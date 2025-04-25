@@ -1,54 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #111; color: white; font-family: sans-serif; }
+    #chat-box { height: 300px; overflow-y: auto; background: #222; padding: 10px; }
+    .message { margin: 5px 0; }
+    .chat-image { max-width: 200px; display: block; margin-top: 5px; }
+    .pfp { width: 30px; height: 30px; border-radius: 50%; vertical-align: middle; margin-right: 5px; }
+  </style>
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <div id="input-container">
-      <input id="messageInput" placeholder="Type a message..." />
-      <button id="sendButton">Send</button>
-    </div>
-  </div>
+  <h1>Sharcord</h1>
+  <div id="chat-box"></div>
+  <input type="file" id="profile-pic" />
+  <input type="text" id="message-input" placeholder="Type your message..." />
+  <input type="file" id="image-upload" />
+  <button id="send-btn">Send</button>
 
-  <!-- Admin Panel (visible only to X12) -->
-  <div id="admin-panel" style="display: none;">
-    <h2 style="color: red;">Admin Panel</h2>
-
-    <!-- Admin Feature: Strobe -->
-    <div>
-      <h3>Strobe Screen</h3>
-      <input type="number" id="strobeDuration" placeholder="Duration (seconds)" />
-      <button onclick="strobeScreen()">Strobe All</button>
-    </div>
-
-    <!-- Admin Feature: Timeout -->
-    <div>
-      <h3>Timeout User</h3>
-      <input type="text" id="timeoutUser" placeholder="Username" />
-      <input type="number" id="timeoutDuration" placeholder="Seconds" />
-      <button onclick="timeoutUser()">Timeout</button>
-    </div>
-
-    <!-- Admin Feature: Redirect -->
-    <div>
-      <h3>Redirect User</h3>
-      <input type="text" id="redirectUser" placeholder="Username" />
-      <input type="text" id="redirectLink" placeholder="https://example.com" />
-      <button onclick="redirectUser()">Redirect</button>
-    </div>
-
-    <!-- Admin Feature: Send Jumpscare -->
-    <div id="jumpscare-section">
-      <h3 style="color: white;">Send Jumpscare</h3>
-      <input type="file" id="jumpscareImage" accept="image/*"><br><br>
-      <input type="file" id="jumpscareAudio" accept="audio/*"><br><br>
-      <button onclick="sendJumpscare()">Send Jumpscare</button>
-    </div>
+  <div id="admin-controls" style="margin-top:20px;">
+    <button id="strobe-btn">Strobe All</button>
+    <button id="kick-btn">Kick</button>
+    <button id="timeout-btn">Timeout</button>
+    <button id="redirect-btn">Redirect</button>
+    <br><br>
+    <label>Image: <input type="file" id="jumpscare-img-upload" /></label><br>
+    <label>Audio: <input type="file" id="jumpscare-audio-upload" /></label><br>
+    <button id="jumpscare-btn">Jumpscare</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
