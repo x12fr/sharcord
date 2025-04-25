@@ -1,38 +1,37 @@
 const socket = io();
 
-// Get HTML elements
-const messageForm = document.getElementById('message-form');
-const messageInput = document.getElementById('message-input');
-const messagesContainer = document.getElementById('messages');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+const messages = document.getElementById('messages');
 const adminPanel = document.getElementById('admin-panel');
 
-// Example username setup (replace with your real login system)
-const username = localStorage.getItem('username') || prompt('Enter your username:');
-localStorage.setItem('username', username);
+// Get username (this is super basic, can be improved)
+let username = prompt('Enter your username:');
+socket.emit('register', username);
 
-// Show admin panel if user is admin
-if (username === "X12") {
-  adminPanel.style.display = 'block';
+// Show admin panel if username is admin
+if (username === 'X12') {
+    adminPanel.style.display = 'block';
+} else {
+    adminPanel.style.display = 'none';
 }
 
 // Send message
-messageForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  if (messageInput.value.trim() !== '') {
-    const messageData = {
-      username: username,
-      text: messageInput.value.trim()
-    };
-    socket.emit('chat message', messageData);
-    messageInput.value = '';
-  }
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (input.value) {
+        socket.emit('chat message', {
+            username: username,
+            message: input.value
+        });
+        input.value = '';
+    }
 });
 
-// Listen for incoming messages
-socket.on('chat message', (data) => {
-  const msgElement = document.createElement('div');
-  msgElement.classList.add('message');
-  msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.text}`;
-  messagesContainer.appendChild(msgElement);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto scroll down
+// Receive message
+socket.on('chat message', function(data) {
+    const item = document.createElement('li');
+    item.textContent = `${data.username}: ${data.message}`;
+    messages.appendChild(item);
+    messages.scrollTop = messages.scrollHeight;
 });
