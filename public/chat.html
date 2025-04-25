@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head><title>Sharcord Chat</title></head>
+<body>
+  <div id="chat"></div>
+  <input id="msgInput" placeholder="Message">
+  <button onclick="sendMessage()">Send</button>
+  <input type="file" id="fileInput">
+
+  <div id="adminPanel" style="display:none;">
+    <h3>Admin Panel</h3>
+    <input id="targetUser" placeholder="Target Username">
+    <button onclick="adminAction('flash')">Flash</button>
+    <button onclick="adminAction('timeout')">Timeout</button>
+    <button onclick="adminAction('redirect')">Redirect</button>
+    <button onclick="adminAction('kick')">Kick</button>
+    <button onclick="adminAction('announce')">Announce</button>
+    <button onclick="adminAction('grantAdmin')">Grant Admin</button>
+    <button onclick="adminAction('removeAdmin')">Remove Admin</button>
+  </div>
+
+  <div id="ownerPanel" style="display:none;">
+    <h3>Owner Menu</h3>
+    <button onclick="socket.emit('jumpscare')">Jumpscare All</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const username = sessionStorage.getItem('username');
+    const isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+    const isOwner = sessionStorage.getItem('isOwner') === 'true';
+
+    if (isAdmin) document.getElementById('adminPanel').style.display = 'block';
+    if (isOwner) document.getElementById('ownerPanel').style.display = 'block';
+
+    socket.emit('login', { username });
+
+    socket.on('chat-history', msgs => {
+      msgs.forEach(showMessage);
+    });
+
+    socket.on('new-message', showMessage);
+
+    function showMessage(data) {
+      const div = document.createElement('div');
+      div.innerHTML = `<b>${data.username}</b>: ${data.msg}`;
+      if (data.type === 'image') div.innerHTML = `<b>${data.username}</b>: <img src="${data.msg}" width="100">`;
+      if (data.type === 'audio') div.innerHTML = `<b>${data.username}</b>: <audio controls src="${data.msg}"></audio>`;
+      document.getElementById('chat').appendChild(div);
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById('msgInput').value;
+      socket.emit('send-message', msg);
+      document.getElementById('msgInput').value = '';
+    }
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (file.type.startsWith("image/")) socket.emit('send-image', reader.result);
+        else if (file.type.startsWith("audio/")) socket.emit('send-audio', reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function adminAction(action) {
+      const target = document.getElementById('targetUser').value;
+      const data = prompt(`Enter data for ${action}`) || '';
+      socket.emit('admin-action', { action, target, data });
+    }
+
+    socket.on('flash', () => {
+      document.body.style.backgroundColor = 'red';
+      setTimeout(() => document.body.style.backgroundColor = '', 2000);
+    });
+
+    socket.on('timeout', () => alert("You've been timed out."));
+    socket.on('redirect', url => window.location.href = url);
+    socket.on('kick', () => window.close());
+    socket.on('announcement', text => alert("[Announcement] " + text));
+    socket.on('jumpscare', () => alert("👻 JUMPSCARE!"));
+  </script>
+</body>
+</html>
