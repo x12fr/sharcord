@@ -3,32 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sharcord</title>
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="loginPage">
-    <h2>Sharcord Login</h2>
-    <input id="username" placeholder="Username">
-    <input id="password" placeholder="Password" type="password">
+  <div id="login">
+    <input id="username" placeholder="Username" />
+    <input id="password" placeholder="Password" type="password" />
+    <input id="pic" placeholder="Profile Pic URL" />
     <button id="loginBtn">Login</button>
-    <button id="registerBtn">Register</button>
   </div>
 
-  <div id="chatPage" style="display: none;">
-    <div id="adminPanel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <input id="strobeDuration" placeholder="Strobe Duration (ms)">
-      <button onclick="sendStrobe()">Strobe</button>
-      <input id="youtubeURL" placeholder="YouTube URL">
-      <button onclick="playYouTubeAudio()">Play Audio</button>
-    </div>
-    
+  <div id="chat" style="display:none;">
     <div id="messages"></div>
-    <input id="imageUpload" type="file" accept="image/*">
-    <input id="messageInput" placeholder="Type your message...">
+    <input id="msgInput" placeholder="Message" />
+    <button id="sendBtn">Send</button>
+    <input type="file" id="imgUpload" />
+    <button id="sendImageBtn">Send Image</button>
+    <audio id="audioPlayer" autoplay></audio>
+  </div>
+
+  <div id="adminPanel" style="display:none;">
+    <h2>Admin Panel</h2>
+    <button onclick="strobe()">Strobe Screen</button>
+    <input id="ytUrl" placeholder="YouTube URL" />
+    <button onclick="playAudio()">Play Audio</button>
+    <input id="timeoutUser" placeholder="Username to timeout" />
+    <input id="timeoutDuration" placeholder="Seconds" type="number" />
+    <button onclick="timeoutUser()">Timeout</button>
+    <input id="redirectUser" placeholder="Username to redirect" />
+    <input id="redirectURL" placeholder="Redirect URL" />
+    <button onclick="redirectUser()">Redirect</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
