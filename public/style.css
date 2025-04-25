@@ -1,0 +1,10 @@
+body {
+  background-color: #111;
+  color: #fff;
+  font-family: sans-serif;
+}
+input, button {
+  padding: 5px;
+  margin: 4px;
+}
+img { max-width: 150px; }
