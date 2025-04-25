@@ -6,36 +6,12 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="login">
-    <input id="username" placeholder="Username" />
-    <input id="password" placeholder="Password" type="password" />
-    <input id="pic" placeholder="Profile Pic URL" />
-    <button id="loginBtn">Login</button>
+  <div class="home-screen">
+    <img src="shark.png" alt="Shark" class="shark-logo" />
+    <h1>Shark</h1>
+    <p>A chill chat app made for fun. Talk, share, and vibe with others.</p>
+    <button onclick="window.location='login.html'">Login</button>
+    <button onclick="window.location='register.html'">Register</button>
   </div>
-
-  <div id="chat" style="display:none;">
-    <div id="messages"></div>
-    <input id="msgInput" placeholder="Message" />
-    <button id="sendBtn">Send</button>
-    <input type="file" id="imgUpload" />
-    <button id="sendImageBtn">Send Image</button>
-    <audio id="audioPlayer" autoplay></audio>
-  </div>
-
-  <div id="adminPanel" style="display:none;">
-    <h2>Admin Panel</h2>
-    <button onclick="strobe()">Strobe Screen</button>
-    <input id="ytUrl" placeholder="YouTube URL" />
-    <button onclick="playAudio()">Play Audio</button>
-    <input id="timeoutUser" placeholder="Username to timeout" />
-    <input id="timeoutDuration" placeholder="Seconds" type="number" />
-    <button onclick="timeoutUser()">Timeout</button>
-    <input id="redirectUser" placeholder="Username to redirect" />
-    <input id="redirectURL" placeholder="Redirect URL" />
-    <button onclick="redirectUser()">Redirect</button>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
 </body>
 </html>
