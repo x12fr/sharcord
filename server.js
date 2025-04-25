@@ -2,101 +2,63 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const bodyParser = require('body-parser');
 const path = require('path');
 
-const users = {}; // Stores { username: { password, profilePic, socketId, timeoutUntil } }
+app.use(express.static(__dirname));
+app.use(express.json());
 
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+const users = {};
+const messages = [];
 
-// Serve pages
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-app.get('/register.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'register.html'));
-});
-app.get('/chat.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
-});
-
-// Login route
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!users[username] || users[username].password !== password) {
-    return res.status(400).send('Invalid username or password');
-  }
-  res.status(200).send('Login successful');
-});
-
-// Register route (NEW)
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).send('Username and password are required');
-  }
-  if (users[username]) {
-    return res.status(400).send('Username already exists');
-  }
-  users[username] = { password: password, profilePic: '/default.png' };
-  console.log(`Registered new user: ${username}`);
-  res.status(200).send('User registered successfully');
+  if (users[username]) return res.json({ success: false, message: 'Username taken' });
+  users[username] = { password, profilePic: '' };
+  res.json({ success: true });
 });
 
-// Socket.io stuff
-io.on('connection', (socket) => {
-  console.log('A user connected');
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!users[username] || users[username].password !== password)
+    return res.json({ success: false, message: 'Invalid login' });
+  res.json({ success: true });
+});
 
-  socket.on('setUserData', ({ username, profilePic }) => {
-    users[username].socketId = socket.id;
-    users[username].profilePic = profilePic || '/default.png';
-    socket.username = username;
-    console.log(`${username} joined with profile picture ${profilePic}`);
+io.on('connection', socket => {
+  socket.on('message', data => {
+    messages.push(data);
+    io.emit('message', data);
   });
 
-  socket.on('chatMessage', (data) => {
-    const { username, message, imageUrl } = data;
-    if (users[username]?.timeoutUntil && users[username].timeoutUntil > Date.now()) {
-      socket.emit('errorMessage', 'You are timed out!');
-      return;
-    }
-    io.emit('chatMessage', { username, message, profilePic: users[username]?.profilePic, imageUrl });
+  socket.on('admin-jumpscare', data => {
+    io.emit('admin-jumpscare', data);
   });
 
-  socket.on('adminStrobe', (duration) => {
-    io.emit('strobe', duration);
-  });
-
-  socket.on('adminPlayAudio', (youtubeUrl) => {
-    io.emit('playAudio', youtubeUrl);
-  });
-
-  socket.on('adminTimeoutUser', ({ targetUsername, duration }) => {
-    const user = users[targetUsername];
-    if (user && user.socketId) {
-      user.timeoutUntil = Date.now() + duration * 1000;
-      io.to(user.socketId).emit('timedOut', duration);
+  socket.on('admin-redirect', data => {
+    for (const id in io.sockets.sockets) {
+      const s = io.sockets.sockets[id];
+      if (s.username === data.user) s.emit('admin-redirect', data.link);
     }
   });
 
-  socket.on('adminRedirectUser', ({ targetUsername, link }) => {
-    const user = users[targetUsername];
-    if (user && user.socketId) {
-      io.to(user.socketId).emit('redirect', link);
+  socket.on('admin-timeout', data => {
+    for (const id in io.sockets.sockets) {
+      const s = io.sockets.sockets[id];
+      if (s.username === data.user) s.emit('admin-timeout', data.seconds);
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
+  socket.on('admin-strobe', duration => {
+    io.emit('admin-strobe', duration);
+  });
+
+  socket.on('admin-clear', () => {
+    io.emit('admin-clear');
+  });
+
+  socket.on('set-username', name => {
+    socket.username = name;
   });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Sharcord server running on port ${PORT}`);
-});
+http.listen(3000, () => console.log('Sharcord server running on http://localhost:3000'));
