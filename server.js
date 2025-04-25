@@ -1,110 +1,39 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
-const bodyParser = require('body-parser');
+const http = require("http").Server(app);
+const io = require("socket.io")(http);
+const fs = require("fs");
 
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static("."));
+app.use(express.json());
 
-// Memory storage for users
-const users = {}; // { username: { password, profilePic, socketId, timeoutUntil } }
-const timeouts = {}; // { socketId: timeoutEndTime }
+let users = {};
+const ADMIN = { user: "X12", pass: "331256444" };
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.post('/register', (req, res) => {
+app.post("/register", (req, res) => {
   const { username, password } = req.body;
-  if (users[username]) {
-    return res.json({ success: false, message: 'Username already taken.' });
-  }
-  users[username] = { password, profilePic: null, socketId: null, timeoutUntil: 0 };
+  if (users[username]) return res.json({ success: false, message: "Taken" });
+  users[username] = { password };
   res.json({ success: true });
 });
 
-app.post('/login', (req, res) => {
+app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  if (!users[username]) {
-    return res.json({ success: false, message: 'User not found.' });
-  }
-  if (users[username].password !== password) {
-    return res.json({ success: false, message: 'Incorrect password.' });
-  }
+  const isAdmin = username === ADMIN.user && password === ADMIN.pass;
+  if (!users[username] && !isAdmin) return res.json({ success: false, message: "User not found" });
+  if ((users[username] && users[username].password !== password) && !isAdmin)
+    return res.json({ success: false, message: "Wrong password" });
   res.json({ success: true });
 });
 
-// Real-time socket.io communication
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
-  socket.on('setUsername', (username) => {
-    if (users[username]) {
-      users[username].socketId = socket.id;
-      socket.username = username;
-      console.log(`Username ${username} associated with socket ${socket.id}`);
-    }
-  });
-
-  socket.on('sendMessage', (data) => {
-    const now = Date.now();
-    if (timeouts[socket.id] && timeouts[socket.id] > now) {
-      socket.emit('errorMessage', 'You are timed out!');
-      return;
-    }
-    io.emit('chatMessage', {
-      username: data.username,
-      message: data.message,
-      profilePic: users[data.username]?.profilePic || null
-    });
-  });
-
-  socket.on('sendImage', (data) => {
-    io.emit('imageMessage', {
-      username: data.username,
-      imageUrl: data.imageUrl,
-      profilePic: users[data.username]?.profilePic || null
-    });
-  });
-
-  socket.on('setProfilePic', (data) => {
-    if (users[data.username]) {
-      users[data.username].profilePic = data.profilePic;
-    }
-  });
-
-  socket.on('adminStrobe', (duration) => {
-    io.emit('strobeEffect', duration);
-  });
-
-  socket.on('adminPlayAudio', (youtubeUrl) => {
-    io.emit('playAudio', youtubeUrl);
-  });
-
-  socket.on('adminTimeoutUser', ({ username, duration }) => {
-    const user = users[username];
-    if (user && user.socketId) {
-      const timeoutEnd = Date.now() + duration * 1000;
-      timeouts[user.socketId] = timeoutEnd;
-      io.to(user.socketId).emit('timeoutSet', duration);
-    }
-  });
-
-  socket.on('adminRedirectUser', ({ username, link }) => {
-    const user = users[username];
-    if (user && user.socketId) {
-      io.to(user.socketId).emit('redirectUser', link);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
+io.on("connection", socket => {
+  socket.on("message", data => io.emit("message", data));
+  socket.on("image", data => io.emit("image", data));
+  socket.on("clear", () => io.emit("clear"));
+  socket.on("timeout", data => io.to(data.user).emit("timeout", data));
+  socket.on("redirect", data => io.to(data.user).emit("redirect", data.link));
+  socket.on("strobe", () => io.emit("strobe"));
+  socket.on("jumpscare", data => io.emit("jumpscare", data));
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Sharcord server running on port ${PORT}`);
-});
+http.listen(3000, () => console.log("Sharcord running on port 3000"));
