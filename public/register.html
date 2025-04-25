@@ -1,20 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
   <title>Register - Sharcord</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="auth-body">
-  <div class="auth-container">
-    <h2>Register for Sharcord</h2>
-    <input id="username" placeholder="Username" />
-    <input id="password" type="password" placeholder="Password" />
-    <input id="profile-pic" placeholder="Profile Picture URL" />
-    <button onclick="register()">Register</button>
-    <p>Already have an account? <a href="login.html">Login here</a></p>
-  </div>
-
+<body>
+  <h2>Create an Account</h2>
+  <input id="username" placeholder="Username"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <input id="profile-pic" placeholder="Profile Picture URL"><br>
+  <button onclick="register()">Register</button>
+  <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
