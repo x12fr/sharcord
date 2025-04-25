@@ -1,73 +1,72 @@
-
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const fs = require('fs');
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-const path = require('path');
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static(__dirname + '/public'));
 
 let users = {};
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+io.on('connection', (socket) => {
+  console.log('User connected');
 
-const USER_DB = './users.json';
-const ADMIN_USER = 'X12';
-const ADMIN_PASS = '331256444';
+  socket.on('login', ({ username, password }) => {
+    if (users[username]) {
+      socket.emit('login-failed', 'Username already taken');
+    } else {
+      socket.username = username;
+      socket.profilePic = 'default.png';
+      users[username] = socket;
 
-if (!fs.existsSync(USER_DB)) fs.writeFileSync(USER_DB, '{}');
-
-app.post('/register', (req, res) => {
-  const db = JSON.parse(fs.readFileSync(USER_DB));
-  const { username, password } = req.body;
-  if (db[username]) return res.json({ success: false, message: "Username taken" });
-  db[username] = password;
-  fs.writeFileSync(USER_DB, JSON.stringify(db));
-  res.json({ success: true, isAdmin: username === ADMIN_USER && password === ADMIN_PASS });
-});
-
-app.post('/login', (req, res) => {
-  const db = JSON.parse(fs.readFileSync(USER_DB));
-  const { username, password } = req.body;
-  if (db[username] !== password) return res.json({ success: false, message: "Invalid credentials" });
-  res.json({ success: true, isAdmin: username === ADMIN_USER && password === ADMIN_PASS });
-});
-
-io.on('connection', socket => {
-  socket.on("join", username => {
-    users[username] = socket;
-    socket.username = username;
+      socket.emit('login-success', username);
+      if (username === 'X12' && password === '331256444') {
+        socket.emit('admin-authenticated');
+      }
+    }
   });
 
-  socket.on("message", data => {
-    io.emit("message", data);
+  socket.on('chat-message', (text) => {
+    io.emit('chat-message', {
+      username: socket.username,
+      text,
+      profilePic: socket.profilePic || 'default.png'
+    });
   });
 
-  socket.on("jumpscare", () => {
-    io.emit("jumpscare");
+  // === Admin Events ===
+  socket.on('admin-strobe', (duration) => {
+    if (socket.username === 'X12') {
+      io.emit('strobe', duration);
+    }
   });
 
-  socket.on("strobe", duration => {
-    io.emit("strobe", duration);
+  socket.on('admin-timeout', ({ user, seconds }) => {
+    if (socket.username === 'X12' && users[user]) {
+      users[user].emit('timeout', seconds);
+    }
   });
 
-  socket.on("kickUser", user => {
-    if (users[user]) users[user].emit("kick");
+  socket.on('admin-redirect', ({ user, link }) => {
+    if (socket.username === 'X12' && users[user]) {
+      users[user].emit('redirect', link);
+    }
   });
 
-  socket.on("timeoutUser", ({ user, duration }) => {
-    if (users[user]) users[user].emit("timeout", duration);
-  });
-
-  socket.on("redirectUser", ({ user, link }) => {
-    if (users[user]) users[user].emit("redirect", link);
+  socket.on('admin-jumpscare', ({ image, audio }) => {
+    if (socket.username === 'X12') {
+      io.emit('run-jumpscare', { image, audio });
+    }
   });
 
   socket.on('disconnect', () => {
-    delete users[socket.username];
+    if (socket.username && users[socket.username]) {
+      delete users[socket.username];
+    }
   });
 });
 
-server.listen(3000, () => console.log('Sharcord server running on port 3000'));
+http.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
