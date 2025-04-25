@@ -1,33 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Sharcord</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="login-screen">
-    <h2>Login / Register</h2>
-    <input id="username" placeholder="Username"><br>
-    <input id="password" type="password" placeholder="Password"><br>
-    <input id="profile-pic" placeholder="Profile picture URL"><br>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <input id="profile-pic" placeholder="Profile Pic URL">
     <button onclick="register()">Register</button>
     <button onclick="login()">Login</button>
   </div>
 
   <div id="chat-screen" style="display:none;">
-    <h2>Sharcord Chat</h2>
     <div id="users"></div>
-    <div id="chat-box" style="height:300px;overflow:auto;border:1px solid gray;"></div>
-    <input id="msg-input" placeholder="Message...">
+    <div id="chat-box"></div>
+    <input id="msg-input" placeholder="Type a message">
     <input type="file" id="img-upload">
     <button onclick="send()">Send</button>
 
     <div id="admin-panel" style="display:none;">
       <h3>Admin Panel</h3>
-      <input id="timeout-user" placeholder="Username to timeout">
+      <input id="timeout-user" placeholder="User to timeout">
       <input id="timeout-mins" type="number" placeholder="Minutes">
       <button onclick="timeout()">Timeout</button>
-      <button onclick="flash()">Flash Screens</button>
+
+      <input id="yt-url" placeholder="YouTube URL">
+      <button onclick="playAudio()">Play Audio</button>
+
+      <input id="strobe-time" type="number" placeholder="Strobe Time (sec)">
+      <button onclick="flash()">Strobe</button>
     </div>
   </div>
 
