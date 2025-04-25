@@ -1,21 +1,14 @@
 body {
-  background-color: black;
+  background: black;
   color: red;
   font-family: sans-serif;
 }
-
-#messages {
-  height: 400px;
-  overflow-y: auto;
-  border: 2px solid red;
-  padding: 10px;
+#messages div {
+  margin: 5px 0;
 }
-
-#messageInput {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  background-color: #222;
-  color: red;
-  border: 1px solid red;
+img.profile {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  vertical-align: middle;
 }
