@@ -1,27 +1,65 @@
 <!DOCTYPE html>
-<html>
-<head><title>Register</title><link rel="stylesheet" href="style.css"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sharcord - Register</title>
+  <style>
+    body {
+      background-color: #1e1e2f;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 200px;
+    }
+    button {
+      background-color: #43b581;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
 <body>
-  <div class="form-box">
-    <h2>Register</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="register()">Register</button>
-  </div>
+
+  <h1>Register</h1>
+  <form id="registerForm">
+    <input id="username" type="text" placeholder="Username" required><br>
+    <input id="password" type="password" placeholder="Password" required><br>
+    <button type="submit">Register</button>
+  </form>
+  <p>Already have an account? <a href="login.html" style="color: #43b581;">Login</a></p>
+
   <script>
-    async function register() {
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
       const res = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: document.getElementById('username').value,
-          password: document.getElementById('password').value
-        })
+        body: JSON.stringify({ username, password })
       });
-      const result = await res.text();
-      if (result === 'success') location.href = 'chat.html';
-      else alert(result);
-    }
+      
+      if (res.ok) {
+        window.location.href = '/chat.html';
+      } else {
+        const error = await res.text();
+        alert(error);
+      }
+    });
   </script>
+
 </body>
 </html>
