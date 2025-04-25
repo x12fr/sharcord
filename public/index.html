@@ -1,62 +1,61 @@
-const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const bodyParser = require('body-parser');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sharcord</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="home">
+    <div class="hero">
+      <img src="https://i.imgur.com/nHvYupF.png" alt="Shark Logo" class="logo">
+      <h1>Welcome to Sharcord</h1>
+      <p>A cool chat app made by Joel to chat at school. Real-time chatting, image sharing, admin powers, and more.</p>
+      <button onclick="document.getElementById('login-box').style.display='block'">Login</button>
+      <button onclick="document.getElementById('register-box').style.display='block'">Register</button>
+    </div>
+    <div id="login-box" class="auth-box">
+      <h2>Login</h2>
+      <input type="text" id="log-username" placeholder="Username">
+      <input type="password" id="log-password" placeholder="Password">
+      <button onclick="login()">Log In</button>
+    </div>
+    <div id="register-box" class="auth-box">
+      <h2>Register</h2>
+      <input type="text" id="reg-username" placeholder="Username">
+      <input type="password" id="reg-password" placeholder="Password">
+      <input type="text" id="reg-profile-pic" placeholder="Profile Picture URL">
+      <button onclick="register()">Register</button>
+    </div>
+  </div>
 
-app.use(express.static('public'));
-app.use(bodyParser.json());
+  <div id="chat-screen" style="display:none;">
+    <div id="chat-box" class="chat-box"></div>
+    <div id="timeouts"></div>
+    <input id="msg-input" placeholder="Type a message...">
+    <input type="file" id="img-upload">
+    <button onclick="send()">Send</button>
+    <button onclick="sendImage()">Send Image</button>
+  </div>
 
-const users = {};
-const messages = [];
-const timeouts = {};
-const redirects = {};
+  <div id="admin-panel" style="display:none;">
+    <h3>Admin Panel</h3>
+    <input id="flash-time" placeholder="Strobe Duration (ms)">
+    <button onclick="flash()">Strobe All Screens</button><br><br>
 
-app.post('/register', (req, res) => {
-  const { username, password, profilePic } = req.body;
-  if (users[username]) return res.status(400).end();
-  users[username] = { password, profilePic };
-  res.end();
-});
+    <input id="timeout-user" placeholder="Username to Timeout">
+    <input id="timeout-mins" placeholder="Minutes">
+    <button onclick="timeout()">Timeout User</button><br><br>
 
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!users[username] || users[username].password !== password) return res.status(401).end();
-  res.end();
-});
+    <input id="audio-url" placeholder="YouTube audio URL">
+    <button onclick="playAudio()">Play Audio</button><br><br>
 
-io.on('connection', socket => {
-  let currentUser = '';
+    <input id="redirect-user" placeholder="Username to Redirect">
+    <input id="redirect-link" placeholder="Redirect URL">
+    <button onclick="redirectUser()">Redirect User</button>
+  </div>
 
-  socket.on('join', user => {
-    currentUser = user;
-    socket.emit('init', { messages, timeouts });
-  });
-
-  socket.on('message', msg => {
-    const profilePic = users[msg.username]?.profilePic || '';
-    const fullMsg = { ...msg, profilePic };
-    messages.push(fullMsg);
-    io.emit('message', fullMsg);
-  });
-
-  socket.on('flash', ({ duration }) => {
-    io.emit('flash');
-  });
-
-  socket.on('timeout', ({ target, minutes }) => {
-    const end = Date.now() + minutes * 60000;
-    timeouts[target] = end;
-    io.emit('timeout', { target, end });
-  });
-
-  socket.on('play-audio', url => {
-    io.emit('play-audio', url);
-  });
-
-  socket.on('redirect', ({ target, link }) => {
-    io.emit('redirect', link);
-  });
-});
-
-http.listen(3000, () => console.log('Server running on http://localhost:3000'));
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
