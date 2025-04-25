@@ -1,67 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sharcord Chat</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #fff;
-      margin: 0;
-      padding: 0;
-    }
+const socket = io();
+const username = new URLSearchParams(window.location.search).get('username') || 'Guest';
 
-    #chat-container {
-      width: 100%;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-      background: #1e1e1e;
-      border-radius: 10px;
-    }
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('messageInput').addEventListener('keypress', function (e) {
+  if (e.key === 'Enter') sendMessage();
+});
 
-    #messages {
-      height: 400px;
-      overflow-y: auto;
-      border: 1px solid #333;
-      padding: 10px;
-      background: #2c2c2c;
-      border-radius: 5px;
-    }
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const message = input.value;
+  if (message.trim() !== '') {
+    socket.emit('chat message', { username, message });
+    input.value = '';
+  }
+}
 
-    #messages div {
-      padding: 5px 0;
-    }
+socket.on('chat message', ({ username, message }) => {
+  const messagesDiv = document.getElementById('messages');
+  const msg = document.createElement('div');
+  msg.textContent = `${username}: ${message}`;
+  messagesDiv.appendChild(msg);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
 
-    #messageInput {
-      width: 80%;
-      padding: 10px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 5px;
-    }
+document.getElementById('fileInput').addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      socket.emit('file upload', {
+        username,
+        fileName: file.name,
+        fileType: file.type,
+        fileData: reader.result
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+});
 
-    #sendBtn {
-      padding: 10px 20px;
-      background: #ff4444;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin-left: 10px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Type a message..." />
-    <button id="sendBtn">Send</button>
-  </div>
+socket.on('file upload', ({ username, fileName, fileType, fileData }) => {
+  const messagesDiv = document.getElementById('messages');
+  const msg = document.createElement('div');
+  msg.innerHTML = `<strong>${username}:</strong> `;
+  if (fileType.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.src = fileData;
+    img.style.maxWidth = '200px';
+    msg.appendChild(img);
+  } else if (fileType.startsWith('audio/')) {
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = fileData;
+    msg.appendChild(audio);
+  } else {
+    msg.innerHTML += `<a href="${fileData}" download="${fileName}">${fileName}</a>`;
+  }
+  messagesDiv.appendChild(msg);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
-</body>
-</html>
+socket.emit('check admin', { username }, (isAdmin) => {
+  if (isAdmin) {
+    document.getElementById('admin-panel').style.display = 'block';
+  }
+});
+
+function sendAnnouncement() {
+  const announcement = prompt('Enter announcement:');
+  if (announcement) {
+    socket.emit('announcement', { username, announcement });
+  }
+}
+
+function kickUser() {
+  const userToKick = prompt('Enter username to kick:');
+
+::contentReference[oaicite:10]{index=10}
+ 
