@@ -9,45 +9,27 @@
   <div id="chat-container">
     <div id="messages"></div>
 
-    <div id="message-form">
-      <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-      <button id="send-button">Send</button>
-    </div>
+    <form id="message-form">
+      <input id="message-input" autocomplete="off" placeholder="Type a message...">
+      <button type="submit">Send</button>
+    </form>
 
-    <!-- Admin Panel -->
-    <div id="admin-panel">
-      <div class="admin-header">
-        <h2>Admin Panel</h2>
-        <button id="logout-button">Logout</button>
-      </div>
-      <p>Welcome Admin!</p>
-
-      <button id="strobe-all-button">Strobe All Screens</button>
-
-      <div class="admin-control">
-        <input type="text" id="timeout-username" placeholder="Username to Timeout">
-        <input type="number" id="timeout-duration" placeholder="Seconds">
-        <button id="timeout-button">Timeout User</button>
-      </div>
-
-      <div class="admin-control">
-        <input type="text" id="redirect-username" placeholder="Username to Redirect">
-        <input type="text" id="redirect-link" placeholder="Redirect URL">
-        <button id="redirect-button">Redirect User</button>
-      </div>
-
-      <div class="admin-control">
-        <input type="text" id="announcement-text" placeholder="Announcement Text">
-        <button id="announcement-button">Send Announcement</button>
-      </div>
-
-      <div class="admin-control">
-        <h3>Jumpscare</h3>
-        <input type="file" id="jumpscare-image" accept="image/*">
-        <input type="file" id="jumpscare-audio" accept="audio/*">
-        <button id="jumpscare-button">Launch Jumpscare</button>
-      </div>
-
+    <!-- 🔐 Admin Panel (shown only to X12) -->
+    <div id="admin-panel" style="display:none; margin-top: 20px; border-top: 1px solid red; padding-top: 10px;">
+      <h3>Admin Panel</h3>
+      <button onclick="sendStrobe()">Strobe All Screens</button>
+      <input id="timeout-user" placeholder="Username to timeout">
+      <button onclick="timeoutUser()">Timeout User</button>
+      <input id="kick-user" placeholder="Username to kick">
+      <button onclick="kickUser()">Kick User</button>
+      <input id="redirect-user" placeholder="Username to redirect">
+      <input id="redirect-url" placeholder="URL to redirect to">
+      <button onclick="redirectUser()">Redirect</button>
+      <input id="announcement" placeholder="Announcement text">
+      <button onclick="sendAnnouncement()">Send Announcement</button>
+      <input id="jumpscare-img" placeholder="Jumpscare image URL">
+      <input id="jumpscare-audio" placeholder="Jumpscare audio URL">
+      <button onclick="sendJumpscare()">Send Jumpscare</button>
     </div>
   </div>
 
