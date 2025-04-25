@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharcord Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div id="adminPanel" style="display:none;">
+      <h3>Admin Panel</h3>
+      <input id="jumpscareBtn" type="button" value="Jumpscare Everyone"><br>
+      <input id="strobeBtn" type="button" value="Strobe Screen"><br>
+      <input id="strobeDuration" placeholder="Duration (s)"><br>
+      <input id="kickUser" placeholder="Kick Username"><button onclick="kickUser()">Kick</button><br>
+      <input id="timeoutUser" placeholder="Timeout Username"><input id="timeoutDuration" placeholder="Seconds"><button onclick="timeoutUser()">Timeout</button><br>
+      <input id="redirectUser" placeholder="Redirect Username"><input id="redirectLink" placeholder="Link"><button onclick="redirectUser()">Redirect</button><br>
+    </div>
+    <div id="messages"></div>
+    <input id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <audio id="jumpscareAudio" src="assets/jumpscare.mp3" preload="auto"></audio>
+  <img id="jumpscareImage" src="assets/jumpscare.png" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999;">
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
