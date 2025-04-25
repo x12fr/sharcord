@@ -1,35 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
   <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="chat-body">
-  <div id="chat-screen">
-    <div id="chat-box"></div>
-    <input id="msg-input" placeholder="Type a message..." />
-    <input type="file" id="img-upload" accept="image/*" />
-    <button onclick="send()">Send</button>
+<body onload="initChat()">
+  <h2>Sharcord</h2>
+  <div id="chat-box"></div>
+  <input id="msg-input" placeholder="Type your message...">
+  <input type="file" id="img-upload">
+  <button onclick="send()">Send</button>
 
-    <div id="admin-panel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <button onclick="flash()">Flash Screens</button>
-      <input id="timeout-user" placeholder="Username to timeout" />
-      <input id="timeout-mins" type="number" placeholder="Minutes" />
-      <button onclick="timeout()">Timeout</button>
-      <input id="redirect-user" placeholder="Username to redirect" />
-      <input id="redirect-link" placeholder="Link to redirect to" />
-      <button onclick="redirect()">Redirect User</button>
-      <input id="audio-url" placeholder="YouTube Audio URL" />
-      <button onclick="playAudio()">Play Audio</button>
-      <input id="strobe-time" type="number" placeholder="Strobe seconds" />
-      <button onclick="strobe()">Strobe All</button>
-    </div>
+  <div id="admin-panel" style="display:none;">
+    <h3>Admin Panel</h3>
+    <input id="strobe-time" placeholder="Strobe time (seconds)">
+    <button onclick="flash()">Strobe All Screens</button><br>
 
-    <div id="users"></div>
+    <input id="timeout-user" placeholder="Username to timeout">
+    <input id="timeout-mins" placeholder="Minutes">
+    <button onclick="timeout()">Timeout User</button><br>
+
+    <input id="redirect-user" placeholder="Username to redirect">
+    <input id="redirect-url" placeholder="URL">
+    <button onclick="redirect()">Redirect User</button><br>
+
+    <input id="youtube-url" placeholder="YouTube URL">
+    <button onclick="playYouTube()">Play Audio</button>
   </div>
 
+  <div id="users"></div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
