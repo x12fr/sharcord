@@ -34,10 +34,9 @@ function send() {
   const file = document.getElementById('img-upload').files[0];
   const reader = new FileReader();
   if (file) {
-    reader.onload = function (e) {
+    reader.onload = e => {
       socket.emit('message', { username, text: input.value, image: e.target.result });
       input.value = '';
-      document.getElementById('img-upload').value = null;
     };
     reader.readAsDataURL(file);
   } else {
@@ -58,27 +57,24 @@ function timeout() {
 
 socket.on('init', ({ messages, timeouts }) => {
   for (const msg of messages) render(msg);
-  for (const user in timeouts) {
-    showTimeout(user, timeouts[user]);
-  }
+  for (const user in timeouts) showTimeout(user, timeouts[user]);
 });
 
 socket.on('message', msg => render(msg));
+
 socket.on('flash', () => {
   document.body.style.backgroundColor = 'red';
   setTimeout(() => document.body.style.backgroundColor = '', 3000);
 });
+
 socket.on('timeout', ({ target, end }) => showTimeout(target, end));
 
 function render(msg) {
   const box = document.getElementById('chat-box');
   const el = document.createElement('div');
-  el.className = 'chat-message';
-  let profileImg = msg.profilePic ? `<img src="${msg.profilePic}" height="30" style="vertical-align:middle;border-radius:50%;"> ` : '';
-  el.innerHTML = `${profileImg}<strong>${msg.username}:</strong> ${msg.text || ''}`;
+  el.innerHTML = `<strong>${msg.username}:</strong> ${msg.text || ''}`;
   if (msg.image) el.innerHTML += `<br><img src="${msg.image}" height="100" />`;
   box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
 }
 
 function showTimeout(user, end) {
