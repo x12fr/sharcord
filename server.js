@@ -6,24 +6,30 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '/public/index.html'));
-});
+let users = {}; // username: socket.id
 
 io.on('connection', (socket) => {
-  console.log('A user connected');
+    console.log('a user connected');
 
-  socket.on('chat message', (data) => {
-    io.emit('chat message', data); // <--- Broadcast the message to everyone
-  });
+    socket.on('register', (username) => {
+        users[socket.id] = username;
+        socket.username = username;
+        console.log(`${username} registered`);
+    });
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
-  });
+    socket.on('chat message', (data) => {
+        console.log(`message from ${data.username}: ${data.message}`);
+        io.emit('chat message', { username: data.username, message: data.message });
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`${users[socket.id]} disconnected`);
+        delete users[socket.id];
+    });
 });
 
 http.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+    console.log(`listening on *:${PORT}`);
 });
