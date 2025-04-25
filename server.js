@@ -6,13 +6,13 @@ const path = require('path');
 
 const users = {};
 
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-io.on('connection', socket => {
+io.on('connection', (socket) => {
   socket.on('register', ({ user, pass }) => {
     if (users[user]) return socket.emit('loginError', 'Username taken');
     users[user] = { pass, profilePic: `https://robohash.org/${user}` };
