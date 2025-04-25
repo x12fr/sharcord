@@ -2,124 +2,101 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const session = require('express-session');
 const bodyParser = require('body-parser');
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-// Middleware
-app.use(express.static('public')); // Serve static files from /public
+const users = {}; // Stores { username: { password, profilePic, socketId, timeoutUntil } }
+
+app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(session({
-  secret: 'your-secret-key',
-  resave: false,
-  saveUninitialized: true
-}));
+app.use(bodyParser.json());
 
-// Handle / route (the problem you had)
+// Serve pages
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+app.get('/register.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+app.get('/chat.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
 });
 
-// File upload setup
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname)
+// Login route
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!users[username] || users[username].password !== password) {
+    return res.status(400).send('Invalid username or password');
   }
+  res.status(200).send('Login successful');
 });
-const upload = multer({ storage: storage });
 
-// Create uploads directory if not exists
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
+// Register route (NEW)
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).send('Username and password are required');
+  }
+  if (users[username]) {
+    return res.status(400).send('Username already exists');
+  }
+  users[username] = { password: password, profilePic: '/default.png' };
+  console.log(`Registered new user: ${username}`);
+  res.status(200).send('User registered successfully');
+});
 
-// Users
-const users = {};
-const timeouts = {};
-
-// Socket.io
+// Socket.io stuff
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  console.log('A user connected');
 
-  socket.on('register', ({ username, password }) => {
-    if (users[username]) {
-      socket.emit('registerFail', 'Username already taken.');
-    } else {
-      users[username] = { password, profilePic: '/default.png' };
-      socket.emit('registerSuccess');
+  socket.on('setUserData', ({ username, profilePic }) => {
+    users[username].socketId = socket.id;
+    users[username].profilePic = profilePic || '/default.png';
+    socket.username = username;
+    console.log(`${username} joined with profile picture ${profilePic}`);
+  });
+
+  socket.on('chatMessage', (data) => {
+    const { username, message, imageUrl } = data;
+    if (users[username]?.timeoutUntil && users[username].timeoutUntil > Date.now()) {
+      socket.emit('errorMessage', 'You are timed out!');
+      return;
+    }
+    io.emit('chatMessage', { username, message, profilePic: users[username]?.profilePic, imageUrl });
+  });
+
+  socket.on('adminStrobe', (duration) => {
+    io.emit('strobe', duration);
+  });
+
+  socket.on('adminPlayAudio', (youtubeUrl) => {
+    io.emit('playAudio', youtubeUrl);
+  });
+
+  socket.on('adminTimeoutUser', ({ targetUsername, duration }) => {
+    const user = users[targetUsername];
+    if (user && user.socketId) {
+      user.timeoutUntil = Date.now() + duration * 1000;
+      io.to(user.socketId).emit('timedOut', duration);
     }
   });
 
-  socket.on('login', ({ username, password }) => {
-    const user = users[username];
-    if (user && user.password === password) {
-      socket.username = username;
-      socket.emit('loginSuccess', { username, profilePic: user.profilePic });
-    } else {
-      socket.emit('loginFail', 'Invalid username or password.');
-    }
-  });
-
-  socket.on('sendMessage', (message) => {
-    if (socket.username) {
-      io.emit('newMessage', {
-        username: socket.username,
-        message,
-        profilePic: users[socket.username].profilePic,
-        timeout: timeouts[socket.username] || 0
-      });
-    }
-  });
-
-  socket.on('sendImage', (fileData) => {
-    io.emit('newImage', {
-      username: socket.username,
-      fileData,
-      profilePic: users[socket.username].profilePic,
-      timeout: timeouts[socket.username] || 0
-    });
-  });
-
-  socket.on('adminFlash', (duration) => {
-    io.emit('flashScreen', duration);
-  });
-
-  socket.on('adminTimeout', ({ username, seconds }) => {
-    timeouts[username] = seconds;
-    io.emit('updateTimeout', { username, seconds });
-  });
-
-  socket.on('adminRedirect', ({ username, link }) => {
-    io.emit('forceRedirect', { username, link });
-  });
-
-  socket.on('adminPlayAudio', (audioData) => {
-    io.emit('playAudio', audioData);
-  });
-
-  socket.on('adminDisplayImage', (imageData) => {
-    io.emit('displayImage', imageData);
-  });
-
-  socket.on('updateProfilePic', (picUrl) => {
-    if (socket.username) {
-      users[socket.username].profilePic = picUrl;
+  socket.on('adminRedirectUser', ({ targetUsername, link }) => {
+    const user = users[targetUsername];
+    if (user && user.socketId) {
+      io.to(user.socketId).emit('redirect', link);
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('A user disconnected:', socket.id);
+    console.log('A user disconnected');
   });
 });
 
-// Server start
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Sharcord server running on port ${PORT}`);
 });
