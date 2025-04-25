@@ -1,65 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Sharcord - Register</title>
-  <style>
-    body {
-      background-color: #1e1e2f;
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    input, button {
-      margin: 10px;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      width: 200px;
-    }
-    button {
-      background-color: #43b581;
-      color: white;
-      cursor: pointer;
-    }
-  </style>
+  <title>Register - Sharcord</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <h1>Register</h1>
-  <form id="registerForm">
-    <input id="username" type="text" placeholder="Username" required><br>
-    <input id="password" type="password" placeholder="Password" required><br>
-    <button type="submit">Register</button>
-  </form>
-  <p>Already have an account? <a href="login.html" style="color: #43b581;">Login</a></p>
-
+  <div class="form-container">
+    <h2>Register</h2>
+    <input type="text" id="register-username" placeholder="Username">
+    <input type="password" id="register-password" placeholder="Password">
+    <button onclick="register()">Register</button>
+    <p>Already have an account? <a href="login.html">Login</a></p>
+  </div>
   <script>
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      
-      const res = await fetch('/register', {
+    function register() {
+      const username = document.getElementById('register-username').value;
+      const password = document.getElementById('register-password').value;
+      fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          localStorage.setItem('username', username);
+          window.location.href = '/chat.html';
+        } else {
+          alert(data.message);
+        }
       });
-      
-      if (res.ok) {
-        window.location.href = '/chat.html';
-      } else {
-        const error = await res.text();
-        alert(error);
-      }
-    });
+    }
   </script>
-
 </body>
 </html>
