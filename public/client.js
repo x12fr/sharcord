@@ -1,113 +1,142 @@
 const socket = io();
-const messages = document.getElementById('messages');
-const input = document.getElementById('messageInput');
-let lastSent = 0;
+const username = localStorage.getItem('username');
+let profilePic = '';
 
-document.getElementById('toggle-admin').onclick = () => {
-  const panel = document.getElementById('admin-panel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-};
+if (!username) window.location.href = '/login.html';
 
-input.addEventListener('keydown', (e) => {
+document.getElementById('message-input').focus();
+
+function handleEnter(e) {
   if (e.key === 'Enter') sendMessage();
-});
+}
 
 function sendMessage() {
-  const now = Date.now();
-  if (now - lastSent < 3000) return alert('Wait 3 seconds!');
-  if (input.value.trim() !== '') {
-    socket.emit('message', input.value);
-    input.value = '';
-    lastSent = now;
-  }
+  const input = document.getElementById('message-input');
+  if (!input.value.trim()) return;
+  socket.emit('message', { username, text: input.value, profilePic });
+  input.value = '';
 }
 
 socket.on('message', data => {
-  const div = document.createElement('div');
-  div.textContent = `${data.user}: ${data.text}`;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  const chatBox = document.getElementById('chat-box');
+  const msg = document.createElement('div');
+  msg.className = 'message';
+  msg.innerHTML = `
+    <img src="${data.profilePic}" class="avatar">
+    <strong>${data.username}</strong>: ${data.text}
+  `;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-socket.on('jumpscare', ({ image, audio }) => {
-  const img = new Image();
-  img.src = image;
+function toggleSettings() {
+  const settings = document.getElementById('settings');
+  settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateProfilePic() {
+  const file = document.getElementById('profilePic').files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    profilePic = e.target.result;
+    alert("Profile picture updated.");
+  };
+  if (file) reader.readAsDataURL(file);
+}
+
+function toggleAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'a') toggleAdminPanel();
+});
+
+function sendJumpscare() {
+  const img = document.getElementById('jumpscare-image').files[0];
+  const audio = document.getElementById('jumpscare-audio').files[0];
+
+  const readerImg = new FileReader();
+  const readerAudio = new FileReader();
+
+  readerImg.onload = e1 => {
+    readerAudio.onload = e2 => {
+      socket.emit('admin-jumpscare', {
+        image: e1.target.result,
+        audio: e2.target.result
+      });
+    };
+    if (audio) readerAudio.readAsDataURL(audio);
+  };
+
+  if (img) readerImg.readAsDataURL(img);
+}
+
+socket.on('admin-jumpscare', data => {
+  const img = document.createElement('img');
+  img.src = data.image;
   img.style.position = 'fixed';
   img.style.top = 0;
   img.style.left = 0;
-  img.style.width = '100vw';
-  img.style.height = '100vh';
+  img.style.width = '100%';
+  img.style.height = '100%';
   img.style.zIndex = 9999;
+  img.style.objectFit = 'cover';
+
   document.body.appendChild(img);
-  const snd = new Audio(audio);
-  snd.play();
-  setTimeout(() => document.body.removeChild(img), 3000);
-});
 
-socket.on('strobe', duration => {
-  let colors = ['red', 'blue', 'green', 'yellow'];
-  let i = 0;
-  const interval = setInterval(() => {
-    document.body.style.background = colors[i++ % colors.length];
-  }, 200);
+  const audio = new Audio(data.audio);
+  audio.play();
+
   setTimeout(() => {
-    clearInterval(interval);
-    document.body.style.background = '';
-  }, duration * 1000);
+    document.body.removeChild(img);
+  }, 5000);
 });
 
-socket.on('kick', () => {
-  alert('You have been kicked.');
-  location.href = '/';
-});
-
-socket.on('redirect', url => {
-  window.location.href = url;
-});
-
-socket.on('clear', () => {
-  messages.innerHTML = '';
-});
-
-// ADMIN FUNCTIONS
-function triggerJumpscare() {
-  const img = document.getElementById('jumpscareImage').files[0];
-  const aud = document.getElementById('jumpscareAudio').files[0];
-  if (!img || !aud) return alert("Choose both files.");
-
-  const readerImg = new FileReader();
-  const readerAud = new FileReader();
-
-  readerImg.onload = () => {
-    readerAud.onload = () => {
-      socket.emit('jumpscare', { image: readerImg.result, audio: readerAud.result });
-    };
-    readerAud.readAsDataURL(aud);
-  };
-  readerImg.readAsDataURL(img);
-}
-
-function startStrobe() {
-  const seconds = parseInt(document.getElementById('strobeDuration').value);
-  socket.emit('strobe', seconds);
+function redirectUser() {
+  socket.emit('admin-redirect', {
+    user: document.getElementById('redirect-user').value,
+    link: document.getElementById('redirect-link').value
+  });
 }
 
 function timeoutUser() {
-  const user = document.getElementById('timeoutUser').value;
-  socket.emit('timeout', user);
+  socket.emit('admin-timeout', {
+    user: document.getElementById('timeout-user').value,
+    seconds: parseInt(document.getElementById('timeout-duration').value)
+  });
 }
 
-function kickUser() {
-  const user = document.getElementById('kickUser').value;
-  socket.emit('kick', user);
-}
-
-function redirectUser() {
-  const user = document.getElementById('redirectUser').value;
-  const link = document.getElementById('redirectLink').value;
-  socket.emit('redirect', { user, link });
+function startStrobe() {
+  const duration = parseInt(document.getElementById('strobe-duration').value);
+  socket.emit('admin-strobe', duration);
 }
 
 function clearChat() {
-  socket.emit('clear');
+  socket.emit('admin-clear');
+}
+
+socket.on('admin-redirect', url => window.location.href = url);
+socket.on('admin-timeout', seconds => {
+  const input = document.getElementById('message-input');
+  input.disabled = true;
+  setTimeout(() => input.disabled = false, seconds * 1000);
+});
+socket.on('admin-strobe', duration => {
+  let interval = setInterval(() => {
+    document.body.style.backgroundColor = getRandomColor();
+  }, 100);
+  setTimeout(() => {
+    clearInterval(interval);
+    document.body.style.backgroundColor = '';
+  }, duration * 1000);
+});
+socket.on('admin-clear', () => {
+  document.getElementById('chat-box').innerHTML = '';
+});
+
+function getRandomColor() {
+  const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+  return colors[Math.floor(Math.random() * colors.length)];
 }
