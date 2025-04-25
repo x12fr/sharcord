@@ -1,41 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Sharcord</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div id="login-screen">
+  <div id="loginPage">
+    <h2>Sharcord Login</h2>
     <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
-    <input id="profile-pic" placeholder="Profile Pic URL">
-    <button onclick="register()">Register</button>
-    <button onclick="login()">Login</button>
+    <input id="password" placeholder="Password" type="password">
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Register</button>
   </div>
 
-  <div id="chat-screen" style="display:none;">
-    <div id="users"></div>
-    <div id="chat-box"></div>
-    <input id="msg-input" placeholder="Type a message">
-    <input type="file" id="img-upload">
-    <button onclick="send()">Send</button>
-
-    <div id="admin-panel" style="display:none;">
+  <div id="chatPage" style="display: none;">
+    <div id="adminPanel" style="display:none;">
       <h3>Admin Panel</h3>
-      <input id="timeout-user" placeholder="User to timeout">
-      <input id="timeout-mins" type="number" placeholder="Minutes">
-      <button onclick="timeout()">Timeout</button>
-
-      <input id="yt-url" placeholder="YouTube URL">
-      <button onclick="playAudio()">Play Audio</button>
-
-      <input id="strobe-time" type="number" placeholder="Strobe Time (sec)">
-      <button onclick="flash()">Strobe</button>
+      <input id="strobeDuration" placeholder="Strobe Duration (ms)">
+      <button onclick="sendStrobe()">Strobe</button>
+      <input id="youtubeURL" placeholder="YouTube URL">
+      <button onclick="playYouTubeAudio()">Play Audio</button>
     </div>
+    
+    <div id="messages"></div>
+    <input id="imageUpload" type="file" accept="image/*">
+    <input id="messageInput" placeholder="Type your message...">
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <script src="/client.js"></script>
 </body>
 </html>
