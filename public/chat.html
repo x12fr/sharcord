@@ -1,28 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    #chat-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1e1e1e;
+      border-radius: 10px;
+    }
+
+    #messages {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      padding: 10px;
+      background: #2c2c2c;
+      border-radius: 5px;
+    }
+
+    #messages div {
+      padding: 5px 0;
+    }
+
+    #messageInput {
+      width: 80%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    #sendBtn {
+      padding: 10px 20px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div id="chat-container">
     <div id="messages"></div>
-
-    <form id="message-form">
-      <input id="message-input" autocomplete="off" placeholder="Type a message..." />
-      <button type="submit">Send</button>
-    </form>
-
-    <div id="admin-panel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <button onclick="sendAnnouncement()">Send Announcement</button>
-      <button onclick="triggerFlash()">Flash Screen</button>
-      <button onclick="triggerJumpscare()">Jumpscare (Owner)</button>
-      <button onclick="sendRedirect()">Redirect User</button>
-      <button onclick="timeoutUser()">Timeout User</button>
-      <button onclick="kickUser()">Kick User</button>
-    </div>
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
