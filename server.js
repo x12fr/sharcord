@@ -1,43 +1,61 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+const express = require('express');
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-app.use(express.static("public"));
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static('public'));
 app.use(express.json());
 
-const users = {};
-const passwords = {};
+const users = {}; // username: { password, profilePic, socketId }
+const timeouts = {}; // username: timeoutEnd timestamp
+let messages = [];
 
-app.post("/register", (req, res) => {
+app.post('/register', (req, res) => {
+  const { username, password, profilePic } = req.body;
+  if (users[username]) return res.status(400).send('Username already exists');
+  users[username] = { password, profilePic, socketId: null };
+  res.sendStatus(200);
+});
+
+app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (users[username]) return res.json({ success: false, message: "Username already taken" });
-  users[username] = username;
-  passwords[username] = password;
-  res.json({ success: true });
+  if (!users[username] || users[username].password !== password) return res.status(401).send('Invalid');
+  res.sendStatus(200);
 });
 
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  if (passwords[username] === password) {
-    res.json({ success: true, admin: username === "X12" && password === "331256444" });
-  } else {
-    res.json({ success: false });
-  }
-});
+io.on('connection', socket => {
+  socket.on('join', username => {
+    if (users[username]) users[username].socketId = socket.id;
 
-io.on("connection", (socket) => {
-  let user = "Anonymous";
-  socket.on("join", (username) => {
-    user = username;
-    io.emit("message", `${user} joined the chat`);
+    socket.emit('init', { messages, users, timeouts });
+
+    socket.on('message', data => {
+      if (timeouts[data.username] && Date.now() < timeouts[data.username]) return;
+      const msg = { username: data.username, text: data.text, image: data.image || null };
+      messages.push(msg);
+      io.emit('message', msg);
+    });
+
+    socket.on('dm', ({ from, to, text }) => {
+      const target = users[to];
+      if (target?.socketId) {
+        io.to(target.socketId).emit('dm', { from, text });
+      }
+    });
+
+    socket.on('flash', () => io.emit('flash'));
+
+    socket.on('timeout', ({ target, minutes }) => {
+      const end = Date.now() + minutes * 60000;
+      timeouts[target] = end;
+      io.emit('timeout', { target, end });
+    });
   });
-  socket.on("message", (msg) => {
-    io.emit("message", `${user}: ${msg}`);
-  });
 });
 
-server.listen(3000, () => {
-  console.log("Sharcord running on http://localhost:3000");
-});
+http.listen(PORT, () => console.log(`Sharcord running on port ${PORT}`));
