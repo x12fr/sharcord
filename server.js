@@ -3,76 +3,60 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
-const bodyParser = require('body-parser');
 
-const users = {}; // username -> { password, profilePic, timeoutUntil }
+app.use(express.json());
+app.use(express.static(__dirname));
+const users = {};
 
-const ADMIN_USERNAME = 'X12';
-const ADMIN_PASSWORD = '331256444';
-
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Register endpoint
 app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).send('Missing data');
-
-    if (users[username]) {
-        return res.status(400).send('Username already taken');
-    }
-
-    users[username] = {
-        password: password,
-        profilePic: '',
-        timeoutUntil: null
-    };
-    return res.status(200).send('Registered');
+  const { username, password, profilePic } = req.body;
+  if (users[username]) return res.status(400).send('Username taken');
+  users[username] = { password, profilePic };
+  res.sendStatus(200);
 });
 
-// Login endpoint
 app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) return res.status(400).send('Missing data');
-
-    // Check admin login
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        if (!users[username]) {
-            users[username] = {
-                password: password,
-                profilePic: '',
-                timeoutUntil: null
-            };
-        }
-        return res.status(200).json({ admin: true });
-    }
-
-    // Regular user login
-    const user = users[username];
-    if (!user || user.password !== password) {
-        return res.status(400).send('Login failed');
-    }
-
-    return res.status(200).json({ admin: false });
+  const { username, password } = req.body;
+  if (users[username] && users[username].password === password) {
+    return res.json({ success: true });
+  }
+  res.json({ success: false });
 });
 
-// Serve index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
+app.get('/register.html', (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
+app.get('/chat.html', (req, res) => res.sendFile(path.join(__dirname, 'chat.html')));
 
-io.on('connection', (socket) => {
-    console.log('A user connected');
+io.on('connection', socket => {
+  socket.on('join', username => {
+    socket.username = username;
+  });
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
+  socket.on('message', msg => {
+    io.emit('message', msg);
+  });
+
+  socket.on('admin-flash', duration => {
+    io.emit('flash');
+  });
+
+  socket.on('admin-timeout', ({ target, minutes }) => {
+    io.emit('message', {
+      username: 'SYSTEM',
+      text: `${target} has been timed out for ${minutes} minutes.`
     });
+  });
 
-    // You can put your real-time features here (chat, admin features, etc)
+  socket.on('admin-redirect', ({ target, link }) => {
+    io.emit('redirect', link);
+  });
+
+  socket.on('admin-audio', url => {
+    io.emit('audio', url);
+  });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+http.listen(3000, () => {
+  console.log('Sharcord is running on http://localhost:3000');
 });
