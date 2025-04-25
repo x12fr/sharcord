@@ -1,40 +1,83 @@
 const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const http = require('http');
 const path = require('path');
+const socketIO = require('socket.io');
 
-const users = {};
+const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+  res.sendFile(__dirname + '/public/index.html');
 });
+
+let users = {};
+let timeouts = {};
 
 io.on('connection', (socket) => {
-  socket.on('register', ({ user, pass }) => {
-    if (users[user]) return socket.emit('loginError', 'Username taken');
-    users[user] = { pass, profilePic: `https://robohash.org/${user}` };
-    socket.emit('loginSuccess', { username: user, profilePic: users[user].profilePic });
+  socket.on('login', ({ username, password, pic }, cb) => {
+    if (users[username]) return cb({ error: 'Username taken' });
+
+    if (username === 'X12' && password === '331256444') {
+      socket.isAdmin = true;
+    }
+
+    users[username] = { socket, pic };
+    socket.username = username;
+    socket.pic = pic;
+
+    cb({ success: true, isAdmin: socket.isAdmin });
+    io.emit('userlist', Object.keys(users));
   });
 
-  socket.on('login', ({ user, pass }) => {
-    if (user === 'X12' && pass === '331256444') {
-      return socket.emit('loginSuccess', { username: user, profilePic: `https://robohash.org/${user}` });
+  socket.on('sendMessage', (msg) => {
+    if (!timeout[socket.username]) {
+      io.emit('chatMessage', {
+        username: socket.username,
+        pic: socket.pic,
+        message: msg,
+      });
     }
-    if (!users[user] || users[user].pass !== pass) {
-      return socket.emit('loginError', 'Invalid credentials');
-    }
-    socket.emit('loginSuccess', { username: user, profilePic: users[user].profilePic });
   });
 
-  socket.on('message', data => io.emit('message', data));
-  socket.on('image', data => io.emit('image', data));
-  socket.on('adminStrobe', duration => io.emit('strobe', duration));
-  socket.on('adminAudio', url => io.emit('playAudio', url));
+  socket.on('sendImage', (imgData) => {
+    io.emit('imageMessage', {
+      username: socket.username,
+      pic: socket.pic,
+      image: imgData,
+    });
+  });
+
+  socket.on('adminStrobe', (duration) => {
+    if (socket.isAdmin) io.emit('strobeScreen', duration);
+  });
+
+  socket.on('adminAudio', (ytUrl) => {
+    if (socket.isAdmin) io.emit('playAudio', ytUrl);
+  });
+
+  socket.on('adminTimeout', ({ user, duration }) => {
+    if (socket.isAdmin && users[user]) {
+      timeouts[user] = true;
+      users[user].socket.emit('timeout', duration);
+      setTimeout(() => {
+        delete timeouts[user];
+      }, duration * 1000);
+    }
+  });
+
+  socket.on('adminRedirect', ({ user, url }) => {
+    if (socket.isAdmin && users[user]) {
+      users[user].socket.emit('redirect', url);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    delete users[socket.username];
+    io.emit('userlist', Object.keys(users));
+  });
 });
 
-http.listen(process.env.PORT || 3000, () => {
-  console.log('Sharcord running');
-});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on ${PORT}`));
