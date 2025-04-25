@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sharcord Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Welcome to Sharcord</h1>
+  <div id="chatBox">
+    <div id="messages"></div>
+    <input id="msgInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+    <br /><br />
+    <input type="file" id="imageInput" accept="image/*" />
+    <button onclick="sendImage()">Send Image</button>
+    <br /><br />
+    <input type="file" id="profilePicInput" accept="image/*" />
+    <button onclick="setProfilePic()">Set Profile Picture</button>
+  </div>
+
+  <div id="adminPanel" style="display:none;">
+    <h2>Admin Panel</h2>
+    <input type="text" id="ytURL" placeholder="YouTube Audio URL" />
+    <button onclick="playAudio()">Play Audio</button><br />
+
+    <input type="number" id="strobeDuration" placeholder="Strobe Duration (sec)" />
+    <button onclick="strobeEffect()">Strobe All Screens</button><br />
+
+    <input type="text" id="timeoutUser" placeholder="Username to Timeout" />
+    <input type="number" id="timeoutTime" placeholder="Seconds" />
+    <button onclick="timeoutUser()">Timeout</button><br />
+
+    <input type="text" id="redirectUser" placeholder="Username to Redirect" />
+    <input type="text" id="redirectLink" placeholder="Link to Send" />
+    <button onclick="redirectUser()">Redirect</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
