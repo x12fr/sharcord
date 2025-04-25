@@ -1,38 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Sharcord Chat</title>
+  <title>Sharcord</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <div class="sidebar">
+  <div id="chat-container">
+    <div id="sidebar">
       <h2>Sharcord</h2>
-      <button id="toggleAdminBtn">Toggle Admin Panel</button>
+      <button id="toggle-admin">Admin Panel</button>
     </div>
-
-    <div class="chat-container">
-      <div class="top-bar">
-        <h3># general</h3>
-      </div>
-
-      <div id="chat" class="chat-box"></div>
-
-      <div class="input-container">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendBtn">Send</button>
+    <div id="chat-main">
+      <div id="messages"></div>
+      <div id="input-bar">
+        <input type="text" id="messageInput" placeholder="Type a message..." />
       </div>
     </div>
   </div>
 
-  <!-- Admin Panel -->
-  <div id="adminPanel" class="admin-panel hidden">
+  <div id="admin-panel" style="display: none;">
     <h3>Admin Panel</h3>
-    <button id="strobeBtn">Strobe All Screens</button>
-    <button id="clearChatBtn">Clear Chat</button>
-    <button id="playAudioBtn">Play YouTube Audio</button>
-    <input type="text" id="audioUrlInput" placeholder="YouTube URL">
+    <input type="file" id="jumpscareImage" accept="image/*"><br>
+    <input type="file" id="jumpscareAudio" accept="audio/*"><br>
+    <button onclick="triggerJumpscare()">Send Jumpscare</button><br><br>
+
+    <input type="text" id="strobeDuration" placeholder="Strobe Seconds">
+    <button onclick="startStrobe()">Strobe Screens</button><br><br>
+
+    <input type="text" id="timeoutUser" placeholder="Timeout Username">
+    <button onclick="timeoutUser()">Timeout User</button><br><br>
+
+    <input type="text" id="kickUser" placeholder="Kick Username">
+    <button onclick="kickUser()">Kick User</button><br><br>
+
+    <input type="text" id="redirectUser" placeholder="Redirect Username">
+    <input type="text" id="redirectLink" placeholder="Redirect Link">
+    <button onclick="redirectUser()">Redirect</button><br><br>
+
+    <button onclick="clearChat()">Clear Chat</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
