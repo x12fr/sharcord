@@ -4,29 +4,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sharcord</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="auth">
-    <h2>Login</h2>
-    <input id="login-username" placeholder="Username" />
-    <input id="login-password" type="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <h2>Register</h2>
-    <input id="register-username" placeholder="Username" />
-    <input id="register-password" type="password" placeholder="Password" />
+  <div id="login-screen">
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <input id="profile-pic" type="text" placeholder="Profile pic URL (optional)" />
     <button onclick="register()">Register</button>
+    <button onclick="login()">Login</button>
   </div>
-  <div id="chat" style="display:none;">
-    <div id="adminMenu" style="display:none;">
-      <h3>Admin Menu</h3>
-      <p>You're logged in as admin.</p>
+
+  <div id="chat-screen" style="display:none;">
+    <div id="admin-panel" style="display:none;">
+      <input id="flash-user" placeholder="Flash Everyone" readonly />
+      <button onclick="flash()">⚡ Flash</button>
+      <input id="timeout-user" placeholder="Timeout username" />
+      <input id="timeout-mins" type="number" placeholder="Minutes" />
+      <button onclick="timeout()">⏱ Timeout</button>
     </div>
-    <div id="messages"></div>
-    <input id="messageInput" placeholder="Type your message..." />
-    <button onclick="sendMessage()">Send</button>
+    <div id="users"></div>
+    <div id="chat-box"></div>
+    <input id="msg-input" placeholder="Message..." />
+    <input id="img-upload" type="file" />
+    <button onclick="send()">Send</button>
   </div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
