@@ -1,8 +1,8 @@
 {
   "name": "sharcord",
   "version": "1.0.0",
-  "description": "Discord-style real-time chat app",
   "main": "server.js",
+  "license": "MIT",
   "scripts": {
     "start": "node server.js"
   },
