@@ -2,69 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sharcord Chat</title>
+  <title>Sharcord</title>
   <link rel="stylesheet" href="style.css">
-</head>
-<body class="dark-mode">
-  <div id="chat-container">
-    <div id="messages"></div>
-    <form id="message-form">
-      <input id="message-input" autocomplete="off" placeholder="Type a message..." />
-      <button>Send</button>
-    </form>
-  </div>
-
-  <!-- Admin Panel -->
-  <div id="admin-panel" style="display: none; border: 2px solid red; padding: 10px;">
-    <h3>Admin Panel</h3>
-    <button onclick="strobeAll()">Strobe All</button>
-    <button onclick="clearChat()">Clear Chat</button>
-  </div>
-
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const messages = document.getElementById('messages');
-    const form = document.getElementById('message-form');
-    const input = document.getElementById('message-input');
+  <script defer src="client.js"></script>
+</head>
+<body>
+  <div id="chatContainer">
+    <div id="messages"></div>
 
-    // Get username from sessionStorage
-    const username = sessionStorage.getItem('username');
+    <div id="inputContainer">
+      <input type="text" id="messageInput" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
 
-    // Show admin panel if admin
-    if (username === 'X12') {
-      document.getElementById('admin-panel').style.display = 'block';
-    }
+    <div id="adminPanel" style="display: none; margin-top: 20px; padding: 10px; background: #2c2f33; border-radius: 10px;">
+      <h2 style="color: white;">Admin Panel</h2>
 
-    // Handle message send
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (input.value.trim()) {
-        const msgData = {
-          username: username,
-          text: input.value
-        };
-        socket.emit('chat message', msgData);
-        input.value = '';
-      }
-    });
-
-    // Show messages
-    socket.on('chat message', (msg) => {
-      const item = document.createElement('div');
-      item.innerHTML = `<strong>${msg.username}</strong>: ${msg.text}`;
-      messages.appendChild(item);
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    // Admin actions
-    function strobeAll() {
-      socket.emit('admin action', { type: 'strobe' });
-    }
-
-    function clearChat() {
-      messages.innerHTML = '';
-    }
-  </script>
+      <button onclick="strobeAll()">Strobe All</button>
+      <button onclick="clearChat()">Clear Chat</button>
+      <button onclick="sendAnnouncement()">Send Announcement</button>
+      <button onclick="timeoutUser()">Timeout User</button>
+      <button onclick="kickUser()">Kick User</button>
+      <button onclick="redirectUser()">Redirect User</button>
+      <button onclick="spamTabs()">Spam Tabs</button>
+      <button onclick="grantTemporaryAdmin()">Grant Temp Admin</button>
+      <button onclick="sendJumpscare()">Send Jumpscare</button>
+    </div>
+  </div>
 </body>
 </html>
