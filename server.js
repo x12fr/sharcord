@@ -1,83 +1,84 @@
 const express = require('express');
-const http = require('http');
-const path = require('path');
-const socketIO = require('socket.io');
-
 const app = express();
-const server = http.createServer(app);
-const io = socketIO(server);
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+const path = require('path');
+const bodyParser = require('body-parser');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
-app.use(express.static(path.join(__dirname, 'public')));
+const users = {};
+const timeouts = {};
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
-let users = {};
-let timeouts = {};
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+  if (users[username]) return res.status(400).send('Username taken');
+  users[username] = { password, profilePic: null };
+  res.status(200).send('Registered');
+});
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = users[username];
+  if (!user || user.password !== password) return res.status(400).send('Invalid');
+  res.status(200).send('Success');
+});
 
 io.on('connection', (socket) => {
-  socket.on('login', ({ username, password, pic }, cb) => {
-    if (users[username]) return cb({ error: 'Username taken' });
-
-    if (username === 'X12' && password === '331256444') {
-      socket.isAdmin = true;
-    }
-
-    users[username] = { socket, pic };
+  socket.on('join', ({ username, profilePic }) => {
     socket.username = username;
-    socket.pic = pic;
+    socket.profilePic = profilePic;
+    socket.broadcast.emit('user joined', { username });
 
-    cb({ success: true, isAdmin: socket.isAdmin });
-    io.emit('userlist', Object.keys(users));
+    if (timeouts[username]) {
+      socket.emit('timeout', timeouts[username]);
+    }
   });
 
-  socket.on('sendMessage', (msg) => {
-    if (!timeout[socket.username]) {
-      io.emit('chatMessage', {
+  socket.on('chat message', (msg) => {
+    if (!timeouts[socket.username]) {
+      io.emit('chat message', {
         username: socket.username,
-        pic: socket.pic,
-        message: msg,
+        text: msg,
+        profilePic: socket.profilePic
       });
     }
   });
 
-  socket.on('sendImage', (imgData) => {
-    io.emit('imageMessage', {
+  socket.on('image', (dataUrl) => {
+    io.emit('image', {
       username: socket.username,
-      pic: socket.pic,
-      image: imgData,
+      dataUrl,
+      profilePic: socket.profilePic
     });
   });
 
-  socket.on('adminStrobe', (duration) => {
-    if (socket.isAdmin) io.emit('strobeScreen', duration);
+  socket.on('strobe', (duration) => {
+    io.emit('strobe', duration);
   });
 
-  socket.on('adminAudio', (ytUrl) => {
-    if (socket.isAdmin) io.emit('playAudio', ytUrl);
+  socket.on('play audio', (url) => {
+    io.emit('play audio', url);
   });
 
-  socket.on('adminTimeout', ({ user, duration }) => {
-    if (socket.isAdmin && users[user]) {
-      timeouts[user] = true;
-      users[user].socket.emit('timeout', duration);
-      setTimeout(() => {
-        delete timeouts[user];
-      }, duration * 1000);
-    }
+  socket.on('timeout user', ({ username, duration }) => {
+    timeouts[username] = duration;
+    io.emit('timeout', { username, duration });
   });
 
-  socket.on('adminRedirect', ({ user, url }) => {
-    if (socket.isAdmin && users[user]) {
-      users[user].socket.emit('redirect', url);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    delete users[socket.username];
-    io.emit('userlist', Object.keys(users));
+  socket.on('redirect user', ({ username, url }) => {
+    io.emit('redirect user', { username, url });
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+http.listen(3000, () => {
+  console.log('Sharcord server running on port 3000');
+});
