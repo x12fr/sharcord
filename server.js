@@ -18,7 +18,7 @@ app.use(express.json());
 // In-memory user database
 const registeredUsers = {};
 
-// Serve your main pages
+// Serve pages
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
@@ -32,7 +32,7 @@ app.get('/chat', (req, res) => {
   res.sendFile(__dirname + '/public/chat.html');
 });
 
-// POST: Register new user
+// Register route
 app.post('/register', upload.single('profilePic'), (req, res) => {
   const { username, password } = req.body;
   const profilePic = req.file ? '/uploads/' + req.file.filename : '';
@@ -46,7 +46,7 @@ app.post('/register', upload.single('profilePic'), (req, res) => {
   res.redirect('/login');
 });
 
-// POST: Login existing user
+// Login route
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const user = registeredUsers[username];
@@ -55,10 +55,17 @@ app.post('/login', (req, res) => {
     return res.status(400).send('Invalid username or password.');
   }
 
-  res.redirect('/chat');
+  // Set session on successful login
+  res.send(`
+    <script>
+      sessionStorage.setItem('username', "${username}");
+      sessionStorage.setItem('profilePic', "${user.profilePic}");
+      window.location.href = "/chat";
+    </script>
+  `);
 });
 
-// SOCKET.IO
+// SOCKET.IO communication
 io.on('connection', (socket) => {
   console.log('A user connected.');
 
@@ -79,7 +86,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start the server
+// Start server
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log(`Sharcord server running on port ${PORT}`);
