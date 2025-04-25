@@ -1,206 +1,86 @@
 const express = require('express');
 const app = express();
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const path = require('path');
+const http = require('http').createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(http);
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// Static files served from "public"
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+// Setup storage for profile pics and uploads
+const upload = multer({ dest: 'uploads/' });
+
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Multer setup for profile pictures and image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/uploads');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+// In-memory user database
+const registeredUsers = {};
+
+// Serve your main pages
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+app.get('/login', (req, res) => {
+  res.sendFile(__dirname + '/public/login.html');
+});
+app.get('/register', (req, res) => {
+  res.sendFile(__dirname + '/public/register.html');
+});
+app.get('/chat', (req, res) => {
+  res.sendFile(__dirname + '/public/chat.html');
+});
+
+// POST: Register new user
+app.post('/register', upload.single('profilePic'), (req, res) => {
+  const { username, password } = req.body;
+  const profilePic = req.file ? '/uploads/' + req.file.filename : '';
+
+  if (registeredUsers[username]) {
+    return res.status(400).send('Username already taken.');
   }
-});
-const upload = multer({ storage });
 
-// Handle image upload
-app.post('/upload', upload.single('image'), (req, res) => {
-  res.json({ imageUrl: '/uploads/' + req.file.filename });
+  registeredUsers[username] = { password, profilePic };
+  console.log('Registered users:', registeredUsers);
+  res.redirect('/login');
 });
 
-// Fallback to frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// POST: Login existing user
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = registeredUsers[username];
+
+  if (!user || user.password !== password) {
+    return res.status(400).send('Invalid username or password.');
+  }
+
+  res.redirect('/chat');
 });
 
-// ==================
-// SERVER DATA
-// ==================
-const users = {}; // socket.id -> { username, profilePic, timeoutUntil, isAdmin }
-const privateMessages = {}; // "userA-userB" -> [messages]
-let grantedAdmins = {}; // username -> expiration timestamp
-
-// ==================
-// SOCKET.IO HANDLERS
-// ==================
+// SOCKET.IO
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log('A user connected.');
 
-  // Register/Login
-  socket.on('register', ({ username, password, profilePic }) => {
-    users[socket.id] = { username, profilePic, timeoutUntil: 0, isAdmin: false };
-    io.emit('updateUserList', getAllUsers());
+  socket.on('chat message', (msgData) => {
+    io.emit('chat message', msgData);
   });
 
-  socket.on('login', ({ username, password }) => {
-    let isAdmin = false;
-    if (username === 'X12' && password === '331256444') {
-      isAdmin = true;
-    }
-    users[socket.id] = { username, profilePic: '', timeoutUntil: 0, isAdmin };
-    io.emit('updateUserList', getAllUsers());
+  socket.on('image upload', (imgData) => {
+    io.emit('image upload', imgData);
   });
 
-  // Global Chat
-  socket.on('sendMessage', (message) => {
-    const user = users[socket.id];
-    if (!user) return;
-
-    if (Date.now() < user.timeoutUntil) {
-      socket.emit('timeoutMessage', 'You are currently timed out.');
-      return;
-    }
-
-    io.emit('receiveMessage', {
-      username: user.username,
-      profilePic: user.profilePic,
-      message,
-      type: 'text'
-    });
+  socket.on('admin action', (action) => {
+    io.emit('admin action', action);
   });
 
-  // Image Message
-  socket.on('sendImage', (imageUrl) => {
-    const user = users[socket.id];
-    if (!user) return;
-
-    io.emit('receiveMessage', {
-      username: user.username,
-      profilePic: user.profilePic,
-      message: imageUrl,
-      type: 'image'
-    });
-  });
-
-  // Private DMs
-  socket.on('privateMessage', ({ to, message, type }) => {
-    const fromUser = users[socket.id];
-    const toSocketId = findSocketIdByUsername(to);
-    if (fromUser && toSocketId) {
-      io.to(toSocketId).emit('receivePrivateMessage', {
-        from: fromUser.username,
-        profilePic: fromUser.profilePic,
-        message,
-        type
-      });
-    }
-  });
-
-  // ==================
-  // ADMIN PANEL
-  // ==================
-  socket.on('strobeScreen', () => {
-    if (!isAdmin(socket)) return;
-    io.emit('strobeScreen');
-  });
-
-  socket.on('playAudio', (audioUrl) => {
-    if (!isAdmin(socket)) return;
-    io.emit('playAudio', audioUrl);
-  });
-
-  socket.on('timeoutUser', ({ username, duration }) => {
-    if (!isAdmin(socket)) return;
-    const id = findSocketIdByUsername(username);
-    if (id && users[id]) {
-      users[id].timeoutUntil = Date.now() + (duration * 1000);
-      io.to(id).emit('timeoutApplied', duration);
-    }
-  });
-
-  socket.on('redirectUser', ({ username, url }) => {
-    if (!isAdmin(socket)) return;
-    const id = findSocketIdByUsername(username);
-    if (id) {
-      io.to(id).emit('redirect', url);
-    }
-  });
-
-  socket.on('spamTabs', ({ username, url }) => {
-    if (!isAdmin(socket)) return;
-    const id = findSocketIdByUsername(username);
-    if (id) {
-      io.to(id).emit('spamTabs', url);
-    }
-  });
-
-  socket.on('jumpscare', ({ imageUrl, audioUrl }) => {
-    if (!isAdmin(socket)) return;
-    io.emit('jumpscare', { imageUrl, audioUrl });
-  });
-
-  socket.on('sendAnnouncement', (announcement) => {
-    if (!isAdmin(socket)) return;
-    io.emit('announcement', announcement);
-  });
-
-  socket.on('clearChat', () => {
-    if (!isAdmin(socket)) return;
-    io.emit('clearChat');
-  });
-
-  socket.on('grantAdmin', ({ username, duration }) => {
-    if (!isAdmin(socket)) return;
-    const id = findSocketIdByUsername(username);
-    if (id && users[id]) {
-      users[id].isAdmin = true;
-      grantedAdmins[username] = Date.now() + (duration * 1000);
-      io.to(id).emit('adminGranted', duration);
-    }
-  });
-
-  // Disconnect
   socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-    delete users[socket.id];
-    io.emit('updateUserList', getAllUsers());
+    console.log('A user disconnected.');
   });
 });
 
-// ==================
-// HELPER FUNCTIONS
-// ==================
-function getAllUsers() {
-  return Object.values(users).map(u => ({
-    username: u.username,
-    profilePic: u.profilePic
-  }));
-}
-
-function findSocketIdByUsername(username) {
-  return Object.keys(users).find(id => users[id].username === username);
-}
-
-function isAdmin(socket) {
-  const user = users[socket.id];
-  if (!user) return false;
-  if (user.username === 'X12') return true;
-  if (grantedAdmins[user.username] && grantedAdmins[user.username] > Date.now()) return true;
-  return false;
-}
-
-// ==================
-// SERVER START
-// ==================
+// Start the server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Sharcord server is running on http://localhost:${PORT}`);
+http.listen(PORT, () => {
+  console.log(`Sharcord server running on port ${PORT}`);
 });
