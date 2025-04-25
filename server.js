@@ -1,59 +1,67 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const bodyParser = require('body-parser');
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.static('.'));
+app.use(bodyParser.json());
 
-let users = {};
-let messages = [];
-let timeouts = {};
+const users = {};
+const messages = [];
+const timeouts = {};
 
 app.post('/register', (req, res) => {
   const { username, password, profilePic } = req.body;
-  if (users[username]) return res.status(409).end();
+  if (users[username]) return res.status(400).end();
   users[username] = { password, profilePic };
-  res.status(200).end();
+  res.end();
 });
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (users[username]?.password === password) return res.status(200).end();
-  res.status(401).end();
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+  const user = users[username];
+  if (user && user.password === password) {
+    res.json({ success: true, profilePic: user.profilePic });
+  } else {
+    res.json({ success: false });
+  }
 });
 
 io.on('connection', socket => {
   let user;
 
-  socket.on('join', u => {
-    user = u;
+  socket.on('join', username => {
+    user = username;
     socket.emit('init', { messages, timeouts });
   });
 
   socket.on('message', msg => {
-    if (timeouts[msg.username] && timeouts[msg.username] > Date.now()) return;
-    messages.push(msg);
-    io.emit('message', msg);
+    const now = Date.now();
+    const isTimedOut = timeouts[msg.username] && timeouts[msg.username] > now;
+    if (!isTimedOut) {
+      messages.push(msg);
+      io.emit('message', msg);
+    }
   });
 
-  socket.on('flash', () => {
-    if (user === 'X12') io.emit('flash');
+  socket.on('flash', duration => {
+    io.emit('flash', duration);
   });
 
   socket.on('timeout', ({ target, minutes }) => {
-    if (user === 'X12') {
-      const end = Date.now() + minutes * 60000;
-      timeouts[target] = end;
-      io.emit('timeout', { target, end });
-    }
+    const end = Date.now() + minutes * 60000;
+    timeouts[target] = end;
+    io.emit('timeout', { target, end });
+  });
+
+  socket.on('playAudio', url => {
+    io.emit('playAudio', url);
   });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(3000, () => {
+  console.log('Sharcord server running on port 3000');
+});
