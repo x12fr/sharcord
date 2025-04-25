@@ -1,32 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Sharcord Chat</title>
-  <style>
-    body { background: #111; color: white; font-family: sans-serif; }
-    #chat-box { height: 300px; overflow-y: auto; background: #222; padding: 10px; }
-    .message { margin: 5px 0; }
-    .chat-image { max-width: 200px; display: block; margin-top: 5px; }
-    .pfp { width: 30px; height: 30px; border-radius: 50%; vertical-align: middle; margin-right: 5px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Sharcord</h1>
-  <div id="chat-box"></div>
-  <input type="file" id="profile-pic" />
-  <input type="text" id="message-input" placeholder="Type your message..." />
-  <input type="file" id="image-upload" />
-  <button id="send-btn">Send</button>
+  <div class="app">
+    <div class="sidebar">
+      <h2>Sharcord</h2>
+      <button id="toggleAdminBtn">Toggle Admin Panel</button>
+    </div>
 
-  <div id="admin-controls" style="margin-top:20px;">
-    <button id="strobe-btn">Strobe All</button>
-    <button id="kick-btn">Kick</button>
-    <button id="timeout-btn">Timeout</button>
-    <button id="redirect-btn">Redirect</button>
-    <br><br>
-    <label>Image: <input type="file" id="jumpscare-img-upload" /></label><br>
-    <label>Audio: <input type="file" id="jumpscare-audio-upload" /></label><br>
-    <button id="jumpscare-btn">Jumpscare</button>
+    <div class="chat-container">
+      <div class="top-bar">
+        <h3># general</h3>
+      </div>
+
+      <div id="chat" class="chat-box"></div>
+
+      <div class="input-container">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="admin-panel hidden">
+    <h3>Admin Panel</h3>
+    <button id="strobeBtn">Strobe All Screens</button>
+    <button id="clearChatBtn">Clear Chat</button>
+    <button id="playAudioBtn">Play YouTube Audio</button>
+    <input type="text" id="audioUrlInput" placeholder="YouTube URL">
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
