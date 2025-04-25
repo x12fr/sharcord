@@ -2,66 +2,78 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const bodyParser = require('body-parser');
 const path = require('path');
+const bodyParser = require('body-parser');
 
-let users = {};
-let messages = [];
-let timeouts = {};
-
-app.use(bodyParser.json());
 app.use(express.static('public'));
+app.use(bodyParser.json());
+
+const users = {}; // username -> { password, socketId }
+const admins = ['G0THANGELZ', 'X12', 'Joel']; // Add your admin usernames here
+
+let messages = [];
 
 app.post('/register', (req, res) => {
-  const { username, password, profilePic } = req.body;
-  if (users[username]) return res.sendStatus(409);
-  users[username] = { password, profilePic };
-  res.sendStatus(200);
+  const { username, password } = req.body;
+  if (users[username]) {
+    return res.json({ success: false, message: 'Username already taken' });
+  }
+  users[username] = { password };
+  res.json({ success: true });
 });
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (users[username] && users[username].password === password) {
-    res.sendStatus(200);
-  } else {
-    res.sendStatus(401);
+  const user = users[username];
+  if (!user || user.password !== password) {
+    return res.json({ success: false, message: 'Invalid login' });
   }
+  const isAdmin = admins.includes(username);
+  res.json({ success: true, username, isAdmin });
 });
 
 io.on('connection', socket => {
-  let user;
+  console.log('User connected');
 
-  socket.on('join', username => {
-    user = username;
+  socket.on('join', ({ username }) => {
+    users[username].socketId = socket.id;
     socket.username = username;
-    io.emit('init', { messages, timeouts });
+    socket.emit('chat history', messages);
+    io.emit('user joined', username);
   });
 
-  socket.on('message', data => {
-    if (timeouts[user] && Date.now() < timeouts[user]) return;
-    messages.push(data);
-    io.emit('message', data);
+  socket.on('chat message', data => {
+    const message = { user: data.user, text: data.text };
+    messages.push(message);
+    io.emit('chat message', message);
   });
 
-  socket.on('flash', ({ duration }) => {
-    io.emit('flash', duration);
+  socket.on('private message', ({ toUser, fromUser, text }) => {
+    const target = users[toUser];
+    if (target && target.socketId) {
+      io.to(target.socketId).emit('private message', { fromUser, text });
+    }
   });
 
-  socket.on('timeout', ({ target, minutes }) => {
-    const end = Date.now() + minutes * 60000;
-    timeouts[target] = end;
-    io.emit('timeout', { target, end });
+  // Admin actions
+  socket.on('admin:flash', targetUser => {
+    const target = users[targetUser];
+    if (target?.socketId) {
+      io.to(target.socketId).emit('flash');
+    }
   });
 
-  socket.on('redirect', ({ user, url }) => {
-    io.emit('redirect', { user, url });
+  socket.on('admin:announce', msg => {
+    io.emit('admin announcement', msg);
   });
 
-  socket.on('youtube', ({ url }) => {
-    io.emit('youtube', url);
+  socket.on('disconnect', () => {
+    if (socket.username) {
+      io.emit('user left', socket.username);
+    }
   });
 });
 
 http.listen(3000, () => {
-  console.log('Sharcord server running on port 3000');
+  console.log('Server running on http://localhost:3000');
 });
