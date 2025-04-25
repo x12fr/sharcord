@@ -5,45 +5,34 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app">
-    <div class="header">
-      <h1>Sharcord</h1>
-      <button onclick="toggleSettings()">⚙️</button>
-    </div>
-
-    <div id="chat-box" class="chat-box"></div>
-
-    <div id="message-area">
-      <input type="text" id="message-input" placeholder="Type your message..." onkeydown="handleEnter(event)">
-      <button onclick="sendMessage()">Send</button>
-    </div>
-
-    <div id="settings" style="display:none;">
-      <h3>Settings</h3>
-      <input type="file" id="profilePic" accept="image/*">
-      <button onclick="updateProfilePic()">Update Profile Picture</button>
-    </div>
-
-    <div id="admin-panel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <input type="file" id="jumpscare-image">
-      <input type="file" id="jumpscare-audio">
-      <button onclick="sendJumpscare()">Send Image + Audio</button>
-
-      <input type="text" id="redirect-user" placeholder="Username">
-      <input type="text" id="redirect-link" placeholder="Link">
-      <button onclick="redirectUser()">Redirect</button>
-
-      <input type="text" id="timeout-user" placeholder="Username">
-      <input type="number" id="timeout-duration" placeholder="Seconds">
-      <button onclick="timeoutUser()">Timeout</button>
-
-      <input type="number" id="strobe-duration" placeholder="Strobe Duration (seconds)">
-      <button onclick="startStrobe()">Strobe Screen</button>
-
-      <button onclick="clearChat()">Clear Chat</button>
-    </div>
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <input id="messageInput" type="text" placeholder="Type a message..." />
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="sendImage()">Send Image</button>
+    <button onclick="clearChat()">Clear Chat</button>
+    <button id="adminToggle">Admin Panel</button>
   </div>
+
+  <div id="admin-panel" style="display:none;">
+    <h3>Admin Panel</h3>
+    <button onclick="strobe()">Strobe</button>
+    <input id="timeoutUser" placeholder="User to timeout">
+    <input id="timeoutDuration" placeholder="Duration (seconds)">
+    <button onclick="timeout()">Timeout</button>
+    <input id="redirectUser" placeholder="User to redirect">
+    <input id="redirectLink" placeholder="Link">
+    <button onclick="redirect()">Redirect</button>
+    <input type="file" id="jumpscareImage">
+    <input type="file" id="jumpscareAudio">
+    <button onclick="jumpscare()">Jumpscare</button>
+  </div>
+
+  <div id="settings">
+    <h3>Settings</h3>
+    <input type="file" id="profilePicInput" accept="image/*" onchange="updateProfilePic()">
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
