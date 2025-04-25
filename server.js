@@ -1,67 +1,79 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const bodyParser = require('body-parser');
+const path = require('path');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('.'));
-app.use(bodyParser.json());
-
 const users = {};
-const messages = [];
 const timeouts = {};
 
-app.post('/register', (req, res) => {
-  const { username, password, profilePic } = req.body;
-  if (users[username]) return res.status(400).end();
-  users[username] = { password, profilePic };
-  res.end();
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  const user = users[username];
-  if (user && user.password === password) {
-    res.json({ success: true, profilePic: user.profilePic });
-  } else {
-    res.json({ success: false });
-  }
-});
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
 
-io.on('connection', socket => {
-  let user;
-
-  socket.on('join', username => {
-    user = username;
-    socket.emit('init', { messages, timeouts });
+  socket.on('register', ({ username, profilePic }) => {
+    users[socket.id] = { username, profilePic };
+    io.emit('updateUsers', users);
   });
 
-  socket.on('message', msg => {
-    const now = Date.now();
-    const isTimedOut = timeouts[msg.username] && timeouts[msg.username] > now;
-    if (!isTimedOut) {
-      messages.push(msg);
-      io.emit('message', msg);
+  socket.on('chatMessage', (msg) => {
+    const user = users[socket.id];
+    if (user && !timeouts[socket.id]) {
+      io.emit('chatMessage', {
+        username: user.username,
+        profilePic: user.profilePic,
+        text: msg
+      });
     }
   });
 
-  socket.on('flash', duration => {
-    io.emit('flash', duration);
+  socket.on('image', (data) => {
+    const user = users[socket.id];
+    if (user && !timeouts[socket.id]) {
+      io.emit('image', {
+        username: user.username,
+        profilePic: user.profilePic,
+        image: data
+      });
+    }
   });
 
-  socket.on('timeout', ({ target, minutes }) => {
-    const end = Date.now() + minutes * 60000;
-    timeouts[target] = end;
-    io.emit('timeout', { target, end });
+  socket.on('admin:strobe', (duration) => {
+    io.emit('strobe', duration);
   });
 
-  socket.on('playAudio', url => {
+  socket.on('admin:timeout', ({ targetUsername, duration }) => {
+    for (const [id, user] of Object.entries(users)) {
+      if (user.username === targetUsername) {
+        timeouts[id] = true;
+        io.to(id).emit('timeout', duration);
+        setTimeout(() => {
+          delete timeouts[id];
+        }, duration * 1000);
+      }
+    }
+  });
+
+  socket.on('admin:playAudio', (url) => {
     io.emit('playAudio', url);
+  });
+
+  socket.on('disconnect', () => {
+    delete users[socket.id];
+    delete timeouts[socket.id];
+    io.emit('updateUsers', users);
   });
 });
 
-server.listen(3000, () => {
-  console.log('Sharcord server running on port 3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
