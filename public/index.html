@@ -1,37 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sharcord</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <div id="login-section">
-    <h2>Sharcord</h2>
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
-  </div>
-
-  <div id="chat-section" style="display:none;">
-    <div id="announcement" class="announcement" style="display:none;"></div>
-    <div id="chat" class="chat"></div>
-    <input id="message" placeholder="Type a message..." />
-    <button onclick="sendMessage()">Send</button>
-
-    <div id="dm-container" style="display: none;">
-      <h3 id="dm-title">DM</h3>
-      <div id="dm-messages" class="dm-box"></div>
-      <input id="dm-input" placeholder="Type a private message..." />
-      <button onclick="sendPrivateMessage()">Send DM</button>
-    </div>
-
-    <div id="admin-panel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <button onclick="flashUser()">Flash User Screen</button>
-      <button onclick="announce()">Send Announcement</button>
+<body class="index">
+  <div class="home-container">
+    <h1>🐋 Sharcord</h1>
+    <p>Chat with friends, privately or globally. Admins got power.</p>
+    <div class="btns">
+      <a href="/login"><button>Login</button></a>
+      <a href="/register"><button>Register</button></a>
     </div>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
 </body>
 </html>
