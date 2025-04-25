@@ -1,36 +1,50 @@
 body {
-  background: linear-gradient(to right, #000000, #550000);
-  color: white;
   font-family: 'Segoe UI', sans-serif;
-  text-align: center;
+  background: linear-gradient(to right, #111, #900);
+  color: white;
   margin: 0;
   padding: 0;
 }
 
-.home-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+.hero {
+  text-align: center;
+  padding: 50px 20px;
 }
 
-.shark-logo {
-  width: 200px;
-  margin-bottom: 20px;
+.logo {
+  width: 100px;
+  border-radius: 50%;
 }
 
 button {
-  margin: 10px;
-  padding: 12px 25px;
-  font-size: 18px;
-  background-color: #222;
+  background-color: #ff4757;
   color: white;
   border: none;
-  border-radius: 8px;
+  padding: 10px 20px;
+  margin: 5px;
+  border-radius: 5px;
   cursor: pointer;
 }
 
-button:hover {
-  background-color: #333;
+input {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 4px;
+  border: none;
+  width: 90%;
+  max-width: 300px;
+}
+
+.chat-box {
+  height: 400px;
+  overflow-y: scroll;
+  background-color: #222;
+  padding: 10px;
+  border: 2px solid #900;
+  margin-bottom: 10px;
+}
+
+.auth-box {
+  text-align: center;
+  padding: 20px;
 }
