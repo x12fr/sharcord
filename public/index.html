@@ -1,41 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
   <title>Sharcord</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    #chat-screen, #admin-panel { display: none; }
-    #chat-box img { height: 100px; margin-top: 5px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="login-screen">
-    <h1>Sharcord Login</h1>
-    <input id="username" placeholder="Username" /><br />
-    <input id="password" type="password" placeholder="Password" /><br />
-    <input id="profile-pic" placeholder="Profile picture URL" /><br />
+    <h2>Login / Register</h2>
+    <input id="username" placeholder="Username"><br>
+    <input id="password" type="password" placeholder="Password"><br>
+    <input id="profile-pic" placeholder="Profile picture URL"><br>
     <button onclick="register()">Register</button>
     <button onclick="login()">Login</button>
   </div>
 
-  <div id="chat-screen">
+  <div id="chat-screen" style="display:none;">
+    <h2>Sharcord Chat</h2>
     <div id="users"></div>
-    <div id="chat-box" style="border: 1px solid #ccc; height: 300px; overflow-y: scroll;"></div>
-    <input id="msg-input" placeholder="Message..." />
-    <input type="file" id="img-upload" />
+    <div id="chat-box" style="height:300px;overflow:auto;border:1px solid gray;"></div>
+    <input id="msg-input" placeholder="Message...">
+    <input type="file" id="img-upload">
     <button onclick="send()">Send</button>
-  </div>
 
-  <div id="admin-panel">
-    <h3>Admin Panel</h3>
-    <button onclick="flash()">Flash Users</button><br />
-    <input id="timeout-user" placeholder="Username to timeout" />
-    <input id="timeout-mins" type="number" placeholder="Minutes" />
-    <button onclick="timeout()">Timeout User</button>
+    <div id="admin-panel" style="display:none;">
+      <h3>Admin Panel</h3>
+      <input id="timeout-user" placeholder="Username to timeout">
+      <input id="timeout-mins" type="number" placeholder="Minutes">
+      <button onclick="timeout()">Timeout</button>
+      <button onclick="flash()">Flash Screens</button>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
