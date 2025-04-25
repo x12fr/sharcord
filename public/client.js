@@ -1,10 +1,10 @@
 const socket = io();
-let username;
+let username, profilePic;
 
 function register() {
   username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
-  const profilePic = document.getElementById('profile-pic').value;
+  profilePic = document.getElementById('profile-pic').value;
   fetch('/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -19,13 +19,16 @@ function login() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
-  }).then(res => {
-    if (res.ok) {
+  }).then(res => res.json()).then(data => {
+    if (data.success) {
+      profilePic = data.profilePic;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('chat-screen').style.display = 'block';
       if (username === 'X12') document.getElementById('admin-panel').style.display = 'block';
       socket.emit('join', username);
-    } else alert('Login failed');
+    } else {
+      alert('Login failed');
+    }
   });
 }
 
@@ -34,19 +37,20 @@ function send() {
   const file = document.getElementById('img-upload').files[0];
   const reader = new FileReader();
   if (file) {
-    reader.onload = e => {
-      socket.emit('message', { username, text: input.value, image: e.target.result });
+    reader.onload = function (e) {
+      socket.emit('message', { username, profilePic, text: input.value, image: e.target.result });
       input.value = '';
     };
     reader.readAsDataURL(file);
   } else {
-    socket.emit('message', { username, text: input.value });
+    socket.emit('message', { username, profilePic, text: input.value });
     input.value = '';
   }
 }
 
 function flash() {
-  socket.emit('flash');
+  const duration = parseInt(document.getElementById('strobe-time').value) * 1000;
+  socket.emit('flash', duration);
 }
 
 function timeout() {
@@ -55,24 +59,44 @@ function timeout() {
   socket.emit('timeout', { target, minutes });
 }
 
+function playAudio() {
+  const url = document.getElementById('yt-url').value;
+  socket.emit('playAudio', url);
+}
+
 socket.on('init', ({ messages, timeouts }) => {
   for (const msg of messages) render(msg);
-  for (const user in timeouts) showTimeout(user, timeouts[user]);
+  for (const user in timeouts) {
+    showTimeout(user, timeouts[user]);
+  }
 });
 
 socket.on('message', msg => render(msg));
-
-socket.on('flash', () => {
-  document.body.style.backgroundColor = 'red';
-  setTimeout(() => document.body.style.backgroundColor = '', 3000);
+socket.on('flash', duration => {
+  const colors = ['red', 'blue', 'green', 'purple', 'yellow'];
+  let i = 0;
+  const interval = setInterval(() => {
+    document.body.style.backgroundColor = colors[i++ % colors.length];
+  }, 300);
+  setTimeout(() => {
+    clearInterval(interval);
+    document.body.style.backgroundColor = 'black';
+  }, duration);
+});
+socket.on('timeout', ({ target, end }) => showTimeout(target, end));
+socket.on('playAudio', url => {
+  const audio = new Audio(`https://www.youtube.com/watch?v=${new URL(url).searchParams.get("v")}`);
+  audio.play();
 });
 
-socket.on('timeout', ({ target, end }) => showTimeout(target, end));
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') send();
+});
 
 function render(msg) {
   const box = document.getElementById('chat-box');
   const el = document.createElement('div');
-  el.innerHTML = `<strong>${msg.username}:</strong> ${msg.text || ''}`;
+  el.innerHTML = `<img src="${msg.profilePic}" height="30" style="vertical-align: middle; border-radius: 50%;"> <strong>${msg.username}:</strong> ${msg.text || ''}`;
   if (msg.image) el.innerHTML += `<br><img src="${msg.image}" height="100" />`;
   box.appendChild(el);
 }
