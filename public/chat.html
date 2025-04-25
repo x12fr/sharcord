@@ -1,45 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sharcord</title>
+  <title>Sharcord Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="chat-container">
-    <div id="sidebar">
-      <h2>Sharcord</h2>
-      <button id="toggle-admin">Admin Panel</button>
+  <div id="app">
+    <div class="header">
+      <h1>Sharcord</h1>
+      <button onclick="toggleSettings()">⚙️</button>
     </div>
-    <div id="chat-main">
-      <div id="messages"></div>
-      <div id="input-bar">
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-      </div>
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <div id="message-area">
+      <input type="text" id="message-input" placeholder="Type your message..." onkeydown="handleEnter(event)">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div id="settings" style="display:none;">
+      <h3>Settings</h3>
+      <input type="file" id="profilePic" accept="image/*">
+      <button onclick="updateProfilePic()">Update Profile Picture</button>
+    </div>
+
+    <div id="admin-panel" style="display:none;">
+      <h3>Admin Panel</h3>
+      <input type="file" id="jumpscare-image">
+      <input type="file" id="jumpscare-audio">
+      <button onclick="sendJumpscare()">Send Image + Audio</button>
+
+      <input type="text" id="redirect-user" placeholder="Username">
+      <input type="text" id="redirect-link" placeholder="Link">
+      <button onclick="redirectUser()">Redirect</button>
+
+      <input type="text" id="timeout-user" placeholder="Username">
+      <input type="number" id="timeout-duration" placeholder="Seconds">
+      <button onclick="timeoutUser()">Timeout</button>
+
+      <input type="number" id="strobe-duration" placeholder="Strobe Duration (seconds)">
+      <button onclick="startStrobe()">Strobe Screen</button>
+
+      <button onclick="clearChat()">Clear Chat</button>
     </div>
   </div>
-
-  <div id="admin-panel" style="display: none;">
-    <h3>Admin Panel</h3>
-    <input type="file" id="jumpscareImage" accept="image/*"><br>
-    <input type="file" id="jumpscareAudio" accept="audio/*"><br>
-    <button onclick="triggerJumpscare()">Send Jumpscare</button><br><br>
-
-    <input type="text" id="strobeDuration" placeholder="Strobe Seconds">
-    <button onclick="startStrobe()">Strobe Screens</button><br><br>
-
-    <input type="text" id="timeoutUser" placeholder="Timeout Username">
-    <button onclick="timeoutUser()">Timeout User</button><br><br>
-
-    <input type="text" id="kickUser" placeholder="Kick Username">
-    <button onclick="kickUser()">Kick User</button><br><br>
-
-    <input type="text" id="redirectUser" placeholder="Redirect Username">
-    <input type="text" id="redirectLink" placeholder="Redirect Link">
-    <button onclick="redirectUser()">Redirect</button><br><br>
-
-    <button onclick="clearChat()">Clear Chat</button>
-  </div>
-
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
