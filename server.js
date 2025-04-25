@@ -1,103 +1,111 @@
 const express = require('express');
 const app = express();
-const http = require('http').Server(app);
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
-const users = {}; // username -> { password, profilePic }
-const timeouts = {}; // username -> timeout end timestamp
+const users = {}; // username => { password, profilePic }
+const sessions = {}; // sessionId => username
+const timeouts = {}; // username => timeoutEnd timestamp
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
+const adminUsername = 'X12';
+const adminPassword = '331256444';
+
+app.use(express.static('public'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// Serve HTML files
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-app.get('/login.html', (req, res) => res.sendFile(__dirname + '/public/login.html'));
-app.get('/register.html', (req, res) => res.sendFile(__dirname + '/public/register.html'));
-app.get('/chat.html', (req, res) => res.sendFile(__dirname + '/public/chat.html'));
+app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
+app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
+app.get('/chat', (req, res) => res.sendFile(__dirname + '/public/chat.html'));
 
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!users[username] || users[username].password !== password) {
-    return res.status(401).send('Invalid login');
-  }
-  res.redirect(`/chat.html?username=${username}`);
-});
-
+// Handle Registration
 app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-  if (users[username]) {
-    return res.status(409).send('Username taken');
-  }
-  users[username] = { password, profilePic: '' };
-  res.redirect(`/chat.html?username=${username}`);
+    const { username, password } = req.body;
+    if (users[username]) {
+        return res.status(400).send('Username already taken.');
+    }
+    users[username] = { password, profilePic: '' };
+    res.redirect('/login');
 });
 
-io.on('connection', socket => {
-  let username = '';
+// Handle Login
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (users[username] && users[username].password === password) {
+        res.redirect('/chat');
+    } else if (username === adminUsername && password === adminPassword) {
+        res.redirect('/chat');
+    } else {
+        res.status(401).send('Invalid credentials.');
+    }
+});
 
-  socket.on('login', user => {
-    username = user;
-    socket.username = user;
-    socket.broadcast.emit('user-joined', username);
-  });
+// Socket.IO communication
+io.on('connection', (socket) => {
+    console.log('User connected.');
 
-  socket.on('message', data => {
-    if (timeouts[username] && Date.now() < timeouts[username]) return;
-    io.emit('message', {
-      username,
-      text: data.text,
-      image: data.image || null,
-      profilePic: users[username]?.profilePic || '',
+    socket.on('registerUser', (userData) => {
+        socket.username = userData.username;
+        socket.profilePic = userData.profilePic;
+        io.emit('userJoined', { username: socket.username, profilePic: socket.profilePic });
     });
-  });
 
-  socket.on('setProfilePic', url => {
-    if (users[username]) users[username].profilePic = url;
-  });
+    socket.on('chatMessage', (data) => {
+        if (timeouts[socket.username] && Date.now() < timeouts[socket.username]) {
+            socket.emit('timeoutMessage', 'You are currently timed out.');
+            return;
+        }
+        io.emit('chatMessage', { username: socket.username, message: data.message, profilePic: socket.profilePic });
+    });
 
-  socket.on('admin-command', data => {
-    if (username !== 'X12') return; // Admin only
+    socket.on('sendImage', (data) => {
+        io.emit('sendImage', { username: socket.username, image: data.image, profilePic: socket.profilePic });
+    });
 
-    switch (data.type) {
-      case 'jumpscare':
-        io.emit('jumpscare', { image: data.image, audio: data.audio });
-        break;
+    // Admin Features
+    socket.on('adminStrobe', (data) => {
+        if (socket.username === adminUsername) {
+            io.emit('strobeScreen', data);
+        }
+    });
 
-      case 'strobe':
-        io.emit('strobe', { duration: data.duration });
-        break;
+    socket.on('adminPlayAudio', (data) => {
+        if (socket.username === adminUsername) {
+            io.emit('playAudio', data);
+        }
+    });
 
-      case 'kick':
-        io.sockets.sockets.forEach(s => {
-          if (s.username === data.target) s.disconnect();
-        });
-        break;
+    socket.on('adminTimeout', ({ targetUsername, duration }) => {
+        if (socket.username === adminUsername) {
+            const timeoutEnd = Date.now() + duration * 1000;
+            timeouts[targetUsername] = timeoutEnd;
+            io.emit('userTimeout', { username: targetUsername, duration });
+        }
+    });
 
-      case 'timeout':
-        timeouts[data.target] = Date.now() + data.duration * 1000;
-        io.emit('user-timeout', { username: data.target, duration: data.duration });
-        break;
+    socket.on('adminRedirect', ({ targetUsername, link }) => {
+        if (socket.username === adminUsername) {
+            io.emit('redirectUser', { username: targetUsername, link });
+        }
+    });
 
-      case 'redirect':
-        io.sockets.sockets.forEach(s => {
-          if (s.username === data.target) s.emit('redirect', data.url);
-        });
-        break;
+    socket.on('adminJumpscare', (data) => {
+        if (socket.username === adminUsername) {
+            io.emit('adminJumpscare', data);
+        }
+    });
 
-      default:
-        console.log('Unknown admin command');
-    }
-  });
-
-  socket.on('disconnect', () => {
-    if (username) {
-      socket.broadcast.emit('user-left', username);
-    }
-  });
+    socket.on('disconnect', () => {
+        console.log('User disconnected.');
+    });
 });
 
-http.listen(3000, () => {
-  console.log('Sharcord is running at http://localhost:3000');
+// Start server
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
