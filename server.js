@@ -1,66 +1,80 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const { Server } = require('socket.io');
+const io = new Server(http);
+const multer = require('multer');
 const path = require('path');
-const bodyParser = require('body-parser');
+const fs = require('fs');
 
-const PORT = process.env.PORT || 3000;
+const upload = multer({ dest: 'uploads/' });
 
-// Temporary in-memory user database
-let users = {}; // { username: password }
-let onlineUsers = {}; // { socket.id: username }
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+const registeredUsers = {};
+const timeouts = {};
+let temporaryAdmins = {};
 
-// Serve pages
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/login.html'));
+app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
+app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
 app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
 app.get('/chat', (req, res) => res.sendFile(__dirname + '/public/chat.html'));
+app.get('/admin', (req, res) => res.sendFile(__dirname + '/public/admin.html'));
 
-// Handle registration
-app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    if (users[username]) {
-        return res.send('Username already exists. Go back and try again.');
-    }
-    users[username] = password;
-    console.log(`Registered new user: ${username}`);
-    res.redirect('/');
+app.post('/register', upload.single('profilePic'), (req, res) => {
+  const { username, password } = req.body;
+  const profilePic = req.file ? '/uploads/' + req.file.filename : '';
+  if (registeredUsers[username]) return res.status(400).send('Username taken');
+  registeredUsers[username] = { password, profilePic };
+  res.redirect('/login');
 });
 
-// Handle login
 app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (users[username] && users[username] === password) {
-        return res.redirect(`/chat?username=${username}`);
-    }
-    res.send('Invalid username or password. Go back and try again.');
+  const { username, password } = req.body;
+  const user = registeredUsers[username];
+  if (!user || user.password !== password) return res.status(400).send('Invalid');
+  res.send(`
+    <script>
+      sessionStorage.setItem('username', "${username}");
+      window.location.href = "${username === 'X12' ? '/admin' : '/chat'}";
+    </script>
+  `);
 });
 
-// SOCKET.IO
 io.on('connection', (socket) => {
-    console.log('A user connected');
+  console.log('A user connected.');
 
-    socket.on('join', (username) => {
-        onlineUsers[socket.id] = username;
-        socket.username = username;
-        io.emit('chat message', { username: 'Sharcord', message: `${username} joined the chat.` });
-    });
+  socket.on('chat message', (msgData) => {
+    const user = msgData.username;
+    if (timeouts[user]) return;
+    io.emit('chat message', msgData);
+  });
 
-    socket.on('chat message', (data) => {
-        io.emit('chat message', { username: data.username, message: data.message });
-    });
+  socket.on('image upload', (imgData) => io.emit('image upload', imgData));
+  socket.on('audio upload', (audData) => io.emit('audio upload', audData));
+  socket.on('announcement', (text) => io.emit('announcement', text));
+  socket.on('strobe', (duration) => io.emit('strobe', duration));
+  socket.on('timeout', ({ username, duration }) => {
+    timeouts[username] = Date.now() + duration * 1000;
+    io.emit('timeout', { username, duration });
+    setTimeout(() => delete timeouts[username], duration * 1000);
+  });
+  socket.on('kick', (username) => io.emit('kick', username));
+  socket.on('redirect', ({ username, url }) => io.emit('redirect', { username, url }));
+  socket.on('spam', (username) => io.emit('spam', username));
+  socket.on('clear chat', () => io.emit('clear chat'));
+  socket.on('jumpscare', (data) => io.emit('jumpscare', data));
+  socket.on('grant admin', ({ username, duration }) => {
+    temporaryAdmins[username] = Date.now() + duration * 1000;
+    io.emit('grant admin', { username, duration });
+    setTimeout(() => delete temporaryAdmins[username], duration * 1000);
+  });
 
-    socket.on('disconnect', () => {
-        if (socket.username) {
-            io.emit('chat message', { username: 'Sharcord', message: `${socket.username} left the chat.` });
-            delete onlineUsers[socket.id];
-        }
-    });
+  socket.on('disconnect', () => console.log('User disconnected.'));
 });
 
-http.listen(PORT, () => {
-    console.log(`listening on *:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => console.log(`Sharcord running on ${PORT}`));
