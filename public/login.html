@@ -1,19 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login - Sharcord</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Sharcord - Login</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="auth-body">
-  <div class="auth-container">
-    <h2>Login to Sharcord</h2>
-    <input id="username" placeholder="Username" />
-    <input id="password" type="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <p>Need an account? <a href="register.html">Register here</a></p>
+<body>
+  <div class="login-container">
+    <h1>Login to Sharcord</h1>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username" required><br>
+      <input type="password" id="password" placeholder="Password" required><br>
+      <button type="submit">Login</button>
+    </form>
+    <p>Don’t have an account? <a href="register.html">Register</a></p>
+    <div id="loginStatus" style="color: red; margin-top: 10px;"></div>
   </div>
 
-  <script src="client.js"></script>
+  <script>
+    const form = document.getElementById('loginForm');
+    const loginStatus = document.getElementById('loginStatus');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) throw new Error('Login failed');
+        const data = await res.json();
+
+        if (data.admin) {
+          window.location.href = `/chat.html?username=${data.username}&admin=true`;
+        } else {
+          window.location.href = `/chat.html?username=${data.username}`;
+        }
+      } catch (err) {
+        loginStatus.textContent = "Login failed. Please check your username and password.";
+      }
+    });
+  </script>
 </body>
 </html>
