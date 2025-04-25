@@ -1,18 +1,47 @@
 body {
-  background: black;
-  color: red;
-  font-family: sans-serif;
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #111;
+  color: #fff;
 }
-button {
-  margin: 10px;
-  padding: 10px;
-}
-#chat-box {
-  max-height: 400px;
+
+.chat {
+  border: 1px solid #444;
+  height: 300px;
   overflow-y: scroll;
-  border: 1px solid red;
-  margin: 10px 0;
+  padding: 10px;
+  background: #222;
 }
-img {
-  vertical-align: middle;
+
+#message {
+  width: 60%;
+  padding: 5px;
+}
+
+button {
+  padding: 5px 10px;
+  margin-left: 5px;
+}
+
+.announcement {
+  background: crimson;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+#dm-container {
+  margin-top: 10px;
+  border: 1px solid #666;
+  padding: 10px;
+  background: #1e1e1e;
+}
+
+.dm-box {
+  height: 150px;
+  overflow-y: auto;
+  background: #2c2c2c;
+  margin-bottom: 5px;
+  padding: 5px;
 }
