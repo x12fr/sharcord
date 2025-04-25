@@ -37,6 +37,7 @@ function send() {
     reader.onload = function (e) {
       socket.emit('message', { username, text: input.value, image: e.target.result });
       input.value = '';
+      document.getElementById('img-upload').value = null;
     };
     reader.readAsDataURL(file);
   } else {
@@ -72,9 +73,12 @@ socket.on('timeout', ({ target, end }) => showTimeout(target, end));
 function render(msg) {
   const box = document.getElementById('chat-box');
   const el = document.createElement('div');
-  el.innerHTML = `<strong>${msg.username}:</strong> ${msg.text || ''}`;
+  el.className = 'chat-message';
+  let profileImg = msg.profilePic ? `<img src="${msg.profilePic}" height="30" style="vertical-align:middle;border-radius:50%;"> ` : '';
+  el.innerHTML = `${profileImg}<strong>${msg.username}:</strong> ${msg.text || ''}`;
   if (msg.image) el.innerHTML += `<br><img src="${msg.image}" height="100" />`;
   box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
 }
 
 function showTimeout(user, end) {
