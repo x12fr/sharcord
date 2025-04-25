@@ -1,18 +1,70 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - Sharcord</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Sharcord Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div id="chat-container">
-        <div id="messages"></div>
-        <input type="text" id="message-input" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendMessage()">
-        <button id="send-btn" onclick="sendMessage()">Send</button>
-    </div>
+<body class="dark-mode">
+  <div id="chat-container">
+    <div id="messages"></div>
+    <form id="message-form">
+      <input id="message-input" autocomplete="off" placeholder="Type a message..." />
+      <button>Send</button>
+    </form>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin-panel" style="display: none; border: 2px solid red; padding: 10px;">
+    <h3>Admin Panel</h3>
+    <button onclick="strobeAll()">Strobe All</button>
+    <button onclick="clearChat()">Clear Chat</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messages = document.getElementById('messages');
+    const form = document.getElementById('message-form');
+    const input = document.getElementById('message-input');
+
+    // Get username from sessionStorage
+    const username = sessionStorage.getItem('username');
+
+    // Show admin panel if admin
+    if (username === 'X12') {
+      document.getElementById('admin-panel').style.display = 'block';
+    }
+
+    // Handle message send
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value.trim()) {
+        const msgData = {
+          username: username,
+          text: input.value
+        };
+        socket.emit('chat message', msgData);
+        input.value = '';
+      }
+    });
+
+    // Show messages
+    socket.on('chat message', (msg) => {
+      const item = document.createElement('div');
+      item.innerHTML = `<strong>${msg.username}</strong>: ${msg.text}`;
+      messages.appendChild(item);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    // Admin actions
+    function strobeAll() {
+      socket.emit('admin action', { type: 'strobe' });
+    }
+
+    function clearChat() {
+      messages.innerHTML = '';
+    }
+  </script>
 </body>
 </html>
-    
