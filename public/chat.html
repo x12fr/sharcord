@@ -1,80 +1,24 @@
-const socket = io();
-const username = new URLSearchParams(window.location.search).get('username') || 'Guest';
-
-document.getElementById('sendBtn').addEventListener('click', sendMessage);
-document.getElementById('messageInput').addEventListener('keypress', function (e) {
-  if (e.key === 'Enter') sendMessage();
-});
-
-function sendMessage() {
-  const input = document.getElementById('messageInput');
-  const message = input.value;
-  if (message.trim() !== '') {
-    socket.emit('chat message', { username, message });
-    input.value = '';
-  }
-}
-
-socket.on('chat message', ({ username, message }) => {
-  const messagesDiv = document.getElementById('messages');
-  const msg = document.createElement('div');
-  msg.textContent = `${username}: ${message}`;
-  messagesDiv.appendChild(msg);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
-
-document.getElementById('fileInput').addEventListener('change', (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      socket.emit('file upload', {
-        username,
-        fileName: file.name,
-        fileType: file.type,
-        fileData: reader.result
-      });
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-socket.on('file upload', ({ username, fileName, fileType, fileData }) => {
-  const messagesDiv = document.getElementById('messages');
-  const msg = document.createElement('div');
-  msg.innerHTML = `<strong>${username}:</strong> `;
-  if (fileType.startsWith('image/')) {
-    const img = document.createElement('img');
-    img.src = fileData;
-    img.style.maxWidth = '200px';
-    msg.appendChild(img);
-  } else if (fileType.startsWith('audio/')) {
-    const audio = document.createElement('audio');
-    audio.controls = true;
-    audio.src = fileData;
-    msg.appendChild(audio);
-  } else {
-    msg.innerHTML += `<a href="${fileData}" download="${fileName}">${fileName}</a>`;
-  }
-  messagesDiv.appendChild(msg);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
-
-socket.emit('check admin', { username }, (isAdmin) => {
-  if (isAdmin) {
-    document.getElementById('admin-panel').style.display = 'block';
-  }
-});
-
-function sendAnnouncement() {
-  const announcement = prompt('Enter announcement:');
-  if (announcement) {
-    socket.emit('announcement', { username, announcement });
-  }
-}
-
-function kickUser() {
-  const userToKick = prompt('Enter username to kick:');
-
-::contentReference[oaicite:10]{index=10}
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat - Sharcord</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="chat-container">
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+    <input type="file" id="fileInput" accept="image/*,audio/*" />
+    <div id="admin-panel" style="display: none;">
+      <button onclick="sendAnnouncement()">Send Announcement</button>
+      <button onclick="kickUser()">Kick User</button>
+      <!-- Add more admin controls as needed -->
+    </div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
