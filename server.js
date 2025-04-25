@@ -1,129 +1,85 @@
 const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const http = require('http');
+const { Server } = require('socket.io');
 const path = require('path');
-const bodyParser = require('body-parser');
 
-const users = {}; // { username: { password, socketId, isAdmin } }
-const messages = []; // Store messages
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/login.html');
-});
-
-app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-  if (users[username]) {
-    return res.send('Username already exists.');
-  }
-  users[username] = { password, socketId: null, isAdmin: false };
-  res.redirect('/');
-});
-
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!users[username] || users[username].password !== password) {
-    return res.send('Invalid login.');
-  }
-  res.redirect(`/chat.html?username=${username}`);
-});
+const users = {}; // socket.id -> username
+const userSockets = {}; // username -> socket.id
+const admins = new Set(['X12']); // Add usernames here to give admin rights
 
 io.on('connection', (socket) => {
-  console.log('A user connected.');
+  let currentUser = '';
 
-  socket.on('login', (username) => {
-    if (users[username]) {
-      users[username].socketId = socket.id;
-      socket.username = username;
-      socket.isAdmin = users[username].isAdmin || (username === 'X12');
+  socket.on('check admin', ({ username }, cb) => {
+    cb({ isAdmin: admins.has(username) });
+  });
 
-      socket.emit('chat history', messages);
-      io.emit('user list', Object.keys(users));
+  socket.on('chat message', ({ user, message }) => {
+    currentUser = user;
+    users[socket.id] = user;
+    userSockets[user] = socket.id;
+    io.emit('chat message', { user, message });
+  });
+
+  socket.on('private message', ({ to, from, message }) => {
+    const targetSocketId = userSockets[to];
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('private message', { from, message });
     }
   });
 
-  socket.on('chat message', (msg) => {
-    const message = { username: socket.username, text: msg, type: 'text' };
-    messages.push(message);
-    io.emit('chat message', message);
+  socket.on('announcement', (msg) => {
+    io.emit('announcement', msg);
   });
 
-  socket.on('send image', (imgUrl) => {
-    const message = { username: socket.username, text: imgUrl, type: 'image' };
-    messages.push(message);
-    io.emit('chat message', message);
-  });
-
-  socket.on('send audio', (audioUrl) => {
-    const message = { username: socket.username, text: audioUrl, type: 'audio' };
-    messages.push(message);
-    io.emit('chat message', message);
-  });
-
-  // Admin Functions
-  socket.on('flash', (target) => {
-    if (socket.isAdmin) {
-      const user = users[target];
-      if (user && user.socketId) {
-        io.to(user.socketId).emit('flash');
-      }
+  socket.on('flash', (targetUsername) => {
+    const targetSocket = userSockets[targetUsername];
+    if (targetSocket) {
+      io.to(targetSocket).emit('flash');
     }
   });
 
-  socket.on('announce', (announcement) => {
-    if (socket.isAdmin) {
-      io.emit('announcement', announcement);
-    }
-  });
-
-  socket.on('redirect', ({ target, url }) => {
-    if (socket.isAdmin) {
-      const user = users[target];
-      if (user && user.socketId) {
-        io.to(user.socketId).emit('redirect', url);
-      }
-    }
-  });
-
-  socket.on('timeout', ({ target, duration }) => {
-    if (socket.isAdmin) {
-      const user = users[target];
-      if (user && user.socketId) {
-        io.to(user.socketId).emit('timeout', duration);
-      }
-    }
-  });
-
-  socket.on('kick', (target) => {
-    if (socket.isAdmin) {
-      const user = users[target];
-      if (user && user.socketId) {
-        io.to(user.socketId).emit('kick');
-      }
-    }
-  });
-
-  // Owner Special
   socket.on('jumpscare', () => {
-    if (socket.username === 'X12') {
-      io.emit('jumpscare');
+    for (let id in users) {
+      io.to(id).emit('jumpscare');
+    }
+  });
+
+  socket.on('redirect', ({ user, url }) => {
+    const socketId = userSockets[user];
+    if (socketId) {
+      io.to(socketId).emit('redirect', url);
+    }
+  });
+
+  socket.on('timeout', ({ user, seconds }) => {
+    const socketId = userSockets[user];
+    if (socketId) {
+      io.to(socketId).emit('timeout', seconds);
+    }
+  });
+
+  socket.on('kick', (user) => {
+    const socketId = userSockets[user];
+    if (socketId) {
+      io.to(socketId).emit('kick');
+      io.sockets.sockets.get(socketId)?.disconnect();
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected.');
-    if (socket.username) {
-      users[socket.username].socketId = null;
-    }
-    io.emit('user list', Object.keys(users));
+    const user = users[socket.id];
+    delete userSockets[user];
+    delete users[socket.id];
   });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+server.listen(3000, () => {
+  console.log('Sharcord server running on http://localhost:3000');
 });
