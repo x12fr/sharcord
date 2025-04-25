@@ -1,142 +1,132 @@
 const socket = io();
-const username = localStorage.getItem('username');
-let profilePic = '';
+const username = localStorage.getItem("username");
+let profilePic = localStorage.getItem("profilePic") || "";
 
-if (!username) window.location.href = '/login.html';
+document.getElementById("adminToggle").onclick = () => {
+  const panel = document.getElementById("admin-panel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+};
 
-document.getElementById('message-input').focus();
-
-function handleEnter(e) {
-  if (e.key === 'Enter') sendMessage();
-}
+document.getElementById("messageInput").addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
 
 function sendMessage() {
-  const input = document.getElementById('message-input');
-  if (!input.value.trim()) return;
-  socket.emit('message', { username, text: input.value, profilePic });
-  input.value = '';
+  const message = document.getElementById("messageInput").value;
+  socket.emit("message", { username, message, profilePic });
+  document.getElementById("messageInput").value = "";
 }
 
-socket.on('message', data => {
-  const chatBox = document.getElementById('chat-box');
-  const msg = document.createElement('div');
-  msg.className = 'message';
-  msg.innerHTML = `
-    <img src="${data.profilePic}" class="avatar">
-    <strong>${data.username}</strong>: ${data.text}
-  `;
-  chatBox.appendChild(msg);
-  chatBox.scrollTop = chatBox.scrollHeight;
+socket.on("message", data => {
+  const box = document.getElementById("chat-box");
+  const msg = document.createElement("div");
+  msg.innerHTML = `<img src="${data.profilePic}" class="pfp"><strong>${data.username}</strong>: ${data.message}`;
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
 });
 
-function toggleSettings() {
-  const settings = document.getElementById('settings');
-  settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+function sendImage() {
+  const file = document.getElementById("imageInput").files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      socket.emit("image", { username, dataUrl: reader.result, profilePic });
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
-function updateProfilePic() {
-  const file = document.getElementById('profilePic').files[0];
-  const reader = new FileReader();
-  reader.onload = e => {
-    profilePic = e.target.result;
-    alert("Profile picture updated.");
-  };
-  if (file) reader.readAsDataURL(file);
-}
-
-function toggleAdminPanel() {
-  const panel = document.getElementById('admin-panel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 'a') toggleAdminPanel();
+socket.on("image", data => {
+  const box = document.getElementById("chat-box");
+  const img = document.createElement("div");
+  img.innerHTML = `<img src="${data.profilePic}" class="pfp"><strong>${data.username}</strong>: <img src="${data.dataUrl}" class="chat-img">`;
+  box.appendChild(img);
+  box.scrollTop = box.scrollHeight;
 });
 
-function sendJumpscare() {
-  const img = document.getElementById('jumpscare-image').files[0];
-  const audio = document.getElementById('jumpscare-audio').files[0];
+function clearChat() {
+  socket.emit("clear");
+}
 
+socket.on("clear", () => {
+  document.getElementById("chat-box").innerHTML = "";
+});
+
+function timeout() {
+  const user = document.getElementById("timeoutUser").value;
+  const duration = document.getElementById("timeoutDuration").value;
+  socket.emit("timeout", { user, duration });
+}
+
+socket.on("timeout", data => {
+  alert(`You were timed out for ${data.duration} seconds.`);
+});
+
+function redirect() {
+  const user = document.getElementById("redirectUser").value;
+  const link = document.getElementById("redirectLink").value;
+  socket.emit("redirect", { user, link });
+}
+
+socket.on("redirect", link => {
+  window.location.href = link;
+});
+
+function strobe() {
+  socket.emit("strobe");
+}
+
+socket.on("strobe", () => {
+  let colors = ["red", "blue", "green", "yellow", "purple"];
+  let i = 0;
+  const interval = setInterval(() => {
+    document.body.style.background = colors[i % colors.length];
+    i++;
+    if (i > 20) {
+      clearInterval(interval);
+      document.body.style.background = "";
+    }
+  }, 100);
+});
+
+function jumpscare() {
+  const image = document.getElementById("jumpscareImage").files[0];
+  const audio = document.getElementById("jumpscareAudio").files[0];
   const readerImg = new FileReader();
   const readerAudio = new FileReader();
 
-  readerImg.onload = e1 => {
-    readerAudio.onload = e2 => {
-      socket.emit('admin-jumpscare', {
-        image: e1.target.result,
-        audio: e2.target.result
+  readerImg.onload = () => {
+    readerAudio.onload = () => {
+      socket.emit("jumpscare", {
+        image: readerImg.result,
+        audio: readerAudio.result
       });
     };
-    if (audio) readerAudio.readAsDataURL(audio);
+    readerAudio.readAsDataURL(audio);
   };
-
-  if (img) readerImg.readAsDataURL(img);
+  readerImg.readAsDataURL(image);
 }
 
-socket.on('admin-jumpscare', data => {
-  const img = document.createElement('img');
+socket.on("jumpscare", data => {
+  const img = new Image();
   img.src = data.image;
-  img.style.position = 'fixed';
-  img.style.top = 0;
-  img.style.left = 0;
-  img.style.width = '100%';
-  img.style.height = '100%';
-  img.style.zIndex = 9999;
-  img.style.objectFit = 'cover';
-
+  img.className = "fullscreen-img";
   document.body.appendChild(img);
-
   const audio = new Audio(data.audio);
   audio.play();
-
   setTimeout(() => {
-    document.body.removeChild(img);
+    img.remove();
   }, 5000);
 });
 
-function redirectUser() {
-  socket.emit('admin-redirect', {
-    user: document.getElementById('redirect-user').value,
-    link: document.getElementById('redirect-link').value
-  });
-}
-
-function timeoutUser() {
-  socket.emit('admin-timeout', {
-    user: document.getElementById('timeout-user').value,
-    seconds: parseInt(document.getElementById('timeout-duration').value)
-  });
-}
-
-function startStrobe() {
-  const duration = parseInt(document.getElementById('strobe-duration').value);
-  socket.emit('admin-strobe', duration);
-}
-
-function clearChat() {
-  socket.emit('admin-clear');
-}
-
-socket.on('admin-redirect', url => window.location.href = url);
-socket.on('admin-timeout', seconds => {
-  const input = document.getElementById('message-input');
-  input.disabled = true;
-  setTimeout(() => input.disabled = false, seconds * 1000);
-});
-socket.on('admin-strobe', duration => {
-  let interval = setInterval(() => {
-    document.body.style.backgroundColor = getRandomColor();
-  }, 100);
-  setTimeout(() => {
-    clearInterval(interval);
-    document.body.style.backgroundColor = '';
-  }, duration * 1000);
-});
-socket.on('admin-clear', () => {
-  document.getElementById('chat-box').innerHTML = '';
-});
-
-function getRandomColor() {
-  const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-  return colors[Math.floor(Math.random() * colors.length)];
+function updateProfilePic() {
+  const file = document.getElementById("profilePicInput").files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      profilePic = reader.result;
+      localStorage.setItem("profilePic", profilePic);
+    };
+    reader.readAsDataURL(file);
+  }
 }
