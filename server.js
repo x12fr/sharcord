@@ -8,16 +8,14 @@ const bodyParser = require('body-parser');
 app.use(express.static('public'));
 app.use(bodyParser.json());
 
-const users = {}; // username -> { password, socketId }
-const admins = ['G0THANGELZ', 'X12', 'Joel']; // Add your admin usernames here
+const users = {}; // username: { password, socketId }
+const admins = ['G0THANGELZ', 'X12', 'Joel']; // Add more admin usernames here
 
 let messages = [];
 
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
-  if (users[username]) {
-    return res.json({ success: false, message: 'Username already taken' });
-  }
+  if (users[username]) return res.json({ success: false, message: 'Username already taken' });
   users[username] = { password };
   res.json({ success: true });
 });
@@ -33,10 +31,8 @@ app.post('/login', (req, res) => {
 });
 
 io.on('connection', socket => {
-  console.log('User connected');
-
   socket.on('join', ({ username }) => {
-    users[username].socketId = socket.id;
+    if (users[username]) users[username].socketId = socket.id;
     socket.username = username;
     socket.emit('chat history', messages);
     io.emit('user joined', username);
@@ -50,12 +46,11 @@ io.on('connection', socket => {
 
   socket.on('private message', ({ toUser, fromUser, text }) => {
     const target = users[toUser];
-    if (target && target.socketId) {
+    if (target?.socketId) {
       io.to(target.socketId).emit('private message', { fromUser, text });
     }
   });
 
-  // Admin actions
   socket.on('admin:flash', targetUser => {
     const target = users[targetUser];
     if (target?.socketId) {
@@ -75,5 +70,5 @@ io.on('connection', socket => {
 });
 
 http.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+  console.log('Server running at http://localhost:3000');
 });
