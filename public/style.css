@@ -1,63 +1,41 @@
-.chat-page {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.sidebar {
-  width: 200px;
-  background: #2f3136;
-  padding: 10px;
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #111, #222);
   color: white;
-  overflow-y: auto;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
 }
 
-.channels {
-  width: 250px;
-  background: #36393f;
+input, button {
+  margin: 5px;
   padding: 10px;
-  color: white;
-  overflow-y: auto;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
 }
 
-.chat-area {
-  flex: 1;
-  background: #40444b;
-  display: flex;
-  flex-direction: column;
+button {
+  background-color: #7289da;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #5b6eae;
+}
+
+#server-list, #channel-list {
+  margin: 10px 0;
 }
 
 #messages {
-  flex: 1;
-  overflow-y: auto;
+  background: #333;
+  border-radius: 8px;
   padding: 10px;
+  text-align: left;
 }
 
-#message-input {
-  display: flex;
-  padding: 10px;
-  background: #2f3136;
-}
-
-#message-input input {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 5px 0 0 5px;
-}
-
-#message-input button {
-  padding: 10px;
-  border: none;
-  background: #5865F2;
-  color: white;
-  border-radius: 0 5px 5px 0;
-}
-
-.friends-list {
-  width: 200px;
-  background: #2f3136;
-  padding: 10px;
-  color: white;
-  overflow-y: auto;
+.home, .login, .register {
+  margin-top: 100px;
 }
