@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sharcord - Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="chat-page">
+  <div class="sidebar">
+    <h2>Sharcord</h2>
+    <div id="server-list">
+      <!-- Servers will appear here -->
+    </div>
+    <button onclick="createServer()">+ Create Server</button>
+  </div>
+
+  <div class="channels">
+    <h3 id="server-name">Select a server</h3>
+    <div id="channel-list">
+      <!-- Channels will appear here -->
+    </div>
+    <button onclick="createChannel()">+ Create Channel</button>
+  </div>
+
+  <div class="chat-area">
+    <div id="messages">
+      <!-- Messages will appear here -->
+    </div>
+
+    <div id="message-input">
+      <input type="text" id="msg" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <div class="friends-list">
+    <h3>Friends</h3>
+    <div id="friend-list">
+      <!-- Friends appear here -->
+    </div>
+    <button onclick="addFriend()">+ Add Friend</button>
+
+    <!-- ADMIN PANEL (only for X12) -->
+    <div id="admin-panel" style="display:none;">
+      <h3>Admin Panel</h3>
+      <button onclick="strobe()">Strobe Everyone</button>
+      <button onclick="sendAnnouncement()">Send Announcement</button>
+      <button onclick="kickUser()">Kick User</button>
+      <button onclick="timeoutUser()">Timeout User</button>
+      <input type="file" id="upload-image-audio" multiple>
+      <button onclick="uploadAndBroadcast()">Upload & Broadcast</button>
+    </div>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>
