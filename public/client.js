@@ -1,107 +1,75 @@
 const socket = io();
-const username = localStorage.getItem('username');
-const profilePic = localStorage.getItem('profilePic') || 'default.png';
 
-if (!username) {
-  window.location.href = '/login.html';
-}
+const messages = document.getElementById('messages');
+const input = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
 
-document.getElementById('messageInput').addEventListener('keydown', e => {
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', function (e) {
   if (e.key === 'Enter') sendMessage();
 });
 
 function sendMessage() {
-  const input = document.getElementById('messageInput');
-  if (input.value.trim() !== '') {
-    socket.emit('chat message', { username, text: input.value, profilePic });
+  const text = input.value.trim();
+  if (text !== '') {
+    socket.emit('chat message', text);
     input.value = '';
   }
 }
 
-socket.on('chat message', data => {
-  const messages = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.innerHTML = `<img src="${data.profilePic}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;"> <b style="color:#0ff;">${data.username}</b>: ${data.text}`;
-  messages.appendChild(div);
+socket.on('chat message', (data) => {
+  const item = document.createElement('div');
+  item.textContent = `${data.username}: ${data.message}`;
+  messages.appendChild(item);
   messages.scrollTop = messages.scrollHeight;
 });
 
-socket.emit('check admin', username);
+/// ADMIN STUFF
+socket.on('announcement', (text) => {
+  const announce = document.createElement('div');
+  announce.className = 'announcement';
+  announce.innerText = text;
+  document.body.appendChild(announce);
 
-socket.on('enable admin', () => {
-  document.getElementById('adminPanel').style.display = 'block';
+  setTimeout(() => {
+    announce.remove();
+  }, 10000); // 10 seconds
 });
 
-function strobe() {
-  const duration = parseInt(document.getElementById('strobeDuration').value) || 3;
-  socket.emit('admin strobe', duration);
-}
+socket.on('strobe', (duration) => {
+  let colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'];
+  let index = 0;
+  const original = document.body.style.backgroundColor;
 
-function timeout() {
-  const user = document.getElementById('timeoutUser').value;
-  const duration = parseInt(document.getElementById('timeoutDuration').value) || 5;
-  socket.emit('admin timeout', { user, duration });
-}
-
-function redirect() {
-  const user = document.getElementById('redirectUser').value;
-  socket.emit('admin redirect', user);
-}
-
-function sendAnnouncement() {
-  const text = document.getElementById('announcementText').value;
-  socket.emit('admin announcement', text);
-}
-
-function jumpscare() {
-  const image = document.getElementById('jumpscareImage').value;
-  const audio = document.getElementById('jumpscareAudio').value;
-  socket.emit('admin jumpscare', { image, audio });
-}
-
-socket.on('strobe', duration => {
-  let colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff'];
-  let i = 0;
-  const interval = setInterval(() => {
-    document.body.style.background = colors[i % colors.length];
-    i++;
+  const strobeInterval = setInterval(() => {
+    document.body.style.backgroundColor = colors[index];
+    index = (index + 1) % colors.length;
   }, 100);
+
   setTimeout(() => {
-    clearInterval(interval);
-    document.body.style.background = '#000'; // Reset to black
-  }, duration * 1000);
+    clearInterval(strobeInterval);
+    document.body.style.backgroundColor = original;
+  }, duration);
 });
 
-socket.on('timeout', seconds => {
-  document.body.innerHTML = `<h1 style="color:red;">You are timed out for ${seconds} seconds!</h1>`;
-  setTimeout(() => {
-    location.reload();
-  }, seconds * 1000);
+socket.on('timeout', (time) => {
+  alert(`You are timed out for ${time} seconds`);
 });
 
-socket.on('redirect', () => {
-  window.location.href = '/secret.html';
+socket.on('redirect', (link) => {
+  window.location.href = link;
 });
 
-socket.on('announcement', text => {
-  const announcement = document.getElementById('announcement');
-  announcement.style.display = 'block';
-  announcement.innerText = text;
-  setTimeout(() => {
-    announcement.style.display = 'none';
-  }, 10000);
-});
-
-socket.on('jumpscare', data => {
+socket.on('jumpscare', (data) => {
   const img = document.createElement('img');
-  img.src = data.image;
+  img.src = data.img;
   img.style.position = 'fixed';
   img.style.top = 0;
   img.style.left = 0;
-  img.style.width = '100vw';
-  img.style.height = '100vh';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.zIndex = 1000;
   img.style.objectFit = 'cover';
-  img.style.zIndex = 9999;
   document.body.appendChild(img);
 
   const audio = new Audio(data.audio);
@@ -109,5 +77,61 @@ socket.on('jumpscare', data => {
 
   setTimeout(() => {
     img.remove();
-  }, 5000); // Image disappears after 5 seconds but audio keeps playing
+  }, 5000); // Remove image after 5 seconds
+});
+
+// Admin buttons
+if (document.getElementById('admin-panel')) {
+  document.getElementById('announce-btn').onclick = () => {
+    const text = document.getElementById('announce-text').value;
+    socket.emit('announce', text);
+  };
+
+  document.getElementById('strobe-btn').onclick = () => {
+    const duration = parseInt(document.getElementById('strobe-duration').value) || 3000;
+    socket.emit('strobe', duration);
+  };
+
+  document.getElementById('timeout-btn').onclick = () => {
+    const user = document.getElementById('timeout-user').value;
+    const duration = parseInt(document.getElementById('timeout-duration').value) || 5;
+    socket.emit('timeout', { user, duration });
+  };
+
+  document.getElementById('redirect-btn').onclick = () => {
+    const user = document.getElementById('redirect-user').value;
+    const link = document.getElementById('redirect-link').value;
+    socket.emit('redirect', { user, link });
+  };
+
+  document.getElementById('jumpscare-btn').onclick = () => {
+    const img = document.getElementById('jumpscare-img').value;
+    const audio = document.getElementById('jumpscare-audio').value;
+    socket.emit('jumpscare', { img, audio });
+  };
+}
+
+// "P" Key Image Pop
+let pToggled = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'p') {
+    if (!pToggled) {
+      const overlay = document.createElement('img');
+      overlay.src = 'YOUR_IMAGE_LINK_HERE'; // <-- replace with your image
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.zIndex = '1000';
+      overlay.id = 'p-overlay';
+      overlay.style.objectFit = 'cover';
+      document.body.appendChild(overlay);
+      pToggled = true;
+    } else {
+      const overlay = document.getElementById('p-overlay');
+      if (overlay) overlay.remove();
+      pToggled = false;
+    }
+  }
 });
