@@ -10,28 +10,11 @@ const users = [];
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Pages
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
-
-app.get('/login.html', (req, res) => {
-  res.sendFile(__dirname + '/public/login.html');
-});
-
-app.get('/register.html', (req, res) => {
-  res.sendFile(__dirname + '/public/register.html');
-});
-
-app.get('/chat.html', (req, res) => {
-  res.sendFile(__dirname + '/public/chat.html');
-});
-
 // Register
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
   if (users.find(u => u.username === username)) {
-    return res.send('Username already exists.');
+    return res.status(400).send('Username already exists.');
   }
   users.push({ username, password });
   res.redirect('/login.html');
@@ -45,11 +28,11 @@ app.post('/login', (req, res) => {
   if (user) {
     res.redirect('/chat.html?username=' + encodeURIComponent(username));
   } else {
-    res.send('Invalid login!');
+    res.status(400).send('Invalid login.');
   }
 });
 
-// Socket.io (basic real-time chat example)
+// WebSocket Chat
 io.on('connection', (socket) => {
   console.log('A user connected');
 
@@ -62,6 +45,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log(`Sharcord server running on port ${PORT}`);
