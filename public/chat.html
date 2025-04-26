@@ -5,51 +5,30 @@
   <title>Sharcord - Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="chat-page">
-  <div class="sidebar">
-    <h2>Sharcord</h2>
-    <div id="server-list">
-      <!-- Servers will appear here -->
-    </div>
-    <button onclick="createServer()">+ Create Server</button>
+<body>
+  <div id="profile">
+    <img id="profile-avatar" src="" alt="Profile" width="50" height="50">
+    <span id="profile-name"></span>
   </div>
 
-  <div class="channels">
-    <h3 id="server-name">Select a server</h3>
-    <div id="channel-list">
-      <!-- Channels will appear here -->
-    </div>
-    <button onclick="createChannel()">+ Create Channel</button>
-  </div>
+  <div id="server-list"></div>
+  <button onclick="createServer()">+ Create Server</button>
 
-  <div class="chat-area">
-    <div id="messages">
-      <!-- Messages will appear here -->
-    </div>
+  <div id="channel-list"></div>
+  <button onclick="createChannel()">+ Create Channel</button>
 
-    <div id="message-input">
-      <input type="text" id="msg" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
+  <div id="messages" style="height:400px; overflow-y:scroll; background:#f0f0f0; padding:10px;"></div>
 
-  <div class="friends-list">
-    <h3>Friends</h3>
-    <div id="friend-list">
-      <!-- Friends appear here -->
-    </div>
-    <button onclick="addFriend()">+ Add Friend</button>
+  <input type="text" id="message-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendMessage();">
+  <button onclick="sendMessage()">Send</button>
 
-    <!-- ADMIN PANEL (only for X12) -->
-    <div id="admin-panel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <button onclick="strobe()">Strobe Everyone</button>
-      <button onclick="sendAnnouncement()">Send Announcement</button>
-      <button onclick="kickUser()">Kick User</button>
-      <button onclick="timeoutUser()">Timeout User</button>
-      <input type="file" id="upload-image-audio" multiple>
-      <button onclick="uploadAndBroadcast()">Upload & Broadcast</button>
-    </div>
+  <div id="admin-panel" style="display:none; margin-top:20px;">
+    <h2>Admin Panel</h2>
+    <button onclick="strobeScreen()">🌈 Strobe Screen</button>
+    <button onclick="sendAnnouncement()">📢 Send Announcement</button>
+    <button onclick="kickUser()">👢 Kick User</button>
+    <button onclick="timeoutUser()">⏳ Timeout User</button>
+    <button onclick="uploadMedia()">🖼️ Upload Image and Audio</button>
   </div>
 
   <script src="client.js"></script>
