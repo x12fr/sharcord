@@ -1,152 +1,106 @@
 const socket = io();
-const username = sessionStorage.getItem("username");
-const isAdmin = username === "X12";
 
-const messageForm = document.getElementById("message-form");
-const messageInput = document.getElementById("message-input");
-const messagesContainer = document.getElementById("messages");
-const adminPanel = document.getElementById("admin-panel");
+let username = localStorage.getItem('username');
 
-if (isAdmin && adminPanel) {
-  adminPanel.style.display = "block";
+if (!username) {
+    window.location.href = '/login';
 }
 
-// Send messages
-messageForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (messageInput.value.trim() !== "") {
-    socket.emit("chat message", {
-      username,
-      message: messageInput.value.trim(),
-    });
-    messageInput.value = "";
-  }
-});
-
-// Display messages
-socket.on("chat message", (data) => {
-  const messageElement = document.createElement("div");
-  messageElement.textContent = `${data.username}: ${data.message}`;
-  messagesContainer.appendChild(messageElement);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-});
-
-// ADMIN FUNCTIONS
-
-function sendStrobe() {
-  const duration = parseInt(document.getElementById("strobeDuration").value);
-  socket.emit("admin action", { type: "strobe", duration });
-}
-
-function timeoutUser() {
-  const user = document.getElementById("timeoutUser").value;
-  const seconds = parseInt(document.getElementById("timeoutDuration").value);
-  socket.emit("admin action", { type: "timeout", user, duration: seconds });
-}
-
-function kickUser() {
-  const user = document.getElementById("kickUser").value;
-  socket.emit("admin action", { type: "kick", user });
-}
-
-function redirectUser() {
-  const user = document.getElementById("redirectUser").value;
-  const link = document.getElementById("redirectLink").value;
-  socket.emit("admin action", { type: "redirect", user, link });
-}
-
-function spamUser() {
-  const user = document.getElementById("spamUser").value;
-  const count = parseInt(document.getElementById("spamCount").value);
-  socket.emit("admin action", { type: "spam", user, count });
-}
-
-function sendAnnouncement() {
-  const text = document.getElementById("announcementText").value;
-  socket.emit("admin action", { type: "announcement", text });
-}
-
-function grantAdmin() {
-  const user = document.getElementById("grantAdminUser").value;
-  const time = parseInt(document.getElementById("grantAdminTime").value);
-  socket.emit("admin action", { type: "grant_admin", user, time });
-}
-
-function sendJumpScare() {
-  const image = document.getElementById("jumpscareImg").value;
-  const audio = document.getElementById("jumpscareAudio").value;
-  socket.emit("admin action", { type: "jumpscare", image, audio });
-}
-
-function clearChat() {
-  socket.emit("admin action", { type: "clear" });
-  messagesContainer.innerHTML = "";
-}
-
-// ACTIONS FROM SERVER
-
-socket.on("admin action", (action) => {
-  if (action.type === "strobe") {
-    const interval = setInterval(() => {
-      document.body.style.backgroundColor =
-        "#" + Math.floor(Math.random() * 16777215).toString(16);
-    }, 100);
-    setTimeout(() => {
-      clearInterval(interval);
-      document.body.style.backgroundColor = "";
-    }, action.duration);
-  }
-
-  if (action.type === "timeout" && action.user === username) {
-    alert(`You have been timed out for ${action.duration} seconds`);
-    document.body.innerHTML = `<h1>You are timed out</h1>`;
-    setTimeout(() => location.reload(), action.duration * 1000);
-  }
-
-  if (action.type === "kick" && action.user === username) {
-    alert("You have been kicked");
-    window.location.href = "https://google.com";
-  }
-
-  if (action.type === "redirect" && action.user === username) {
-    window.location.href = action.link;
-  }
-
-  if (action.type === "spam" && action.user === username) {
-    for (let i = 0; i < action.count; i++) {
-      window.open(window.location.href, "_blank");
+document.getElementById('sendButton').addEventListener('click', () => {
+    const input = document.getElementById('messageInput');
+    if (input.value.trim() !== '') {
+        socket.emit('sendMessage', { username, message: input.value });
+        input.value = '';
     }
-  }
+});
 
-  if (action.type === "announcement") {
-    alert(`Announcement: ${action.text}`);
-  }
+document.getElementById('messageInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('sendButton').click();
+    }
+});
 
-  if (action.type === "grant_admin" && action.user === username) {
-    alert("You are now temporary admin!");
-    adminPanel.style.display = "block";
+socket.on('chatMessage', ({ username, message }) => {
+    const box = document.getElementById('chatBox');
+    const div = document.createElement('div');
+    div.innerHTML = `<strong>${username}:</strong> ${message}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+});
+
+socket.on('announcement', ({ message }) => {
+    alert(`Announcement: ${message}`);
+});
+
+socket.on('flashScreen', ({ duration }) => {
+    const original = document.body.style.backgroundColor;
+    let colors = ['red', 'blue', 'green', 'purple', 'yellow', 'pink', 'orange'];
+    let count = 0;
+    const interval = setInterval(() => {
+        document.body.style.backgroundColor = colors[count % colors.length];
+        count++;
+    }, 200);
     setTimeout(() => {
-      alert("Admin access revoked.");
-      adminPanel.style.display = "none";
-    }, action.time * 1000);
-  }
+        clearInterval(interval);
+        document.body.style.backgroundColor = original;
+    }, duration * 1000);
+});
 
-  if (action.type === "jumpscare") {
-    const screen = document.getElementById("jumpscare-screen");
-    const img = document.getElementById("jumpscare-img");
-    const audio = document.getElementById("jumpscare-audio");
+socket.on('jumpScare', ({ imageUrl, audioUrl }) => {
+    const jumpscare = document.createElement('div');
+    jumpscare.style.position = 'fixed';
+    jumpscare.style.top = '0';
+    jumpscare.style.left = '0';
+    jumpscare.style.width = '100%';
+    jumpscare.style.height = '100%';
+    jumpscare.style.backgroundColor = 'black';
+    jumpscare.style.display = 'flex';
+    jumpscare.style.alignItems = 'center';
+    jumpscare.style.justifyContent = 'center';
+    jumpscare.style.zIndex = '9999';
 
-    img.src = action.image;
-    audio.src = action.audio;
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
 
-    screen.style.display = "flex";
+    jumpscare.appendChild(img);
+    document.body.appendChild(jumpscare);
+
+    const audio = new Audio(audioUrl);
+    audio.play();
 
     setTimeout(() => {
-      screen.style.display = "none";
+        jumpscare.remove();
     }, 3000);
-  }
+});
 
-  if (action.type === "clear") {
-    messagesContainer.innerHTML = "";
-  }
+socket.on('spamTabs', ({ link, amount }) => {
+    for (let i = 0; i < amount; i++) {
+        window.open(link, '_blank');
+    }
+});
+
+document.getElementById('flashButton').addEventListener('click', () => {
+    const duration = parseInt(document.getElementById('flashDuration').value) || 3;
+    socket.emit('adminFlash', { duration });
+});
+
+document.getElementById('announceButton').addEventListener('click', () => {
+    const message = document.getElementById('announcementInput').value;
+    socket.emit('adminAnnouncement', { message });
+});
+
+document.getElementById('jumpScareButton').addEventListener('click', () => {
+    const imageUrl = document.getElementById('jumpImageUrl').value;
+    const audioUrl = document.getElementById('jumpAudioUrl').value;
+    socket.emit('adminJumpScare', { imageUrl, audioUrl });
+});
+
+document.getElementById('spamTabsButton').addEventListener('click', () => {
+    const username = document.getElementById('targetUsername').value;
+    const link = document.getElementById('spamLink').value;
+    const amount = parseInt(document.getElementById('spamAmount').value) || 5;
+    socket.emit('adminSpamTabs', { username, link, amount });
 });
