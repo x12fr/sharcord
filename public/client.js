@@ -117,7 +117,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 'p') {
     if (!pToggled) {
       const overlay = document.createElement('img');
-      overlay.src = 'YOUR_IMAGE_LINK_HERE'; // <-- replace with your image
+      overlay.src = 'https://files.catbox.moe/5pz8os.png'; // <-- replace with your image
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
       overlay.style.left = '0';
