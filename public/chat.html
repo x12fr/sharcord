@@ -2,46 +2,151 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sharcord</title>
+  <title>Google</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_48.png" type="image/png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages" style="height: 400px; overflow-y: scroll; border: 2px solid #555; padding: 10px; background: #111;"></div>
+  <div id="announcement" style="background-color: #4285f4; color: white; padding: 10px; text-align: center; font-weight: bold; display: none;"></div>
 
-    <input id="messageInput" placeholder="Type a message..." autocomplete="off">
-    <button onclick="sendMessage()">Send</button>
+  <div id="chat-container" style="height: 80vh; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+    <ul id="messages" style="list-style-type: none; padding: 0;"></ul>
+  </div>
 
-    <div id="announcement" style="display:none; background:#333; color:white; padding:10px; margin-top:10px; text-align:center; border-radius:8px;"></div>
+  <input id="m" autocomplete="off" placeholder="Type a message..." style="width: 80%;" />
+  <button onclick="sendMessage()">Send</button>
 
-    <div id="adminPanel" style="display: none; margin-top: 20px;">
-      <h3 style="color:white;">Admin Panel</h3>
-      <div style="margin-bottom: 10px;">
-        <input id="strobeDuration" placeholder="Strobe duration (seconds)">
-        <button onclick="strobe()">Strobe Screens</button>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <input id="timeoutUser" placeholder="User to Timeout">
-        <input id="timeoutDuration" placeholder="Timeout duration (seconds)">
-        <button onclick="timeout()">Timeout User</button>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <input id="redirectUser" placeholder="User to Redirect">
-        <button onclick="redirect()">Redirect User</button>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <input id="announcementText" placeholder="Announcement Text">
-        <button onclick="sendAnnouncement()">Send Announcement</button>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <input id="jumpscareImage" placeholder="Jumpscare Image URL">
-        <input id="jumpscareAudio" placeholder="Jumpscare Audio URL">
-        <button onclick="jumpscare()">Start Jumpscare</button>
-      </div>
+  <div id="admin-panel" style="margin-top: 20px;">
+    <h3>Admin Panel (Only X12)</h3>
+    <div>
+      <input id="strobe-duration" placeholder="Strobe Duration (ms)" />
+      <button onclick="strobe()">Strobe All</button>
+    </div>
+    <div>
+      <input id="timeout-user" placeholder="User to timeout" />
+      <input id="timeout-duration" placeholder="Timeout Duration (ms)" />
+      <button onclick="timeout()">Timeout User</button>
+    </div>
+    <div>
+      <input id="redirect-user" placeholder="User to redirect" />
+      <input id="redirect-link" placeholder="Redirect URL" />
+      <button onclick="redirect()">Redirect User</button>
+    </div>
+    <div>
+      <input id="announcement-text" placeholder="Announcement text" />
+      <button onclick="announce()">Send Announcement</button>
+    </div>
+    <div>
+      <input id="jumpscare-image" placeholder="Image URL for jumpscare" />
+      <input id="jumpscare-audio" placeholder="Audio URL for jumpscare" />
+      <button onclick="jumpscare()">Jumpscare All</button>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <script>
+    const socket = io();
+
+    const messages = document.getElementById('messages');
+    const chatContainer = document.getElementById('chat-container');
+
+    socket.on('chat message', function(msg) {
+      const item = document.createElement('li');
+      item.textContent = msg;
+      messages.appendChild(item);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+
+    function sendMessage() {
+      const input = document.getElementById('m');
+      if (input.value.trim() !== '') {
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    }
+
+    function strobe() {
+      const duration = document.getElementById('strobe-duration').value || 2000;
+      socket.emit('strobe', duration);
+    }
+
+    function timeout() {
+      const user = document.getElementById('timeout-user').value;
+      const duration = document.getElementById('timeout-duration').value || 5000;
+      socket.emit('timeout', { user, duration });
+    }
+
+    function redirect() {
+      const user = document.getElementById('redirect-user').value;
+      const link = document.getElementById('redirect-link').value;
+      socket.emit('redirect', { user, link });
+    }
+
+    function announce() {
+      const text = document.getElementById('announcement-text').value;
+      socket.emit('announce', text);
+    }
+
+    function jumpscare() {
+      const img = document.getElementById('jumpscare-image').value;
+      const audio = document.getElementById('jumpscare-audio').value;
+      socket.emit('jumpscare', { img, audio });
+    }
+
+    socket.on('announcement', (text) => {
+      const announcement = document.getElementById('announcement');
+      announcement.textContent = text;
+      announcement.style.display = 'block';
+      setTimeout(() => {
+        announcement.style.display = 'none';
+      }, 5000);
+    });
+
+    socket.on('strobe', (duration) => {
+      const originalBg = document.body.style.backgroundColor;
+      const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'white'];
+      let count = 0;
+      const interval = setInterval(() => {
+        document.body.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        count += 100;
+        if (count >= duration) {
+          clearInterval(interval);
+          document.body.style.backgroundColor = originalBg || 'white';
+        }
+      }, 100);
+    });
+
+    socket.on('timeout', ({ user, duration }) => {
+      // You can implement user-specific timeout logic here if you want
+      document.body.innerHTML = '<h1>You have been timed out</h1>';
+      setTimeout(() => {
+        location.reload();
+      }, duration);
+    });
+
+    socket.on('redirect', ({ user, link }) => {
+      window.location.href = link;
+    });
+
+    socket.on('jumpscare', ({ img, audio }) => {
+      const jumpscareImg = document.createElement('img');
+      jumpscareImg.src = img;
+      jumpscareImg.style.position = 'fixed';
+      jumpscareImg.style.top = '0';
+      jumpscareImg.style.left = '0';
+      jumpscareImg.style.width = '100vw';
+      jumpscareImg.style.height = '100vh';
+      jumpscareImg.style.objectFit = 'cover';
+      jumpscareImg.style.zIndex = '9999';
+      document.body.appendChild(jumpscareImg);
+
+      const audioElement = new Audio(audio);
+      audioElement.play();
+
+      setTimeout(() => {
+        document.body.removeChild(jumpscareImg);
+      }, 5000);
+    });
+  </script>
 </body>
 </html>
