@@ -1,188 +1,196 @@
 const socket = io();
-let isTyping = false;
+let username = new URLSearchParams(window.location.search).get('username');
 let lastMessageTime = 0;
-let privateRecipient = null;
+let pImageVisible = false;
 
-// Messaging
-function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const message = input.value.trim();
-    if (!message) return;
+document.getElementById('welcome-user').innerText = `Welcome, ${username}!`;
 
-    const now = Date.now();
-    if (now - lastMessageTime < 3000) {
-        alert('Cooldown: Wait 3 seconds!');
-        return;
+document.getElementById('send-button').addEventListener('click', sendMessage);
+document.getElementById('message-input').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendMessage();
+});
+document.getElementById('file-button').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+document.getElementById('file-input').addEventListener('change', sendImage);
+document.getElementById('logout-button').addEventListener('click', () => {
+  window.location.href = '/logout';
+});
+
+document.getElementById('send-dm-button').addEventListener('click', () => {
+  const target = document.getElementById('dm-username').value.trim();
+  const message = document.getElementById('dm-message').value.trim();
+  if (target && message) {
+    socket.emit('private_message', { target, message, from: username });
+    document.getElementById('dm-message').value = '';
+  }
+});
+
+document.getElementById('change-pfp-button').addEventListener('click', () => {
+  const file = document.getElementById('pfp-input').files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      socket.emit('change_pfp', { username, pfp: reader.result });
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// ADMIN ONLY BUTTONS
+if (username === 'X12') {
+  document.getElementById('admin-panel').style.display = 'block';
+
+  document.getElementById('kick-button').addEventListener('click', () => {
+    const target = document.getElementById('kick-username').value.trim();
+    if (target) socket.emit('kick_user', target);
+  });
+
+  document.getElementById('jumpscare-button').addEventListener('click', () => {
+    const imageUrl = document.getElementById('jumpscare-image').value.trim();
+    const audioUrl = document.getElementById('jumpscare-audio').value.trim();
+    socket.emit('jumpscare', { imageUrl, audioUrl });
+  });
+
+  document.getElementById('prank-pfp-button').addEventListener('click', () => {
+    const target = document.getElementById('change-pfp-username').value.trim();
+    const newPfp = document.getElementById('new-pfp-url').value.trim();
+    if (target && newPfp) {
+      socket.emit('prank_pfp', { target, newPfp });
     }
+  });
 
-    socket.emit('chat message', message);
+  document.getElementById('collapse-admin').addEventListener('click', () => {
+    const panel = document.getElementById('admin-controls');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  });
+}
+
+// Send a normal chat message
+function sendMessage() {
+  const now = Date.now();
+  if (now - lastMessageTime < 3000) {
+    alert('Wait 3 seconds between messages.');
+    return;
+  }
+
+  const input = document.getElementById('message-input');
+  const message = input.value.trim();
+  if (message) {
+    socket.emit('chat_message', { username, message });
     input.value = '';
     lastMessageTime = now;
+  }
 }
 
+// Send an uploaded image
 function sendImage() {
-    const fileInput = document.getElementById('imageInput');
-    if (fileInput.files.length === 0) return;
-    const file = fileInput.files[0];
+  const file = document.getElementById('file-input').files[0];
+  if (file) {
     const reader = new FileReader();
-    reader.onload = function (e) {
-        socket.emit('chat image', e.target.result);
+    reader.onload = () => {
+      socket.emit('image_message', { username, image: reader.result });
     };
     reader.readAsDataURL(file);
+  }
 }
 
-function sendPrivateMessage() {
-    const message = document.getElementById('privateMessageInput').value.trim();
-    if (message && privateRecipient) {
-        socket.emit('private message', { to: privateRecipient, message });
-        closePrivateMessage();
-    }
-}
-
-function closePrivateMessage() {
-    document.getElementById('privateMessageContainer').classList.add('hidden');
-    privateRecipient = null;
-}
-
-// Admin Stuff
-function kickUser() {
-    const user = document.getElementById('kickUser').value.trim();
-    if (user) socket.emit('admin kick', user);
-}
-
-function timeoutUser() {
-    const user = document.getElementById('timeoutUser').value.trim();
-    const seconds = document.getElementById('timeoutDuration').value;
-    if (user && seconds) socket.emit('admin timeout', { user, seconds });
-}
-
-function redirectUser() {
-    const user = document.getElementById('redirectUser').value.trim();
-    const link = document.getElementById('redirectLink').value.trim();
-    if (user && link) socket.emit('admin redirect', { user, link });
-}
-
-function sendAnnouncement() {
-    const text = document.getElementById('announcementText').value.trim();
-    if (text) socket.emit('admin announce', text);
-}
-
-function jumpscareAll() {
-    const image = document.getElementById('jumpscareImage').value.trim();
-    const audio = document.getElementById('jumpscareAudio').value.trim();
-    if (image && audio) socket.emit('admin jumpscare', { image, audio });
-}
-
-function strobeScreen() {
-    socket.emit('admin strobe');
-}
-
-function kickEveryone() {
-    socket.emit('admin kickall');
-}
-
-function changeUserPfp() {
-    const user = document.getElementById('changePfpUser').value.trim();
-    const url = document.getElementById('newPfpUrl').value.trim();
-    if (user && url) socket.emit('admin changepfp', { user, url });
-}
-
-function changeMyPfp() {
-    const fileInput = document.getElementById('pfpInput');
-    if (fileInput.files.length === 0) return;
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        socket.emit('change pfp', e.target.result);
-    };
-    reader.readAsDataURL(file);
-}
-
-function toggleAdminPanel() {
-    const panel = document.getElementById('adminPanel');
-    panel.classList.toggle('hidden');
-}
-
-// Listeners
-socket.on('chat message', ({ username, message, pfp, link }) => {
-    const chat = document.getElementById('chatArea');
-    const msgElement = document.createElement('div');
-    msgElement.innerHTML = `<img src="${pfp}" width="30" style="border-radius:50%;"> <b>${username}</b>: ${link || message}`;
-    chat.appendChild(msgElement);
-    chat.scrollTop = chat.scrollHeight;
+// Show incoming messages
+socket.on('chat_message', ({ username, message, pfp }) => {
+  addMessage(username, message, pfp);
 });
 
-socket.on('chat image', ({ username, image, pfp }) => {
-    const chat = document.getElementById('chatArea');
-    const msgElement = document.createElement('div');
-    msgElement.innerHTML = `<img src="${pfp}" width="30" style="border-radius:50%;"> <b>${username}</b>:<br><img src="${image}" width="150">`;
-    chat.appendChild(msgElement);
-    chat.scrollTop = chat.scrollHeight;
+// Show incoming image
+socket.on('image_message', ({ username, image, pfp }) => {
+  addImage(username, image, pfp);
 });
 
-socket.on('private message', ({ from, message }) => {
-    alert(`Private message from ${from}: ${message}`);
+// Receive private message
+socket.on('private_message', ({ from, message }) => {
+  alert(`DM from ${from}: ${message}`);
 });
 
-socket.on('jumpscare', ({ image, audio }) => {
-    const overlay = document.getElementById('jumpscareOverlay');
-    const img = document.getElementById('jumpscareImageElement');
-    img.src = image;
-    overlay.classList.remove('hidden');
-    const sound = new Audio(audio);
-    sound.play();
-    setTimeout(() => {
-        overlay.classList.add('hidden');
-    }, 5000);
+// Update someone's profile picture
+socket.on('update_pfp', ({ username, pfp }) => {
+  document.querySelectorAll(`.pfp-${username}`).forEach(img => {
+    img.src = pfp;
+  });
 });
 
-socket.on('redirect', (link) => {
-    window.location.href = link;
+// Handle jumpscare
+socket.on('jumpscare', ({ imageUrl, audioUrl }) => {
+  const img = document.createElement('img');
+  img.src = imageUrl;
+  img.style.position = 'fixed';
+  img.style.top = '0';
+  img.style.left = '0';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.zIndex = '9999';
+  img.style.objectFit = 'cover';
+  document.body.appendChild(img);
+
+  const audio = new Audio(audioUrl);
+  audio.play();
+
+  setTimeout(() => {
+    img.remove();
+  }, 5000);
 });
 
-socket.on('timeout', (seconds) => {
-    alert(`You are timed out for ${seconds} seconds!`);
+// Handle being kicked
+socket.on('kicked', () => {
+  alert('You were kicked.');
+  window.location.href = '/logout';
 });
 
-socket.on('announcement', (text) => {
-    alert(`Announcement: ${text}`);
-});
-
-socket.on('strobe', () => {
-    const colors = ['red', 'blue', 'green', 'yellow', 'pink', 'white'];
-    let i = 0;
-    const interval = setInterval(() => {
-        document.body.style.background = colors[i % colors.length];
-        i++;
-    }, 200);
-    setTimeout(() => {
-        clearInterval(interval);
-        document.body.style.background = '#0d0d0d';
-    }, 3000);
-});
-
-socket.on('update userlist', (users) => {
-    const userList = document.getElementById('userList');
-    userList.innerHTML = '';
-    users.forEach(u => {
-        const userEl = document.createElement('div');
-        userEl.innerHTML = `<img src="${u.pfp}" width="20" style="border-radius:50%;"> ${u.username}`;
-        userEl.onclick = () => {
-            privateRecipient = u.username;
-            document.getElementById('privateRecipient').innerText = u.username;
-            document.getElementById('privateMessageContainer').classList.remove('hidden');
-        };
-        userList.appendChild(userEl);
-    });
-});
-
-// "P" Key Jumpscare
+// Press P to toggle full screen image
 document.addEventListener('keydown', (e) => {
-    const input = document.activeElement.tagName.toLowerCase();
-    if (e.key === 'p' && input !== 'input' && input !== 'textarea') {
-        const overlay = document.getElementById('jumpscareOverlay');
-        const img = document.getElementById('jumpscareImageElement');
-        img.src = 'https://files.catbox.moe/5pz8os.png';
-        overlay.classList.toggle('hidden');
+  if (e.key.toLowerCase() === 'p' && document.activeElement.id !== 'message-input') {
+    if (!pImageVisible) {
+      const img = document.createElement('img');
+      img.id = 'pImage';
+      img.src = 'https://files.catbox.moe/5pz8os.png';
+      img.style.position = 'fixed';
+      img.style.top = '0';
+      img.style.left = '0';
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.zIndex = '9999';
+      img.style.objectFit = 'cover';
+      document.body.appendChild(img);
+      pImageVisible = true;
+    } else {
+      document.getElementById('pImage')?.remove();
+      pImageVisible = false;
     }
+  }
 });
+
+// Add chat message
+function addMessage(username, message, pfp) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message';
+  div.innerHTML = `<img src="${pfp || '/default-pfp.png'}" class="pfp-${username}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:5px;">
+    <strong>${username}</strong>: ${linkify(message)}`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// Add image message
+function addImage(username, image, pfp) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message';
+  div.innerHTML = `<img src="${pfp || '/default-pfp.png'}" class="pfp-${username}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:5px;">
+    <strong>${username}</strong>: <br><img src="${image}" style="max-width:200px;max-height:200px;border-radius:8px;">`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// Convert links inside messages
+function linkify(text) {
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
+}
