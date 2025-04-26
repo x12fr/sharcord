@@ -3,70 +3,108 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
+const bodyParser = require('body-parser');
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static files (your client side)
+// ====== User Database (Temporary In-Memory) ======
+const users = {}; // { username: password }
+const sessions = {}; // { sessionId: username }
+
+// ====== Admin Setup ======
+const ADMIN_USERNAME = 'X12';
+const ADMIN_PASSWORD = '331256444';
+
+// ====== Middleware ======
+app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-memory storage
-let users = {};
-let timeouts = {};
+// ====== Login API ======
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
 
-io.on('connection', socket => {
-    console.log('A user connected');
-
-    socket.on('register', (username, callback) => {
-        if (Object.values(users).includes(username)) {
-            callback({ success: false, message: 'Username taken' });
-        } else {
-            users[socket.id] = username;
-            callback({ success: true });
-            io.emit('userlist', users);
-        }
-    });
-
-    socket.on('chatMessage', data => {
-        io.emit('chatMessage', { username: users[socket.id], text: data });
-    });
-
-    socket.on('adminStrobe', () => {
-        io.emit('strobe');
-    });
-
-    socket.on('adminAnnouncement', (message) => {
-        io.emit('announcement', message);
-    });
-
-    socket.on('adminKick', (username) => {
-        const socketId = Object.keys(users).find(id => users[id] === username);
-        if (socketId) {
-            io.to(socketId).emit('kicked');
-            io.sockets.sockets.get(socketId).disconnect();
-        }
-    });
-
-    socket.on('adminTimeout', (username, duration) => {
-        const socketId = Object.keys(users).find(id => users[id] === username);
-        if (socketId) {
-            io.to(socketId).emit('timeout', duration);
-            timeouts[socketId] = Date.now() + duration * 1000;
-        }
-    });
-
-    socket.on('adminUpload', (imageUrl, audioUrl) => {
-        io.emit('adminUpload', { imageUrl, audioUrl });
-    });
-
-    socket.on('disconnect', () => {
-        console.log('A user disconnected');
-        delete users[socket.id];
-        delete timeouts[socket.id];
-        io.emit('userlist', users);
-    });
+  if (users[username] && users[username] === password) {
+    res.status(200).json({ message: 'Login successful' });
+  } else if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    res.status(200).json({ message: 'Admin login successful' });
+  } else {
+    res.status(401).json({ message: 'Invalid credentials' });
+  }
 });
 
-// Start server
+// ====== Register API ======
+app.post('/api/register', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!users[username] && username !== ADMIN_USERNAME) {
+    users[username] = password;
+    res.status(200).json({ message: 'Registration successful' });
+  } else {
+    res.status(409).json({ message: 'Username already taken' });
+  }
+});
+
+// ====== Sockets ======
+io.on('connection', (socket) => {
+  console.log('A user connected.');
+
+  // ====== Chat Messages ======
+  socket.on('chat message', (msg) => {
+    socket.username = socket.username || 'Guest';
+    io.emit('chat message', { username: socket.username, message: msg });
+  });
+
+  // ====== Assign Username ======
+  socket.on('set username', (username) => {
+    socket.username = username;
+  });
+
+  // ====== Admin Features ======
+  socket.on('admin strobe', () => {
+    if (socket.username === ADMIN_USERNAME) {
+      io.emit('strobe');
+    }
+  });
+
+  socket.on('admin announcement', (text) => {
+    if (socket.username === ADMIN_USERNAME) {
+      io.emit('announcement', text);
+    }
+  });
+
+  socket.on('admin kick', (targetUsername) => {
+    if (socket.username === ADMIN_USERNAME) {
+      for (let [id, s] of io.of('/').sockets) {
+        if (s.username === targetUsername) {
+          s.emit('kicked');
+          s.disconnect();
+        }
+      }
+    }
+  });
+
+  socket.on('admin timeout', ({ targetUsername, seconds }) => {
+    if (socket.username === ADMIN_USERNAME) {
+      for (let [id, s] of io.of('/').sockets) {
+        if (s.username === targetUsername) {
+          s.emit('timeout', seconds);
+        }
+      }
+    }
+  });
+
+  socket.on('admin showMedia', ({ imageUrl, audioUrl }) => {
+    if (socket.username === ADMIN_USERNAME) {
+      io.emit('showMedia', { imageUrl, audioUrl });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected.');
+  });
+});
+
+// ====== Start Server ======
 http.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
