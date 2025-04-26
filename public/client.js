@@ -1,77 +1,125 @@
 const socket = io();
-const params = new URLSearchParams(window.location.search);
-const sessionID = params.get('session');
+const urlParams = new URLSearchParams(window.location.search);
+const username = urlParams.get('username');
 
-socket.emit('join', sessionID);
+socket.emit('join', { username, profilePic: '/default.png' });
 
-socket.on('init', ({ username, pfp, isAdmin }) => {
-    document.getElementById('usernameDisplay').innerText = username;
-    if (isAdmin) {
-        document.getElementById('adminPanel').style.display = 'block';
-    }
+const chatBox = document.getElementById('chat-box');
+const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+
+if (username === 'X12') {
+    document.getElementById('admin-panel').style.display = 'block';
+}
+
+socket.on('chat message', (data) => {
+    const messageElement = document.createElement('div');
+    messageElement.innerHTML = `<b><img src="${data.profilePic}" width="20" height="20"> ${data.username}:</b> ${data.message}`;
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-function sendMessage() {
-    const input = document.getElementById('messageInput');
-    if (input.value.trim() !== "") {
-        socket.emit('sendMessage', input.value);
-        input.value = "";
-    }
-}
-
-socket.on('message', ({ username, pfp, text }) => {
-    const chat = document.getElementById('chatMessages');
-    const msg = document.createElement('div');
-    msg.innerHTML = `<img src="${pfp}" style="width:30px;height:30px;border-radius:50%;"> <b>${username}:</b> ${text}`;
-    chat.appendChild(msg);
-    chat.scrollTop = chat.scrollHeight;
+socket.on('image upload', (data) => {
+    const messageElement = document.createElement('div');
+    messageElement.innerHTML = `<b><img src="${data.profilePic}" width="20" height="20"> ${data.username}:</b><br><img src="${data.image}" width="200">`;
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-function changePfp() {
-    const newPfp = document.getElementById('pfpInput').value;
-    if (newPfp.trim() !== "") {
-        socket.emit('updatePfp', newPfp);
-        alert('Profile picture updated!');
-    }
-}
+socket.on('announcement', (data) => {
+    const announcementBar = document.getElementById('announcement-bar');
+    announcementBar.innerText = data.message;
+    announcementBar.style.backgroundColor = 'yellow';
+});
 
-function clearChat() {
-    document.getElementById('chatMessages').innerHTML = '';
-}
-
-function strobeAll() {
-    let colors = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'];
+socket.on('strobe', () => {
+    let colors = ['red', 'blue', 'green', 'purple', 'orange'];
     let count = 0;
-    const interval = setInterval(() => {
-        document.body.style.background = colors[count % colors.length];
+    const strobeInterval = setInterval(() => {
+        document.body.style.backgroundColor = colors[count % colors.length];
         count++;
-        if (count > 20) {
-            clearInterval(interval);
-            document.body.style.background = '';
-        }
-    }, 100);
+        if (count > 10) clearInterval(strobeInterval);
+    }, 300);
+});
+
+socket.on('timeout user', ({ username: target, duration }) => {
+    if (username === target) {
+        messageInput.disabled = true;
+        setTimeout(() => {
+            messageInput.disabled = false;
+        }, duration * 1000);
+    }
+});
+
+socket.on('redirect user', ({ username: target, url }) => {
+    if (username === target) {
+        window.location.href = url;
+    }
+});
+
+socket.on('play audio', (url) => {
+    const audio = new Audio(url);
+    audio.play();
+});
+
+socket.on('jumpscare', ({ image, audio }) => {
+    const img = document.createElement('img');
+    img.src = image;
+    img.style.position = 'fixed';
+    img.style.top = '0';
+    img.style.left = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.zIndex = '9999';
+    document.body.appendChild(img);
+
+    const sound = new Audio(audio);
+    sound.play();
+
+    setTimeout(() => {
+        img.remove();
+    }, 5000);
+});
+
+messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (messageInput.value.trim() !== '') {
+        socket.emit('chat message', { message: messageInput.value });
+        messageInput.value = '';
+    }
+});
+
+function strobe() {
+    socket.emit('strobe');
 }
 
 function sendAnnouncement() {
-    const msg = document.getElementById('announcementInput').value;
-    if (msg.trim() !== "") {
-        socket.emit('sendAnnouncement', msg);
+    const text = prompt('Enter announcement text:');
+    if (text) {
+        socket.emit('announcement', text);
     }
 }
 
-socket.on('announcement', (text) => {
-    const notice = document.createElement('div');
-    notice.style.background = "black";
-    notice.style.color = "white";
-    notice.style.padding = "10px";
-    notice.style.textAlign = "center";
-    notice.innerText = text;
-    document.body.prepend(notice);
-    setTimeout(() => {
-        notice.remove();
-    }, 10000);
-});
+function timeoutUser() {
+    const target = prompt('Enter username to timeout:');
+    const seconds = prompt('Enter timeout duration (seconds):');
+    if (target && seconds) {
+        socket.emit('timeout user', { username: target, duration: parseInt(seconds) });
+    }
+}
 
-socket.on('forceLogout', () => {
-    window.location.href = "/";
-});
+function redirectUser() {
+    const target = prompt('Enter username to redirect:');
+    const url = prompt('Enter URL to redirect to:');
+    if (target && url) {
+        socket.emit('redirect user', { username: target, url });
+    }
+}
+
+function jumpscare() {
+    const image = document.getElementById('jumpscare-image').value;
+    const audio = document.getElementById('jumpscare-audio').value;
+    if (image && audio) {
+        socket.emit('jumpscare', { image, audio });
+    }
+}
