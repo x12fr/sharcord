@@ -1,76 +1,64 @@
 const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const http = require('http');
+const { Server } = require('socket.io');
 const path = require('path');
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, '/')));
+const PORT = process.env.PORT || 3000;
 
-const users = {};
+// Serve static files (HTML, CSS, JS, images)
+app.use(express.static(path.join(__dirname, 'public')));
 
+// Route to index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Handle socket.io connections
 io.on('connection', (socket) => {
-  socket.on('user-joined', (username) => {
-    users[socket.id] = { username, profilePic: '' };
-    io.emit('userList', Object.values(users));
+  console.log('A user connected:', socket.id);
+
+  // Handle incoming chat messages
+  socket.on('chat message', (data) => {
+    io.emit('chat message', data); // Send message to everyone
   });
 
-  socket.on('chat-message', (data) => {
-    io.emit('chat-message', { user: data.user, text: data.text, profilePic: users[socket.id].profilePic });
+  // Handle private messages
+  socket.on('private message', ({ to, message, from }) => {
+    io.to(to).emit('private message', { message, from });
   });
 
-  socket.on('private-message', ({ to, from, message }) => {
-    for (let id in users) {
-      if (users[id].username === to) {
-        io.to(id).emit('private-message', { from, message });
-        break;
-      }
-    }
+  // Handle jumpscare (image + audio)
+  socket.on('jumpscare', ({ imageUrl, audioUrl }) => {
+    io.emit('jumpscare', { imageUrl, audioUrl });
   });
 
-  socket.on('chat-image', (data) => {
-    io.emit('chat-image', { user: data.user, imageUrl: data.imageUrl, profilePic: users[socket.id].profilePic });
+  // Handle kicks
+  socket.on('kick user', (userId) => {
+    io.to(userId).emit('kicked');
   });
 
-  socket.on('update-profile-pic', (data) => {
-    if (users[socket.id]) {
-      users[socket.id].profilePic = data.profilePic;
-    }
+  // Handle other admin features (flash screen, etc.)
+  socket.on('flash', (color) => {
+    io.emit('flash', color);
   });
 
-  socket.on('kick-user', (username) => {
-    for (let id in users) {
-      if (users[id].username === username) {
-        io.to(id).emit('kicked');
-        io.sockets.sockets.get(id).disconnect();
-        delete users[id];
-        break;
-      }
-    }
+  socket.on('play audio', (audioUrl) => {
+    io.emit('play audio', audioUrl);
   });
 
-  socket.on('jumpscare-all', (data) => {
-    io.emit('jumpscare', { image: data.image, audio: data.audio });
-  });
-
-  socket.on('strobe-all', (duration) => {
-    io.emit('strobe', duration);
-  });
-
-  socket.on('redirect-user', ({ username, url }) => {
-    for (let id in users) {
-      if (users[id].username === username) {
-        io.to(id).emit('redirect', url);
-        break;
-      }
-    }
+  socket.on('redirect user', ({ userId, link }) => {
+    io.to(userId).emit('redirect', link);
   });
 
   socket.on('disconnect', () => {
-    delete users[socket.id];
-    io.emit('userList', Object.values(users));
+    console.log('User disconnected:', socket.id);
   });
 });
 
-http.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+// Start server
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
