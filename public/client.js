@@ -1,214 +1,130 @@
-// ===== Variables =====
-let currentUser = null;
-let servers = {};
-let currentServer = null;
-let currentChannel = null;
-let messages = {};
-let users = {}; 
-let timeouts = {};
+// ======== LOGIN FORM ========
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Prevent page reload
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
-// ===== Login =====
-function login() {
-  const username = document.getElementById('login-username').value;
-  const password = document.getElementById('login-password').value;
-  const storedUser = JSON.parse(localStorage.getItem(`user_${username}`));
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
 
-  if (storedUser && storedUser.password === password) {
-    localStorage.setItem('loggedInUser', username);
-    window.location.href = 'chat.html';
-  } else {
-    alert('Invalid username or password.');
-  }
-}
-
-// ===== Register =====
-function register() {
-  const username = document.getElementById('register-username').value;
-  const password = document.getElementById('register-password').value;
-  const existingUser = localStorage.getItem(`user_${username}`);
-
-  if (existingUser) {
-    alert('Username already exists.');
-    return;
-  }
-
-  const user = { username, password, friends: [], about: "", avatar: "", status: "Online" };
-  localStorage.setItem(`user_${username}`, JSON.stringify(user));
-  alert('Registration successful!');
-  window.location.href = 'login.html';
-}
-
-// ===== When chat.html loads =====
-window.onload = function() {
-  const user = localStorage.getItem('loggedInUser');
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
-  currentUser = user;
-
-  if (currentUser === 'X12') {
-    document.getElementById('admin-panel').style.display = 'block';
-  }
-
-  loadServers();
-  loadProfile();
-};
-
-// ===== Profile =====
-function loadProfile() {
-  const user = JSON.parse(localStorage.getItem(`user_${currentUser}`));
-  if (user) {
-    document.getElementById('profile-name').innerText = user.username;
-    if (user.avatar) {
-      document.getElementById('profile-avatar').src = user.avatar;
+    if (response.ok) {
+      window.location.href = '/chat.html';
+    } else {
+      alert('Invalid login. Please try again.');
     }
-  }
+  });
 }
 
-// ===== Servers =====
-function loadServers() {
-  servers = JSON.parse(localStorage.getItem('servers')) || {};
-  const serverList = document.getElementById('server-list');
-  serverList.innerHTML = '';
+// ======== REGISTER FORM ========
+const registerForm = document.getElementById('register-form');
+if (registerForm) {
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Prevent page reload
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
-  for (const serverName in servers) {
-    const serverButton = document.createElement('button');
-    serverButton.innerText = serverName;
-    serverButton.onclick = () => loadChannels(serverName);
-    serverList.appendChild(serverButton);
-  }
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (response.ok) {
+      window.location.href = '/chat.html';
+    } else {
+      alert('Registration failed. Try a different username.');
+    }
+  });
 }
 
-function createServer() {
-  const serverName = prompt('Enter server name:');
-  if (!serverName) return;
-  servers[serverName] = { channels: { general: [] } };
-  localStorage.setItem('servers', JSON.stringify(servers));
-  loadServers();
+// ======== CHAT PAGE ========
+const socket = io();
+
+// Chat sending
+const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const messagesContainer = document.getElementById('messages');
+
+if (messageForm) {
+  messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const message = messageInput.value.trim();
+    if (message !== '') {
+      socket.emit('chat message', message);
+      messageInput.value = '';
+    }
+  });
+
+  // Receiving chat messages
+  socket.on('chat message', (data) => {
+    const msgElement = document.createElement('div');
+    msgElement.classList.add('message');
+    msgElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+    messagesContainer.appendChild(msgElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  });
 }
 
-// ===== Channels =====
-function loadChannels(serverName) {
-  currentServer = serverName;
-  const channelList = document.getElementById('channel-list');
-  channelList.innerHTML = '';
-
-  const server = servers[serverName];
-  for (const channelName in server.channels) {
-    const channelButton = document.createElement('button');
-    channelButton.innerText = `#${channelName}`;
-    channelButton.onclick = () => loadMessages(channelName);
-    channelList.appendChild(channelButton);
-  }
-}
-
-function createChannel() {
-  const channelName = prompt('Enter channel name:');
-  if (!channelName) return;
-  if (!currentServer) return alert('Select a server first.');
-
-  servers[currentServer].channels[channelName] = [];
-  localStorage.setItem('servers', JSON.stringify(servers));
-  loadChannels(currentServer);
-}
-
-// ===== Messages =====
-function loadMessages(channelName) {
-  currentChannel = channelName;
-  const messageArea = document.getElementById('messages');
-  messageArea.innerHTML = '';
-
-  const server = servers[currentServer];
-  const channel = server.channels[channelName];
-  for (const message of channel) {
-    displayMessage(message.user, message.text);
-  }
-}
-
-function sendMessage() {
-  const text = document.getElementById('message-input').value;
-  if (!text.trim()) return;
-  if (!currentChannel) return alert('Select a channel first.');
-
-  const message = { user: currentUser, text };
-  servers[currentServer].channels[currentChannel].push(message);
-  localStorage.setItem('servers', JSON.stringify(servers));
-
-  displayMessage(currentUser, text);
-  document.getElementById('message-input').value = '';
-}
-
-function displayMessage(user, text) {
-  const messageArea = document.getElementById('messages');
-  const messageDiv = document.createElement('div');
-  messageDiv.innerHTML = `<strong>${user}:</strong> ${text}`;
-  messageArea.appendChild(messageDiv);
-  messageArea.scrollTop = messageArea.scrollHeight;
-}
-
-// ===== Admin Panel =====
-function strobeScreen() {
-  let colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+// ======== ADMIN FEATURES (ONLY FOR X12) ========
+socket.on('strobe', () => {
+  let colors = ['red', 'blue', 'green', 'yellow', 'purple', 'cyan'];
   let i = 0;
-  const strobe = setInterval(() => {
+  const strobeInterval = setInterval(() => {
     document.body.style.backgroundColor = colors[i % colors.length];
     i++;
   }, 100);
 
   setTimeout(() => {
-    clearInterval(strobe);
+    clearInterval(strobeInterval);
     document.body.style.backgroundColor = '';
-  }, 3000);
-}
+  }, 3000); // stop after 3 seconds
+});
 
-function sendAnnouncement() {
-  const announcement = prompt('Enter announcement:');
-  if (!announcement) return;
-  alert(`ANNOUNCEMENT: ${announcement}`);
-}
+socket.on('announcement', (text) => {
+  const announcement = document.createElement('div');
+  announcement.className = 'announcement';
+  announcement.innerText = `📢 Announcement: ${text}`;
+  document.body.prepend(announcement);
 
-function kickUser() {
-  const userToKick = prompt('Enter username to kick:');
-  if (!userToKick) return;
-  if (userToKick === 'X12') return alert('You cannot kick yourself.');
+  setTimeout(() => {
+    announcement.remove();
+  }, 5000);
+});
 
-  localStorage.removeItem(`user_${userToKick}`);
-  alert(`${userToKick} has been kicked.`);
-}
+socket.on('kicked', () => {
+  alert('You have been kicked.');
+  window.location.href = '/';
+});
 
-function timeoutUser() {
-  const userToTimeout = prompt('Enter username to timeout:');
-  if (!userToTimeout) return;
-  const duration = parseInt(prompt('Enter duration (seconds):'), 10);
+socket.on('timeout', (time) => {
+  alert(`You have been timed out for ${time} seconds.`);
+  messageInput.disabled = true;
+  setTimeout(() => {
+    messageInput.disabled = false;
+  }, time * 1000);
+});
 
-  if (isNaN(duration)) return;
+socket.on('showMedia', (data) => {
+  const img = document.createElement('img');
+  img.src = data.imageUrl;
+  img.style.position = 'fixed';
+  img.style.top = '20%';
+  img.style.left = '50%';
+  img.style.transform = 'translateX(-50%)';
+  img.style.zIndex = '9999';
+  img.style.maxWidth = '500px';
+  img.style.maxHeight = '300px';
+  document.body.appendChild(img);
 
-  timeouts[userToTimeout] = Date.now() + duration * 1000;
-  alert(`${userToTimeout} is timed out for ${duration} seconds.`);
-}
+  const audio = new Audio(data.audioUrl);
+  audio.play();
 
-function uploadMedia() {
-  const imageUrl = prompt('Enter image URL:');
-  const audioUrl = prompt('Enter audio URL:');
-
-  if (imageUrl) {
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.style.width = '300px';
-    img.style.position = 'fixed';
-    img.style.top = '10px';
-    img.style.left = '50%';
-    img.style.transform = 'translateX(-50%)';
-    document.body.appendChild(img);
-
-    setTimeout(() => {
-      img.remove();
-    }, 10000);
-  }
-
-  if (audioUrl) {
-    const audio = new Audio(audioUrl);
-    audio.play();
-  }
-}
+  setTimeout(() => {
+    img.remove();
+  }, 10000); // remove image after 10 seconds
+});
