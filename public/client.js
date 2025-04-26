@@ -1,178 +1,181 @@
 const socket = io();
-const username = sessionStorage.getItem("username");
+const messageBox = document.getElementById('messages');
+const form = document.getElementById('chat-form');
+const input = document.getElementById('message');
+const profilePic = sessionStorage.getItem('profilePic');
+const username = sessionStorage.getItem('username');
+let cooldown = false;
 
-// Display username on the page
-document.getElementById("usernameDisplay").textContent = username;
-
-// Show admin controls if user is admin
-if (username === "X12") {
-  const adminPanel = document.getElementById("adminControls");
-  if (adminPanel) adminPanel.style.display = "block";
+// Scroll to bottom
+function scrollToBottom() {
+  messageBox.scrollTop = messageBox.scrollHeight;
 }
 
-// Handle sending messages
-const form = document.getElementById("chatForm");
-const input = document.getElementById("messageInput");
-const messages = document.getElementById("chatBox");
+// Append message
+function appendMessage(data) {
+  const item = document.createElement('div');
+  item.className = 'message';
+  item.innerHTML = `
+    <img src="${data.profilePic}" class="pfp">
+    <strong>${data.username}</strong>: ${data.text}
+  `;
+  messageBox.appendChild(item);
+  scrollToBottom();
+}
 
-// 3 second cooldown
-let canSend = true;
-form.addEventListener("submit", (e) => {
+form.addEventListener('submit', (e) => {
   e.preventDefault();
-  if (!input.value || !canSend) return;
+  if (cooldown || !input.value.trim()) return;
 
-  socket.emit("chat message", {
-    user: username,
-    message: input.value
+  socket.emit('chat message', {
+    username,
+    profilePic,
+    text: input.value.trim()
   });
 
-  input.value = "";
-  canSend = false;
-  setTimeout(() => {
-    canSend = true;
-  }, 3000);
+  input.value = '';
+  cooldown = true;
+  setTimeout(() => cooldown = false, 3000);
 });
 
-// Display chat messages
-socket.on("chat message", (data) => {
-  const item = document.createElement("div");
-  item.className = "message";
-  item.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
-  messages.appendChild(item);
-  messages.scrollTop = messages.scrollHeight;
+socket.on('chat message', appendMessage);
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  sessionStorage.clear();
+  window.location.href = '/login';
 });
 
-// ADMIN ACTIONS
-// Clear Chat
-document.getElementById("clearChatBtn")?.addEventListener("click", () => {
-  messages.innerHTML = "";
-  socket.emit("admin action", { type: "clearChat" });
-});
+// Admin Panel Features
+if (username === 'X12') {
+  document.getElementById('admin-panel').style.display = 'block';
 
-// Announcement
-document.getElementById("announceBtn")?.addEventListener("click", () => {
-  const msg = prompt("Enter announcement:");
-  if (msg) {
-    socket.emit("admin action", { type: "announcement", message: msg });
-  }
-});
+  // Handle strobe
+  document.getElementById('strobe-btn').onclick = () => {
+    const duration = parseInt(document.getElementById('strobe-duration').value);
+    socket.emit('admin action', { type: 'strobe', duration });
+  };
 
-// Timeout user
-document.getElementById("timeoutBtn")?.addEventListener("click", () => {
-  const user = prompt("Username to timeout:");
-  const time = prompt("Time in seconds:");
-  socket.emit("admin action", { type: "timeout", user, time });
-});
+  // Timeout
+  document.getElementById('timeout-btn').onclick = () => {
+    const user = document.getElementById('timeout-user').value;
+    const duration = parseInt(document.getElementById('timeout-duration').value);
+    socket.emit('admin action', { type: 'timeout', user, duration });
+  };
 
-// Kick user
-document.getElementById("kickBtn")?.addEventListener("click", () => {
-  const user = prompt("Username to kick:");
-  socket.emit("admin action", { type: "kick", user });
-});
+  // Redirect
+  document.getElementById('redirect-btn').onclick = () => {
+    const user = document.getElementById('redirect-user').value;
+    const url = document.getElementById('redirect-url').value;
+    socket.emit('admin action', { type: 'redirect', user, url });
+  };
 
-// Redirect user
-document.getElementById("redirectBtn")?.addEventListener("click", () => {
-  const user = prompt("Username to redirect:");
-  const url = prompt("URL to send them to:");
-  socket.emit("admin action", { type: "redirect", user, url });
-});
+  // Spam Tabs
+  document.getElementById('spam-btn').onclick = () => {
+    const user = document.getElementById('spam-user').value;
+    const amount = parseInt(document.getElementById('spam-amount').value);
+    socket.emit('admin action', { type: 'spam', user, amount });
+  };
 
-// Spam tabs
-document.getElementById("spamBtn")?.addEventListener("click", () => {
-  const user = prompt("Username to spam:");
-  const count = prompt("How many tabs?");
-  socket.emit("admin action", { type: "spamTabs", user, count });
-});
+  // Clear Chat
+  document.getElementById('clear-btn').onclick = () => {
+    socket.emit('admin action', { type: 'clear' });
+  };
 
-// Jumpscare
-document.getElementById("jumpscareBtn")?.addEventListener("click", () => {
-  const imageUrl = prompt("Image URL:");
-  const audioUrl = prompt("Audio URL:");
-  socket.emit("admin action", { type: "jumpscare", imageUrl, audioUrl });
-});
+  // Announcement
+  document.getElementById('announce-btn').onclick = () => {
+    const msg = document.getElementById('announcement').value;
+    socket.emit('admin action', { type: 'announce', msg });
+  };
 
-// Strobe screen
-document.getElementById("strobeBtn")?.addEventListener("click", () => {
-  const duration = prompt("Strobe duration in seconds:");
-  socket.emit("admin action", { type: "strobe", duration });
-});
+  // Grant Admin
+  document.getElementById('grant-admin-btn').onclick = () => {
+    const user = document.getElementById('grant-user').value;
+    const time = parseInt(document.getElementById('grant-duration').value);
+    socket.emit('admin action', { type: 'grant', user, time });
+  };
 
-// Receive admin actions
-socket.on("admin action", (action) => {
+  // Jumpscare
+  document.getElementById('jumpscare-btn').onclick = () => {
+    const image = document.getElementById('jumpscare-img').value;
+    const audio = document.getElementById('jumpscare-audio').value;
+    socket.emit('admin action', { type: 'jumpscare', image, audio });
+  };
+}
+
+// Admin events received
+socket.on('admin action', (action) => {
   switch (action.type) {
-    case "announcement":
-      const banner = document.createElement("div");
-      banner.className = "announcement";
-      banner.textContent = action.message;
-      document.body.prepend(banner);
-      setTimeout(() => banner.remove(), 5000);
+    case 'strobe':
+      const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+      let count = 0;
+      const strobe = setInterval(() => {
+        document.body.style.background = colors[count % colors.length];
+        count++;
+      }, 200);
+      setTimeout(() => {
+        clearInterval(strobe);
+        document.body.style.background = '';
+      }, action.duration * 1000);
       break;
 
-    case "clearChat":
-      messages.innerHTML = "";
-      break;
-
-    case "redirect":
-      if (username === action.user) window.location.href = action.url;
-      break;
-
-    case "kick":
-      if (username === action.user) window.location.href = "/login";
-      break;
-
-    case "spamTabs":
+    case 'timeout':
       if (username === action.user) {
-        for (let i = 0; i < parseInt(action.count); i++) {
-          window.open("https://example.com", "_blank");
+        alert('You have been timed out.');
+        document.body.innerHTML = '<h1>Timed Out</h1>';
+      }
+      break;
+
+    case 'redirect':
+      if (username === action.user) {
+        window.location.href = action.url;
+      }
+      break;
+
+    case 'spam':
+      if (username === action.user) {
+        for (let i = 0; i < action.amount; i++) {
+          window.open(window.location.href, '_blank');
         }
       }
       break;
 
-    case "timeout":
+    case 'clear':
+      messageBox.innerHTML = '';
+      break;
+
+    case 'announce':
+      const banner = document.createElement('div');
+      banner.className = 'announcement';
+      banner.innerText = action.msg;
+      document.body.prepend(banner);
+      setTimeout(() => banner.remove(), 5000);
+      break;
+
+    case 'grant':
       if (username === action.user) {
-        alert(`You've been timed out for ${action.time} seconds`);
-        document.body.innerHTML = "<h1>Timed out...</h1>";
-        setTimeout(() => window.location.href = "/login", action.time * 1000);
+        document.getElementById('admin-panel').style.display = 'block';
+        setTimeout(() => {
+          alert('Your temporary admin access has ended.');
+          document.getElementById('admin-panel').style.display = 'none';
+        }, action.time * 1000);
       }
       break;
 
-    case "jumpscare":
-      if (username === action.user) {
-        const img = document.createElement("img");
-        img.src = action.imageUrl;
-        img.style.position = "fixed";
-        img.style.top = "0";
-        img.style.left = "0";
-        img.style.width = "100%";
-        img.style.height = "100%";
-        img.style.zIndex = "9999";
-        img.style.objectFit = "cover";
-        document.body.appendChild(img);
-
-        const audio = new Audio(action.audioUrl);
-        audio.play();
-
-        setTimeout(() => {
-          img.remove();
-          audio.pause();
-          window.location.href = "/chat";
-        }, 3000);
-      }
-      break;
-
-    case "strobe":
-      if (username === action.user) {
-        const colors = ["red", "blue", "green", "purple", "yellow"];
-        let i = 0;
-        const interval = setInterval(() => {
-          document.body.style.backgroundColor = colors[i % colors.length];
-          i++;
-        }, 200);
-        setTimeout(() => {
-          clearInterval(interval);
-          document.body.style.backgroundColor = "";
-        }, parseInt(action.duration) * 1000);
-      }
+    case 'jumpscare':
+      const scare = document.createElement('div');
+      scare.style.position = 'fixed';
+      scare.style.top = 0;
+      scare.style.left = 0;
+      scare.style.width = '100vw';
+      scare.style.height = '100vh';
+      scare.style.background = `url(${action.image}) center center / cover no-repeat`;
+      scare.style.zIndex = 9999;
+      document.body.appendChild(scare);
+      const audio = new Audio(action.audio);
+      audio.play();
+      setTimeout(() => {
+        scare.remove();
+      }, 3000);
       break;
   }
 });
