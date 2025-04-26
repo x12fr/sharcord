@@ -5,89 +5,65 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const path = require('path');
 
-const users = {};
+let users = {};
 
+app.use(express.static(path.join(__dirname, '/')));
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/login.html');
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(__dirname + '/public/login.html');
-});
-
-app.get('/register', (req, res) => {
-    res.sendFile(__dirname + '/public/register.html');
-});
-
-app.get('/chat', (req, res) => {
-    res.sendFile(__dirname + '/public/chat.html');
-});
+app.get('/', (req, res) => res.sendFile(__dirname + '/login.html'));
+app.get('/register.html', (req, res) => res.sendFile(__dirname + '/register.html'));
+app.get('/login.html', (req, res) => res.sendFile(__dirname + '/login.html'));
+app.get('/chat.html', (req, res) => res.sendFile(__dirname + '/chat.html'));
+app.get('/secret.html', (req, res) => res.sendFile(__dirname + '/secret.html'));
 
 app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    if (users[username]) {
-        return res.send('Username already taken.');
-    }
-    users[username] = { password, profilePic: '/default.png', timeoutUntil: 0 };
-    res.redirect('/login');
+  const { username, password } = req.body;
+  if (users[username]) {
+    return res.status(400).send('Username already taken');
+  }
+  users[username] = { password, profilePic: '/default.png' };
+  res.redirect('/login.html');
 });
 
 app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (!users[username] || users[username].password !== password) {
-        return res.send('Invalid username or password.');
+  const { username, password } = req.body;
+  if (!users[username] || users[username].password !== password) {
+    return res.status(400).send('Invalid login');
+  }
+  res.redirect('/chat.html');
+});
+
+io.on('connection', socket => {
+  socket.on('chat message', data => {
+    io.emit('chat message', data);
+  });
+
+  socket.on('check admin', username => {
+    if (username === 'X12') {
+      socket.emit('enable admin');
     }
-    res.redirect(`/chat?username=${username}`);
+  });
+
+  socket.on('admin strobe', duration => {
+    io.emit('strobe', duration);
+  });
+
+  socket.on('admin timeout', data => {
+    io.emit('timeout', data.duration);
+  });
+
+  socket.on('admin redirect', user => {
+    io.emit('redirect');
+  });
+
+  socket.on('admin announcement', text => {
+    io.emit('announcement', text);
+  });
+
+  socket.on('admin jumpscare', data => {
+    io.emit('jumpscare', data);
+  });
 });
 
-io.on('connection', (socket) => {
-    socket.on('join', ({ username, profilePic }) => {
-        socket.username = username;
-        socket.profilePic = profilePic;
-        io.emit('user joined', { username, profilePic });
-    });
-
-    socket.on('chat message', (data) => {
-        io.emit('chat message', { username: socket.username, message: data.message, profilePic: socket.profilePic });
-    });
-
-    socket.on('image upload', (data) => {
-        io.emit('image upload', { username: socket.username, image: data.image, profilePic: socket.profilePic });
-    });
-
-    socket.on('announcement', (data) => {
-        io.emit('announcement', { message: data });
-    });
-
-    socket.on('strobe', (data) => {
-        io.emit('strobe', data);
-    });
-
-    socket.on('play audio', (url) => {
-        io.emit('play audio', url);
-    });
-
-    socket.on('timeout user', ({ username, duration }) => {
-        io.emit('timeout user', { username, duration });
-    });
-
-    socket.on('redirect user', ({ username, url }) => {
-        io.emit('redirect user', { username, url });
-    });
-
-    socket.on('jumpscare', ({ image, audio }) => {
-        io.emit('jumpscare', { image, audio });
-    });
-
-    socket.on('disconnect', () => {
-        io.emit('user left', socket.username);
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+http.listen(3000, () => console.log('Sharcord running on port 3000'));
