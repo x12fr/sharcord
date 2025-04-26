@@ -7,39 +7,33 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="login-container">
-    <h1>Register for Sharcord</h1>
+  <div class="home-container">
+    <img src="https://cdn.discordapp.com/attachments/1135667081765185567/1229141457687863346/shark_sharcord.png" class="logo">
+    <h1>Create Your Sharcord Account</h1>
     <form id="registerForm">
       <input type="text" id="registerUsername" placeholder="Username" required>
       <input type="password" id="registerPassword" placeholder="Password" required>
-      <button type="submit">Register</button>
+      <button type="submit" class="btn">Register</button>
     </form>
     <p>Already have an account? <a href="login.html">Login here</a></p>
   </div>
 
   <script>
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    document.getElementById('registerForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const username = document.getElementById('registerUsername').value.trim();
       const password = document.getElementById('registerPassword').value.trim();
 
-      if (!username || !password) {
-        alert('Please enter both username and password.');
-        return;
-      }
-
-      // Save the new user to localStorage (basic fake auth)
       let users = JSON.parse(localStorage.getItem('users')) || {};
 
       if (users[username]) {
-        alert('Username already exists!');
+        alert('Username already taken!');
         return;
       }
 
-      users[username] = { password: password };
+      users[username] = { password, profilePic: '' };
       localStorage.setItem('users', JSON.stringify(users));
-
-      alert('Account created! You can now log in.');
+      alert('Account created successfully! Now login.');
       window.location.href = 'login.html';
     });
   </script>
