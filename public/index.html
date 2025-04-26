@@ -1,20 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Home</title>
-    <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Home | Sharcord</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_48.png">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="home-container">
-        <img src="shark-logo.png" alt="Sharcord Logo" class="logo">
-        <h1>Welcome to Sharcord!</h1>
-        <p>Chat with friends, just like Discord — but cooler.</p>
-        <div class="buttons">
-            <a href="login.html"><button>Login</button></a>
-            <a href="register.html"><button>Register</button></a>
-        </div>
+  <div class="home-container">
+    <img src="https://cdn.discordapp.com/attachments/1135667081765185567/1229141457687863346/shark_sharcord.png?ex=663004eb&is=661d8feb&hm=2fc1354534f17b4df9cc71fd009a8ab2efeff41e62b7cc3fbd1c3bb10bb8a5c5&" alt="Sharcord Logo" class="logo">
+    <h1>Welcome to Sharcord</h1>
+    <p>The ultimate place to chat, hangout, and chill with friends!</p>
+    <div class="buttons">
+      <a href="login.html" class="btn">Login</a>
+      <a href="register.html" class="btn">Register</a>
     </div>
+  </div>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #000000, #4b0000);
+      color: white;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .home-container {
+      text-align: center;
+    }
+
+    .logo {
+      width: 150px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .btn {
+      background: #ff4040;
+      color: white;
+      padding: 15px 30px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 18px;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: #ff7373;
+    }
+  </style>
 </body>
 </html>
