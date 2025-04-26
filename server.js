@@ -1,115 +1,86 @@
 const express = require('express');
 const app = express();
-const http = require('http').createServer(app);
+const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const multer = require('multer');
 const path = require('path');
+const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
 
-// Serve public folder
-app.use(express.static(path.join(__dirname, 'public')));
+const users = {}; // username -> socket id
 
-// Routes
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+app.use(express.static('public'));
+app.use(express.json());
+
+app.post('/api/register', (req, res) => {
+  const { username, password } = req.body;
+  if (fs.existsSync(`./users/${username}.json`)) {
+    return res.json({ success: false, message: "Username taken!" });
+  }
+  fs.writeFileSync(`./users/${username}.json`, JSON.stringify({ username, password }));
+  res.json({ success: true });
 });
 
-// Server and channel structure
-let servers = [
-  { name: 'Main Server', channels: [{ name: 'general' }, { name: 'memes' }] }
-];
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!fs.existsSync(`./users/${username}.json`)) {
+    return res.json({ success: false, message: "No such user!" });
+  }
+  const user = JSON.parse(fs.readFileSync(`./users/${username}.json`));
+  if (user.password !== password) {
+    return res.json({ success: false, message: "Wrong password!" });
+  }
+  res.json({ success: true, token: username });
+});
 
-let users = {}; // { socketId: { username, profilePic } }
-let timeouts = {}; // { username: timeoutEndTimestamp }
+app.get('/api/me', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token || !fs.existsSync(`./users/${token}.json`)) {
+    return res.json({ success: false });
+  }
+  res.json({ success: true, username: token });
+});
 
-// Socket.io
-io.on('connection', socket => {
-  console.log('User connected:', socket.id);
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  const filePath = `/uploads/${req.file.filename}${path.extname(req.file.originalname)}`;
+  fs.renameSync(req.file.path, `./public${filePath}`);
+  res.json({ success: true, url: filePath });
+});
 
-  socket.on('user_connected', ({ username, profilePic }) => {
-    users[socket.id] = { username, profilePic };
-    io.to(socket.id).emit('server_list', servers);
+io.on('connection', (socket) => {
+  socket.on('join', ({ username }) => {
+    users[username] = socket.id;
   });
 
-  socket.on('create_server', serverName => {
-    if (serverName.length > 0) {
-      servers.push({ name: serverName, channels: [{ name: 'general' }] });
-      io.emit('server_list', servers);
+  socket.on('chat message', (data) => {
+    io.emit('chat message', data);
+  });
+
+  socket.on('admin announcement', (msg) => {
+    io.emit('announcement', msg);
+  });
+
+  socket.on('admin strobe', () => {
+    io.emit('strobe');
+  });
+
+  socket.on('admin kick', (username) => {
+    if (users[username]) {
+      io.to(users[username]).emit('kick');
     }
   });
 
-  socket.on('create_channel', ({ server, channel }) => {
-    const srv = servers.find(s => s.name === server);
-    if (srv && channel.length > 0) {
-      srv.channels.push({ name: channel });
-      io.emit('channel_list', srv.channels);
+  socket.on('admin timeout', ({ user, duration }) => {
+    if (users[user]) {
+      io.to(users[user]).emit('timeout', duration);
     }
   });
 
-  socket.on('get_channels', serverName => {
-    const srv = servers.find(s => s.name === serverName);
-    if (srv) {
-      io.to(socket.id).emit('channel_list', srv.channels);
-    }
-  });
-
-  socket.on('join_channel', ({ server, channel }) => {
-    socket.join(server + '-' + channel);
-  });
-
-  socket.on('chat_message', ({ server, channel, username, profilePic, message }) => {
-    const now = Date.now();
-    if (timeouts[username] && timeouts[username] > now) {
-      return; // User is timed out
-    }
-    io.to(server + '-' + channel).emit('chat_message', { username, profilePic, message });
-  });
-
-  // ADMIN EVENTS
-  socket.on('admin_strobe', () => {
-    if (users[socket.id]?.username === 'X12') {
-      io.emit('admin_strobe');
-    }
-  });
-
-  socket.on('admin_announcement', msg => {
-    if (users[socket.id]?.username === 'X12') {
-      io.emit('admin_announcement', msg);
-    }
-  });
-
-  socket.on('admin_kick', userToKick => {
-    if (users[socket.id]?.username === 'X12') {
-      const socketId = Object.keys(users).find(id => users[id].username === userToKick);
-      if (socketId) {
-        io.to(socketId).emit('kick');
-        io.sockets.sockets.get(socketId)?.disconnect();
-      }
-    }
-  });
-
-  socket.on('admin_timeout', ({ user, time }) => {
-    if (users[socket.id]?.username === 'X12') {
-      const targetSocketId = Object.keys(users).find(id => users[id].username === user);
-      if (targetSocketId) {
-        timeouts[user] = Date.now() + time * 1000;
-        io.to(targetSocketId).emit('timeout', time);
-      }
-    }
-  });
-
-  socket.on('admin_media', ({ imageUrl, audioUrl }) => {
-    if (users[socket.id]?.username === 'X12') {
-      io.emit('admin_media', { imageUrl, audioUrl });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    delete users[socket.id];
+  socket.on('admin broadcast', ({ fileUrl, type }) => {
+    io.emit('broadcastMedia', fileUrl, type);
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Sharcord server running on port ${PORT}`);
+http.listen(3000, () => {
+  console.log('Sharcord server running on http://localhost:3000');
 });
