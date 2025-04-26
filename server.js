@@ -1,129 +1,84 @@
 const express = require('express');
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const server = require('http').createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server);
 const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static files
-app.use(express.static('public'));
+// MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static('public'));
 
-// Load users from users.json
-let users = {};
-const usersFile = path.join(__dirname, 'users.json');
-
-if (fs.existsSync(usersFile)) {
-  users = JSON.parse(fs.readFileSync(usersFile));
-}
-
-// Save users to users.json
-function saveUsers() {
-  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-}
-
-// Serve pages
+// HOME
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
-app.get('/login', (req, res) => {
-  res.sendFile(__dirname + '/public/login.html');
-});
-app.get('/register', (req, res) => {
-  res.sendFile(__dirname + '/public/register.html');
-});
-app.get('/chat', (req, res) => {
-  res.sendFile(__dirname + '/public/chat.html');
-});
-app.get('/secret', (req, res) => {
-  res.sendFile(__dirname + '/public/secret.html');
-});
 
-// Handle registration
+// REGISTER
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
-  if (users[username]) {
-    return res.send('Username taken!');
+
+  let users = {};
+  if (fs.existsSync('./users.json')) {
+    users = JSON.parse(fs.readFileSync('./users.json', 'utf8'));
   }
-  users[username] = {
-    password,
-    profilePicture: '/defaultpfp.png'
-  };
-  saveUsers();
-  res.redirect('/login');
+
+  if (users[username]) {
+    res.send('Username taken!');
+  } else {
+    users[username] = { password: password, pfp: '' };
+    fs.writeFileSync('./users.json', JSON.stringify(users, null, 2));
+    res.redirect('/login.html');
+  }
 });
 
-// Handle login
+// LOGIN (Fixed!)
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
+
+  let users = {};
+  if (fs.existsSync('./users.json')) {
+    users = JSON.parse(fs.readFileSync('./users.json', 'utf8'));
+  }
+
   if (users[username] && users[username].password === password) {
-    res.redirect(`/chat?username=${username}`);
+    res.redirect(`/chat.html?username=${encodeURIComponent(username)}`);
   } else {
     res.send('Invalid login!');
   }
 });
 
-// Real-time chat
-let announcements = '';
-let timeouts = {};
+// SECRET PAGE for redirection
+app.get('/secret.html', (req, res) => {
+  res.sendFile(__dirname + '/public/secret.html');
+});
 
-io.on('connection', socket => {
-  let currentUser = '';
+// SOCKET.IO CONNECTION
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
-  socket.on('join', username => {
-    currentUser = username;
-    socket.username = username;
-    socket.emit('loadProfilePicture', users[username]?.profilePicture || '/defaultpfp.png');
+  socket.on('chat message', (msg) => {
+    io.emit('chat message', msg);
   });
 
-  socket.on('chat message', msg => {
-    io.emit('chat message', { username: socket.username, msg });
+  socket.on('announcement', (msg) => {
+    io.emit('announcement', msg);
   });
 
-  socket.on('sendImage', imgData => {
-    io.emit('sendImage', { username: socket.username, imgData });
+  socket.on('redirectUser', (data) => {
+    io.to(data.targetId).emit('redirect', '/secret.html');
   });
 
-  socket.on('setProfilePicture', imgUrl => {
-    if (users[socket.username]) {
-      users[socket.username].profilePicture = imgUrl;
-      saveUsers();
-      io.emit('updateProfilePicture', { username: socket.username, imgUrl });
-    }
-  });
-
-  socket.on('admin_announcement', announcement => {
-    announcements = announcement;
-    io.emit('announcement', announcement);
-    setTimeout(() => {
-      io.emit('announcement', '');
-    }, 10000);
-  });
-
-  socket.on('admin_strobe', duration => {
-    io.emit('strobe', duration);
-  });
-
-  socket.on('admin_playAudio', url => {
-    io.emit('playAudio', url);
-  });
-
-  socket.on('admin_timeout', (username, duration) => {
-    timeouts[username] = Date.now() + duration * 1000;
-    io.emit('timeout', { username, duration });
-  });
-
-  socket.on('admin_redirect', username => {
-    io.to([...io.sockets.sockets.values()].find(s => s.username === username)?.id || '').emit('redirect', '/secret.html');
-    setTimeout(() => {
-      io.to([...io.sockets.sockets.values()].find(s => s.username === username)?.id || '').emit('redirect', '/chat.html');
-    }, 5000);
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
   });
 });
 
-// Start server
-http.listen(PORT, () => {
+// START SERVER
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
