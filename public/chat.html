@@ -1,32 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Sharcord Chat</title>
-    <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
+  <title>Sharcord</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="announcement-bar"></div>
-    <div id="chat-box"></div>
+  <div id="chat-container">
+    <div id="messages" style="height: 400px; overflow-y: scroll; border: 2px solid #555; padding: 10px; background: #111;"></div>
 
-    <form id="message-form">
-        <input id="message-input" autocomplete="off" placeholder="Type a message..." />
-        <button type="submit">Send</button>
-    </form>
+    <input id="messageInput" placeholder="Type a message..." autocomplete="off">
+    <button onclick="sendMessage()">Send</button>
 
-    <div id="admin-panel" style="display:none;">
-        <h2>Admin Panel</h2>
-        <button onclick="strobe()">Strobe All Screens</button>
+    <div id="announcement" style="display:none; background:#333; color:white; padding:10px; margin-top:10px; text-align:center; border-radius:8px;"></div>
+
+    <div id="adminPanel" style="display: none; margin-top: 20px;">
+      <h3 style="color:white;">Admin Panel</h3>
+      <div style="margin-bottom: 10px;">
+        <input id="strobeDuration" placeholder="Strobe duration (seconds)">
+        <button onclick="strobe()">Strobe Screens</button>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <input id="timeoutUser" placeholder="User to Timeout">
+        <input id="timeoutDuration" placeholder="Timeout duration (seconds)">
+        <button onclick="timeout()">Timeout User</button>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <input id="redirectUser" placeholder="User to Redirect">
+        <button onclick="redirect()">Redirect User</button>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <input id="announcementText" placeholder="Announcement Text">
         <button onclick="sendAnnouncement()">Send Announcement</button>
-        <button onclick="timeoutUser()">Timeout User</button>
-        <button onclick="redirectUser()">Redirect User</button>
-        <br><br>
-        <input type="text" id="jumpscare-image" placeholder="Image URL">
-        <input type="text" id="jumpscare-audio" placeholder="Audio URL">
-        <button onclick="jumpscare()">Jumpscare</button>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <input id="jumpscareImage" placeholder="Jumpscare Image URL">
+        <input id="jumpscareAudio" placeholder="Jumpscare Audio URL">
+        <button onclick="jumpscare()">Start Jumpscare</button>
+      </div>
     </div>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/client.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
