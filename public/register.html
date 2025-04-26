@@ -1,41 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Register | Sharcord</title>
-  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_48.png">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="home-container">
-    <img src="https://cdn.discordapp.com/attachments/1135667081765185567/1229141457687863346/shark_sharcord.png" class="logo">
-    <h1>Create Your Sharcord Account</h1>
-    <form id="registerForm">
-      <input type="text" id="registerUsername" placeholder="Username" required>
-      <input type="password" id="registerPassword" placeholder="Password" required>
-      <button type="submit" class="btn">Register</button>
-    </form>
-    <p>Already have an account? <a href="login.html">Login here</a></p>
-  </div>
-
-  <script>
-    document.getElementById('registerForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const username = document.getElementById('registerUsername').value.trim();
-      const password = document.getElementById('registerPassword').value.trim();
-
-      let users = JSON.parse(localStorage.getItem('users')) || {};
-
-      if (users[username]) {
-        alert('Username already taken!');
-        return;
-      }
-
-      users[username] = { password, profilePic: '' };
-      localStorage.setItem('users', JSON.stringify(users));
-      alert('Account created successfully! Now login.');
-      window.location.href = 'login.html';
-    });
-  </script>
+<body class="auth-body">
+    <div class="auth-container">
+        <h1>Register for Sharcord</h1>
+        <form id="registerForm">
+            <input type="text" id="registerUsername" placeholder="Username" required>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="login.html">Login</a></p>
+    </div>
+    <script src="/client.js"></script>
 </body>
 </html>
