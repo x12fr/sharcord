@@ -2,61 +2,135 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Home - Sharcord</title>
-  <link rel="icon" href="/classroom.png">
-  <link rel="stylesheet" href="/style.css">
+  <title>Sharcord - Chat</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: white;
+    }
+    #chat-container {
+      display: flex;
+      height: 100vh;
+    }
+    #admin-panel {
+      width: 250px;
+      background: #111;
+      border-right: 2px solid red;
+      padding: 10px;
+      overflow-y: auto;
+      transition: 0.3s;
+    }
+    #admin-toggle {
+      display: none;
+      background: red;
+      color: white;
+      padding: 8px;
+      border: none;
+      cursor: pointer;
+      margin: 10px;
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      z-index: 1000;
+    }
+    #chat-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      border: 2px solid red;
+      margin: 10px;
+      background: #111;
+    }
+    #input-container {
+      display: flex;
+      padding: 10px;
+    }
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      background: #222;
+      color: white;
+      border: 2px solid red;
+      outline: none;
+    }
+    #send-button {
+      background: red;
+      color: white;
+      border: none;
+      padding: 10px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    #p-image {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    #p-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  </style>
 </head>
 <body>
 
-  <div id="chat-container">
-    <div id="user-bar">
-      <span id="welcome-user"></span>
-      <button id="logout-button">Logout</button>
-    </div>
-
-    <div id="messages"></div>
-
-    <div id="input-area">
-      <input type="text" id="message-input" placeholder="Type your message...">
-      <button id="send-button">Send</button>
-      <input type="file" id="file-input" accept="image/*" style="display:none;">
-      <button id="file-button">📷</button>
-    </div>
-
-    <div id="private-chat">
-      <input type="text" id="dm-username" placeholder="Username to DM...">
-      <input type="text" id="dm-message" placeholder="Your private message...">
-      <button id="send-dm-button">Send DM</button>
-    </div>
-
-    <div id="profile-picture-change">
-      <input type="file" id="pfp-input" accept="image/*">
-      <button id="change-pfp-button">Change PFP</button>
-    </div>
-
-    <div id="admin-panel" style="display:none;">
-      <h2>Admin Panel</h2>
-
-      <div id="admin-controls">
-        <input type="text" id="kick-username" placeholder="Username to Kick">
-        <button id="kick-button">Kick User</button>
-
-        <input type="text" id="jumpscare-image" placeholder="Jumpscare Image URL">
-        <input type="text" id="jumpscare-audio" placeholder="Jumpscare Audio URL">
-        <button id="jumpscare-button">Jumpscare Everyone</button>
-
-        <input type="text" id="change-pfp-username" placeholder="Username to Prank">
-        <input type="text" id="new-pfp-url" placeholder="New PFP URL">
-        <button id="prank-pfp-button">Change User's PFP</button>
-
-        <button id="collapse-admin">Collapse Panel</button>
-      </div>
-
-    </div>
+<div id="chat-container">
+  <div id="admin-panel">
+    <button onclick="collapseAdmin()">Collapse</button>
+    <h3>Admin Panel</h3>
+    <input type="text" id="image-url" placeholder="Image URL"><br><br>
+    <input type="text" id="audio-url" placeholder="Audio URL"><br><br>
+    <button onclick="jumpscare()">Jumpscare</button><br><br>
+    <input type="text" id="kick-username" placeholder="Kick Username">
+    <button onclick="kickUser()">Kick User</button><br><br>
+    <input type="text" id="target-username" placeholder="Change PFP for Username">
+    <input type="text" id="new-pfp-url" placeholder="New PFP URL">
+    <button onclick="changeOtherPfp()">Change Their PFP</button>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+  <button id="admin-toggle" onclick="expandAdmin()">⚡ Admin Panel</button>
+
+  <div id="chat-box">
+    <div id="messages"></div>
+    <div id="input-container">
+      <input type="text" id="message-input" placeholder="Type a message...">
+      <button id="send-button">Send</button>
+    </div>
+  </div>
+</div>
+
+<div id="p-image">
+  <img src="https://files.catbox.moe/5pz8os.png" alt="P Image">
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
+
+<script>
+function collapseAdmin() {
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('admin-toggle').style.display = 'block';
+}
+function expandAdmin() {
+  document.getElementById('admin-panel').style.display = 'block';
+  document.getElementById('admin-toggle').style.display = 'none';
+}
+</script>
 
 </body>
 </html>
