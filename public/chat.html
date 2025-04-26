@@ -2,42 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sharcord | Chat</title>
+  <title>Sharcord Chat</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <script defer src="client.js"></script>
 </head>
 <body>
-  <div class="main-container">
-    
-    <!-- Sidebar: Servers -->
-    <div class="servers-bar">
-      <button id="create-server-btn">+</button>
-      <ul id="server-list">
-        <!-- Servers will appear here -->
-      </ul>
+
+<div id="app">
+  
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>Sharcord</h2>
+
+    <!-- Server List -->
+    <div id="serverList">
+      <h3>Servers</h3>
+      <div id="servers"></div>
+      <input id="serverNameInput" placeholder="New Server Name">
+      <button onclick="createServer()">Create Server</button>
     </div>
 
-    <!-- Server Content: Channels -->
-    <div class="channels-bar">
-      <h2 id="server-name">Sharcord</h2>
-      <ul id="channel-list">
-        <!-- Channels will appear here -->
-      </ul>
-      <button id="create-channel-btn">+ Channel</button>
+    <!-- Channel List -->
+    <div id="channelList">
+      <h3>Channels</h3>
+      <div id="channels"></div>
+      <input id="channelNameInput" placeholder="New Channel Name">
+      <button onclick="createChannel()">Create Channel</button>
     </div>
-
-    <!-- Channel Content: Messages -->
-    <div class="chat-area">
-      <div id="messages"></div>
-
-      <form id="chat-form">
-        <input id="chat-input" autocomplete="off" placeholder="Message #general..." />
-        <button type="submit">Send</button>
-      </form>
-    </div>
-
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <!-- Main Chat -->
+  <div id="chatArea">
+    <div id="messages"></div>
+    <div id="messageInputArea">
+      <input id="messageInput" type="text" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+</div>
+
 </body>
 </html>
