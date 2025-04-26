@@ -1,46 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sharcord</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.png"> <!-- Google Classroom Icon -->
+    <meta charset="UTF-8">
+    <title>Sharcord</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <div id="message-form">
-      <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
-      <button id="sendBtn">Send</button>
+    <div id="chat-container">
+        <div id="messages" class="messages"></div>
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit">Send</button>
+        </form>
+
+        <form id="profile-pic-form">
+            <input type="text" id="new-pfp" placeholder="New profile picture URL">
+            <button type="submit">Change PFP</button>
+        </form>
+
+        <div id="admin-panel" style="display:none;">
+            <h2>Admin Panel</h2>
+            <!-- Admin controls go here (strobe, timeout, redirect, announcement, jumpscare, etc.) -->
+        </div>
     </div>
-  </div>
 
-  <div id="admin-panel" style="display: none;">
-    <h2>Admin Panel</h2>
-    <input id="strobeDuration" placeholder="Strobe Duration (seconds)">
-    <button onclick="startStrobe()">Start Strobe</button>
-
-    <input id="timeoutUser" placeholder="Username to Timeout">
-    <input id="timeoutDuration" placeholder="Timeout Duration (seconds)">
-    <button onclick="timeoutUser()">Timeout User</button>
-
-    <input id="redirectUser" placeholder="Username to Redirect">
-    <button onclick="redirectUser()">Redirect User</button>
-
-    <input id="announcementText" placeholder="Announcement Text">
-    <button onclick="sendAnnouncement()">Send Announcement</button>
-
-    <input id="jumpscareImage" placeholder="Jumpscare Image URL">
-    <input id="jumpscareAudio" placeholder="Jumpscare Audio URL">
-    <button onclick="triggerJumpscare()">Trigger Jumpscare</button>
-  </div>
-
-  <div id="profile-picture">
-    <input type="text" id="profilePicUrl" placeholder="New Profile Picture URL">
-    <button onclick="changeProfilePicture()">Change Profile Picture</button>
-  </div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
 </body>
 </html>
