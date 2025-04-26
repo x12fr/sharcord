@@ -1,41 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="/socket.io/socket.io.js"></script>
-  <script defer src="client.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="chatContainer">
-    <div id="topBar">
-      <h1>Sharcord</h1>
-      <span id="usernameDisplay"></span>
-      <button id="logoutBtn">Log Out</button>
+  <div id="chat-container">
+    <div id="chat-box" class="chat-box"></div>
+
+    <div id="message-controls">
+      <input type="text" id="message-input" placeholder="Type your message..."/>
+      <button id="send-button">Send</button>
+      <button id="logout-button">Logout</button>
     </div>
 
-    <div id="chatBox" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #111; color: #fff;">
-      <!-- Messages will go here -->
-    </div>
-
-    <form id="chatForm" style="margin-top: 10px;">
-      <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" style="width: 80%;">
-      <button type="submit">Send</button>
-    </form>
-
-    <!-- Admin Controls (only visible to X12) -->
-    <div id="adminControls" style="display: none; margin-top: 20px;">
-      <hr>
-      <h3>Admin Panel</h3>
-      <button id="strobeBtn">Strobe All Screens</button>
-      <button id="timeoutBtn">Timeout User</button>
-      <button id="kickBtn">Kick User</button>
-      <button id="redirectBtn">Redirect User</button>
-      <button id="spamBtn">Spam Tabs</button>
-      <button id="announceBtn">Send Announcement</button>
-      <button id="jumpscareBtn">Send Jumpscare</button>
+    <!-- Admin Panel Section -->
+    <div id="admin-panel" style="display: none; margin-top: 30px;">
+      <h2>Admin Panel</h2>
+      <div>
+        <button id="strobe-btn">Strobe</button>
+        <input type="text" id="timeout-user" placeholder="Username to timeout"/>
+        <input type="number" id="timeout-duration" placeholder="Seconds"/>
+        <button id="timeout-btn">Timeout User</button>
+      </div>
+      <div>
+        <input type="text" id="kick-user" placeholder="Username to kick"/>
+        <button id="kick-btn">Kick User</button>
+      </div>
+      <div>
+        <input type="text" id="redirect-user" placeholder="Username to redirect"/>
+        <input type="text" id="redirect-url" placeholder="URL"/>
+        <button id="redirect-btn">Redirect User</button>
+      </div>
+      <div>
+        <input type="text" id="spam-user" placeholder="Username to spam"/>
+        <input type="number" id="spam-count" placeholder="Tab count"/>
+        <button id="spam-btn">Spam Tabs</button>
+      </div>
+      <div>
+        <button id="clear-chat-btn">Clear Chat</button>
+      </div>
+      <div>
+        <input type="text" id="announcement-text" placeholder="Announcement"/>
+        <button id="announce-btn">Send Announcement</button>
+      </div>
+      <div>
+        <input type="text" id="grant-user" placeholder="Username to grant admin"/>
+        <input type="number" id="grant-time" placeholder="Time (sec)"/>
+        <button id="grant-btn">Grant Admin</button>
+      </div>
+      <div>
+        <input type="text" id="jumpscare-img" placeholder="Image URL"/>
+        <input type="text" id="jumpscare-audio" placeholder="Audio URL"/>
+        <button id="jumpscare-btn">Jumpscare</button>
+      </div>
     </div>
   </div>
+
+  <!-- Hidden Jumpscare Elements -->
+  <div id="jumpscare-overlay" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:black; z-index: 9999; justify-content:center; align-items:center;">
+    <img id="jumpscare-img-display" style="max-width: 100%; max-height: 100%;" />
+  </div>
+  <audio id="jumpscare-audio-player" autoplay></audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
