@@ -1,125 +1,113 @@
 const socket = io();
-const urlParams = new URLSearchParams(window.location.search);
-const username = urlParams.get('username');
+const username = localStorage.getItem('username');
+const profilePic = localStorage.getItem('profilePic') || 'default.png';
 
-socket.emit('join', { username, profilePic: '/default.png' });
-
-const chatBox = document.getElementById('chat-box');
-const messageForm = document.getElementById('message-form');
-const messageInput = document.getElementById('message-input');
-
-if (username === 'X12') {
-    document.getElementById('admin-panel').style.display = 'block';
+if (!username) {
+  window.location.href = '/login.html';
 }
 
-socket.on('chat message', (data) => {
-    const messageElement = document.createElement('div');
-    messageElement.innerHTML = `<b><img src="${data.profilePic}" width="20" height="20"> ${data.username}:</b> ${data.message}`;
-    chatBox.appendChild(messageElement);
-    chatBox.scrollTop = chatBox.scrollHeight;
+document.getElementById('messageInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
 });
 
-socket.on('image upload', (data) => {
-    const messageElement = document.createElement('div');
-    messageElement.innerHTML = `<b><img src="${data.profilePic}" width="20" height="20"> ${data.username}:</b><br><img src="${data.image}" width="200">`;
-    chatBox.appendChild(messageElement);
-    chatBox.scrollTop = chatBox.scrollHeight;
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  if (input.value.trim() !== '') {
+    socket.emit('chat message', { username, text: input.value, profilePic });
+    input.value = '';
+  }
+}
+
+socket.on('chat message', data => {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.innerHTML = `<img src="${data.profilePic}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;"> <b style="color:#0ff;">${data.username}</b>: ${data.text}`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
 });
 
-socket.on('announcement', (data) => {
-    const announcementBar = document.getElementById('announcement-bar');
-    announcementBar.innerText = data.message;
-    announcementBar.style.backgroundColor = 'yellow';
-});
+socket.emit('check admin', username);
 
-socket.on('strobe', () => {
-    let colors = ['red', 'blue', 'green', 'purple', 'orange'];
-    let count = 0;
-    const strobeInterval = setInterval(() => {
-        document.body.style.backgroundColor = colors[count % colors.length];
-        count++;
-        if (count > 10) clearInterval(strobeInterval);
-    }, 300);
-});
-
-socket.on('timeout user', ({ username: target, duration }) => {
-    if (username === target) {
-        messageInput.disabled = true;
-        setTimeout(() => {
-            messageInput.disabled = false;
-        }, duration * 1000);
-    }
-});
-
-socket.on('redirect user', ({ username: target, url }) => {
-    if (username === target) {
-        window.location.href = url;
-    }
-});
-
-socket.on('play audio', (url) => {
-    const audio = new Audio(url);
-    audio.play();
-});
-
-socket.on('jumpscare', ({ image, audio }) => {
-    const img = document.createElement('img');
-    img.src = image;
-    img.style.position = 'fixed';
-    img.style.top = '0';
-    img.style.left = '0';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.zIndex = '9999';
-    document.body.appendChild(img);
-
-    const sound = new Audio(audio);
-    sound.play();
-
-    setTimeout(() => {
-        img.remove();
-    }, 5000);
-});
-
-messageForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (messageInput.value.trim() !== '') {
-        socket.emit('chat message', { message: messageInput.value });
-        messageInput.value = '';
-    }
+socket.on('enable admin', () => {
+  document.getElementById('adminPanel').style.display = 'block';
 });
 
 function strobe() {
-    socket.emit('strobe');
+  const duration = parseInt(document.getElementById('strobeDuration').value) || 3;
+  socket.emit('admin strobe', duration);
+}
+
+function timeout() {
+  const user = document.getElementById('timeoutUser').value;
+  const duration = parseInt(document.getElementById('timeoutDuration').value) || 5;
+  socket.emit('admin timeout', { user, duration });
+}
+
+function redirect() {
+  const user = document.getElementById('redirectUser').value;
+  socket.emit('admin redirect', user);
 }
 
 function sendAnnouncement() {
-    const text = prompt('Enter announcement text:');
-    if (text) {
-        socket.emit('announcement', text);
-    }
-}
-
-function timeoutUser() {
-    const target = prompt('Enter username to timeout:');
-    const seconds = prompt('Enter timeout duration (seconds):');
-    if (target && seconds) {
-        socket.emit('timeout user', { username: target, duration: parseInt(seconds) });
-    }
-}
-
-function redirectUser() {
-    const target = prompt('Enter username to redirect:');
-    const url = prompt('Enter URL to redirect to:');
-    if (target && url) {
-        socket.emit('redirect user', { username: target, url });
-    }
+  const text = document.getElementById('announcementText').value;
+  socket.emit('admin announcement', text);
 }
 
 function jumpscare() {
-    const image = document.getElementById('jumpscare-image').value;
-    const audio = document.getElementById('jumpscare-audio').value;
-    if (image && audio) {
-        socket.emit('jumpscare', { image, audio });
-    }
+  const image = document.getElementById('jumpscareImage').value;
+  const audio = document.getElementById('jumpscareAudio').value;
+  socket.emit('admin jumpscare', { image, audio });
 }
+
+socket.on('strobe', duration => {
+  let colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff'];
+  let i = 0;
+  const interval = setInterval(() => {
+    document.body.style.background = colors[i % colors.length];
+    i++;
+  }, 100);
+  setTimeout(() => {
+    clearInterval(interval);
+    document.body.style.background = '#000'; // Reset to black
+  }, duration * 1000);
+});
+
+socket.on('timeout', seconds => {
+  document.body.innerHTML = `<h1 style="color:red;">You are timed out for ${seconds} seconds!</h1>`;
+  setTimeout(() => {
+    location.reload();
+  }, seconds * 1000);
+});
+
+socket.on('redirect', () => {
+  window.location.href = '/secret.html';
+});
+
+socket.on('announcement', text => {
+  const announcement = document.getElementById('announcement');
+  announcement.style.display = 'block';
+  announcement.innerText = text;
+  setTimeout(() => {
+    announcement.style.display = 'none';
+  }, 10000);
+});
+
+socket.on('jumpscare', data => {
+  const img = document.createElement('img');
+  img.src = data.image;
+  img.style.position = 'fixed';
+  img.style.top = 0;
+  img.style.left = 0;
+  img.style.width = '100vw';
+  img.style.height = '100vh';
+  img.style.objectFit = 'cover';
+  img.style.zIndex = 9999;
+  document.body.appendChild(img);
+
+  const audio = new Audio(data.audio);
+  audio.play();
+
+  setTimeout(() => {
+    img.remove();
+  }, 5000); // Image disappears after 5 seconds but audio keeps playing
+});
