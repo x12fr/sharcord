@@ -2,240 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Google</title>
-  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_48.png">
+  <title>Home</title>
+  <link rel="icon" href="https://files.catbox.moe/5pz8os.png">
   <link rel="stylesheet" href="/style.css">
-  <style>
-    body {
-      background-color: #1e1e1e;
-      color: white;
-      font-family: Arial, sans-serif;
-    }
-    #chat-container {
-      max-height: 70vh;
-      overflow-y: auto;
-      margin-bottom: 20px;
-      background: #2c2c2c;
-      padding: 10px;
-      border-radius: 8px;
-    }
-    #messages {
-      list-style: none;
-      padding: 0;
-    }
-    #messages li {
-      margin-bottom: 10px;
-      padding: 5px;
-      background: #3a3a3a;
-      border-radius: 5px;
-    }
-    #announcement {
-      background: #0a84ff;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      border-radius: 8px;
-      display: none;
-      margin-bottom: 10px;
-      font-weight: bold;
-      font-size: 18px;
-    }
-    #admin-panel {
-      background: #2c2c2c;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 8px;
-    }
-    input, button {
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 4px;
-      border: none;
-    }
-    button {
-      background: #0a84ff;
-      color: white;
-      cursor: pointer;
-    }
-  </style>
 </head>
 <body>
-  <div id="announcement"></div>
 
-  <div id="chat-container">
-    <ul id="messages"></ul>
-  </div>
+<div id="chat-container">
+  <div id="messages"></div>
+  <input id="message-input" placeholder="Type a message..." autocomplete="off">
+  <button id="send-btn">Send</button>
+</div>
 
-  <input id="m" autocomplete="off" placeholder="Type your message..." />
-  <button onclick="sendMessage()">Send</button>
+<div id="admin-panel" style="display:none;">
+  <h3>Admin Panel</h3>
+  
+  <input id="announce-text" placeholder="Announcement text">
+  <button id="announce-btn">Send Announcement</button><br><br>
 
-  <br><br>
+  <input id="strobe-duration" placeholder="Strobe Duration (ms)">
+  <button id="strobe-btn">Strobe</button><br><br>
 
-  <input type="text" id="profile-pic-url" placeholder="Profile Picture URL">
-  <button onclick="setProfilePic()">Set Profile Picture</button>
+  <input id="timeout-user" placeholder="User to timeout">
+  <input id="timeout-duration" placeholder="Timeout (s)">
+  <button id="timeout-btn">Timeout User</button><br><br>
 
-  <div id="admin-panel">
-    <h3>Admin Panel</h3>
-    <input type="number" id="strobe-duration" placeholder="Strobe Duration (ms)">
-    <button onclick="strobe()">Strobe All</button><br>
+  <input id="redirect-user" placeholder="User to redirect">
+  <input id="redirect-link" placeholder="Link to redirect">
+  <button id="redirect-btn">Redirect User</button><br><br>
 
-    <input type="text" id="timeout-user" placeholder="Username to timeout">
-    <input type="number" id="timeout-duration" placeholder="Timeout Duration (ms)">
-    <button onclick="timeout()">Timeout User</button><br>
+  <input id="jumpscare-img" placeholder="Jumpscare Image Link">
+  <input id="jumpscare-audio" placeholder="Jumpscare Audio Link">
+  <button id="jumpscare-btn">Jumpscare</button>
+</div>
 
-    <input type="text" id="redirect-user" placeholder="Username to redirect">
-    <input type="text" id="redirect-link" placeholder="Redirect Link">
-    <button onclick="redirect()">Redirect User</button><br>
-
-    <input type="text" id="announcement-text" placeholder="Announcement Text">
-    <button onclick="announce()">Send Announcement</button><br>
-
-    <input type="text" id="jumpscare-image" placeholder="Jumpscare Image URL">
-    <input type="text" id="jumpscare-audio" placeholder="Jumpscare Audio URL">
-    <button onclick="jumpscare()">Trigger Jumpscare</button>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const messages = document.getElementById('messages');
-    const chatContainer = document.getElementById('chat-container');
-    const mInput = document.getElementById('m');
-    const profilePicInput = document.getElementById('profile-pic-url');
-    const announcement = document.getElementById('announcement');
-
-    let myProfilePic = '';
-
-    let pPressed = false;
-    const toggleImageUrl = 'YOUR_IMAGE_LINK_HERE'; // <<< put your toggle image here
-    let overlayImage = null;
-
-    function sendMessage() {
-      if (mInput.value.trim() !== '') {
-        socket.emit('chat message', { text: mInput.value, pic: myProfilePic });
-        mInput.value = '';
-      }
-    }
-
-    function setProfilePic() {
-      myProfilePic = profilePicInput.value;
-      alert('Profile picture set!');
-    }
-
-    function strobe() {
-      const duration = document.getElementById('strobe-duration').value || 2000;
-      socket.emit('strobe', duration);
-    }
-
-    function timeout() {
-      const user = document.getElementById('timeout-user').value;
-      const duration = document.getElementById('timeout-duration').value || 5000;
-      socket.emit('timeout', { user, duration });
-    }
-
-    function redirect() {
-      const user = document.getElementById('redirect-user').value;
-      const link = document.getElementById('redirect-link').value;
-      socket.emit('redirect', { user, link });
-    }
-
-    function announce() {
-      const text = document.getElementById('announcement-text').value;
-      socket.emit('announce', text);
-    }
-
-    function jumpscare() {
-      const img = document.getElementById('jumpscare-image').value;
-      const audio = document.getElementById('jumpscare-audio').value;
-      socket.emit('jumpscare', { img, audio });
-    }
-
-    socket.on('chat message', function(data) {
-      const item = document.createElement('li');
-      if (data.pic) {
-        item.innerHTML = `<img src="${data.pic}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;margin-right:8px;"> ${data.text}`;
-      } else {
-        item.textContent = data.text;
-      }
-      messages.appendChild(item);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    });
-
-    socket.on('announcement', (text) => {
-      announcement.textContent = text;
-      announcement.style.display = 'block';
-      setTimeout(() => {
-        announcement.style.display = 'none';
-      }, 5000);
-    });
-
-    socket.on('strobe', (duration) => {
-      const originalBg = document.body.style.backgroundColor;
-      const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'white'];
-      let count = 0;
-      const interval = setInterval(() => {
-        document.body.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        count += 100;
-        if (count >= duration) {
-          clearInterval(interval);
-          document.body.style.backgroundColor = originalBg || 'white';
-        }
-      }, 100);
-    });
-
-    socket.on('timeout', ({ user, duration }) => {
-      document.body.innerHTML = '<h1>You have been timed out</h1>';
-      setTimeout(() => {
-        location.reload();
-      }, duration);
-    });
-
-    socket.on('redirect', ({ user, link }) => {
-      window.location.href = link;
-    });
-
-    socket.on('jumpscare', ({ img, audio }) => {
-      const jumpscareImg = document.createElement('img');
-      jumpscareImg.src = img;
-      jumpscareImg.style.position = 'fixed';
-      jumpscareImg.style.top = '0';
-      jumpscareImg.style.left = '0';
-      jumpscareImg.style.width = '100vw';
-      jumpscareImg.style.height = '100vh';
-      jumpscareImg.style.objectFit = 'cover';
-      jumpscareImg.style.zIndex = '9999';
-      document.body.appendChild(jumpscareImg);
-
-      const audioElement = new Audio(audio);
-      audioElement.play();
-
-      setTimeout(() => {
-        document.body.removeChild(jumpscareImg);
-      }, 5000);
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'p') {
-        if (!pPressed) {
-          overlayImage = document.createElement('img');
-          overlayImage.src = toggleImageUrl;
-          overlayImage.style.position = 'fixed';
-          overlayImage.style.top = '0';
-          overlayImage.style.left = '0';
-          overlayImage.style.width = '100vw';
-          overlayImage.style.height = '100vh';
-          overlayImage.style.objectFit = 'cover';
-          overlayImage.style.zIndex = '9999';
-          document.body.appendChild(overlayImage);
-          pPressed = true;
-        } else {
-          if (overlayImage) {
-            document.body.removeChild(overlayImage);
-          }
-          pPressed = false;
-        }
-      }
-    });
-  </script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/client.js"></script>
 </body>
 </html>
