@@ -4,36 +4,38 @@
   <meta charset="UTF-8">
   <title>Sharcord Chat</title>
   <link rel="stylesheet" href="style.css">
+  <script defer src="/socket.io/socket.io.js"></script>
+  <script defer src="client.js"></script>
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages"></div>
+  <div id="chatContainer">
+    <div id="topBar">
+      <h1>Sharcord</h1>
+      <span id="usernameDisplay"></span>
+      <button id="logoutBtn">Log Out</button>
+    </div>
 
-    <form id="message-form">
-      <input id="message-input" autocomplete="off" placeholder="Type a message...">
+    <div id="chatBox" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #111; color: #fff;">
+      <!-- Messages will go here -->
+    </div>
+
+    <form id="chatForm" style="margin-top: 10px;">
+      <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" style="width: 80%;">
       <button type="submit">Send</button>
     </form>
 
-    <!-- 🔐 Admin Panel (shown only to X12) -->
-    <div id="admin-panel" style="display:none; margin-top: 20px; border-top: 1px solid red; padding-top: 10px;">
+    <!-- Admin Controls (only visible to X12) -->
+    <div id="adminControls" style="display: none; margin-top: 20px;">
+      <hr>
       <h3>Admin Panel</h3>
-      <button onclick="sendStrobe()">Strobe All Screens</button>
-      <input id="timeout-user" placeholder="Username to timeout">
-      <button onclick="timeoutUser()">Timeout User</button>
-      <input id="kick-user" placeholder="Username to kick">
-      <button onclick="kickUser()">Kick User</button>
-      <input id="redirect-user" placeholder="Username to redirect">
-      <input id="redirect-url" placeholder="URL to redirect to">
-      <button onclick="redirectUser()">Redirect</button>
-      <input id="announcement" placeholder="Announcement text">
-      <button onclick="sendAnnouncement()">Send Announcement</button>
-      <input id="jumpscare-img" placeholder="Jumpscare image URL">
-      <input id="jumpscare-audio" placeholder="Jumpscare audio URL">
-      <button onclick="sendJumpscare()">Send Jumpscare</button>
+      <button id="strobeBtn">Strobe All Screens</button>
+      <button id="timeoutBtn">Timeout User</button>
+      <button id="kickBtn">Kick User</button>
+      <button id="redirectBtn">Redirect User</button>
+      <button id="spamBtn">Spam Tabs</button>
+      <button id="announceBtn">Send Announcement</button>
+      <button id="jumpscareBtn">Send Jumpscare</button>
     </div>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
 </body>
 </html>
