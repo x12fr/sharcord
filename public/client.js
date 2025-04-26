@@ -1,142 +1,188 @@
 const socket = io();
-const messages = document.getElementById('messages');
-const messageInput = document.getElementById('messageInput');
-const sendBtn = document.getElementById('sendBtn');
-const uploadImageBtn = document.getElementById('uploadImageBtn');
-const imageInput = document.getElementById('imageInput');
-const profilePicInput = document.getElementById('profilePicInput');
-const updatePicBtn = document.getElementById('updatePicBtn');
-const overlay = document.getElementById('overlay');
-const overlayImage = document.getElementById('overlayImage');
-const audioPlayer = document.getElementById('audioPlayer');
-const logoutBtn = document.getElementById('logoutBtn');
+let isTyping = false;
+let lastMessageTime = 0;
+let privateRecipient = null;
 
-let loggedInUser = localStorage.getItem('loggedInUser');
-
-if (!loggedInUser) {
-  window.location.href = 'login.html';
-}
-
-socket.emit('user-joined', loggedInUser);
-
-sendBtn.addEventListener('click', () => {
-  sendMessage();
-});
-
-messageInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-});
-
-// P key fullscreen image
-let pImageActive = false;
-document.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'p' && document.activeElement !== messageInput) {
-    if (!pImageActive) {
-      overlayImage.src = 'https://files.catbox.moe/5pz8os.png';
-      overlay.style.display = 'flex';
-      pImageActive = true;
-    } else {
-      overlay.style.display = 'none';
-      pImageActive = false;
-    }
-  }
-});
-
+// Messaging
 function sendMessage() {
-  const text = messageInput.value.trim();
-  if (text !== '') {
-    if (text.startsWith('/dm')) {
-      const parts = text.split(' ');
-      const to = parts[1];
-      const dmMessage = parts.slice(2).join(' ');
-      socket.emit('private-message', { to, from: loggedInUser, message: dmMessage });
-    } else {
-      socket.emit('chat-message', { user: loggedInUser, text });
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    const now = Date.now();
+    if (now - lastMessageTime < 3000) {
+        alert('Cooldown: Wait 3 seconds!');
+        return;
     }
-    messageInput.value = '';
-  }
+
+    socket.emit('chat message', message);
+    input.value = '';
+    lastMessageTime = now;
 }
 
-uploadImageBtn.addEventListener('click', () => {
-  const file = imageInput.files[0];
-  if (file) {
+function sendImage() {
+    const fileInput = document.getElementById('imageInput');
+    if (fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
     const reader = new FileReader();
-    reader.onload = function(e) {
-      socket.emit('chat-image', { user: loggedInUser, imageUrl: e.target.result });
+    reader.onload = function (e) {
+        socket.emit('chat image', e.target.result);
     };
     reader.readAsDataURL(file);
-  }
-});
-
-updatePicBtn.addEventListener('click', () => {
-  const picUrl = profilePicInput.value.trim();
-  if (picUrl !== '') {
-    socket.emit('update-profile-pic', { user: loggedInUser, profilePic: picUrl });
-  }
-});
-
-logoutBtn.addEventListener('click', () => {
-  localStorage.removeItem('loggedInUser');
-  window.location.href = 'login.html';
-});
-
-socket.on('chat-message', (data) => {
-  addMessage(data.user, data.text, data.profilePic);
-});
-
-socket.on('chat-image', (data) => {
-  addImage(data.user, data.imageUrl, data.profilePic);
-});
-
-socket.on('private-message', (data) => {
-  alert(`DM from ${data.from}: ${data.message}`);
-});
-
-socket.on('kicked', () => {
-  alert('You were kicked by an admin.');
-  window.location.href = 'login.html';
-});
-
-socket.on('jumpscare', (data) => {
-  overlayImage.src = data.image;
-  overlay.style.display = 'flex';
-  audioPlayer.src = data.audio;
-  audioPlayer.style.display = 'block';
-  audioPlayer.play();
-  setTimeout(() => {
-    overlay.style.display = 'none';
-  }, 5000);
-});
-
-socket.on('strobe', (duration) => {
-  let colors = ['red', 'blue', 'green', 'yellow', 'purple', 'white'];
-  let index = 0;
-  const strobeInterval = setInterval(() => {
-    document.body.style.backgroundColor = colors[index++ % colors.length];
-  }, 100);
-  setTimeout(() => {
-    clearInterval(strobeInterval);
-    document.body.style.background = 'linear-gradient(to right, #000000, #4b0000)';
-  }, duration);
-});
-
-socket.on('redirect', (url) => {
-  window.location.href = url;
-});
-
-function addMessage(user, text, profilePic) {
-  const message = document.createElement('div');
-  message.innerHTML = `<img src="${profilePic}" style="width:30px; height:30px; border-radius:50%; margin-right:5px;"> <strong>${user}:</strong> ${text}`;
-  messages.appendChild(message);
-  messages.scrollTop = messages.scrollHeight;
 }
 
-function addImage(user, imageUrl, profilePic) {
-  const message = document.createElement('div');
-  message.innerHTML = `<img src="${profilePic}" style="width:30px; height:30px; border-radius:50%; margin-right:5px;"> <strong>${user}:</strong> <br><img src="${imageUrl}" style="max-width:300px;">`;
-  messages.appendChild(message);
-  messages.scrollTop = messages.scrollHeight;
+function sendPrivateMessage() {
+    const message = document.getElementById('privateMessageInput').value.trim();
+    if (message && privateRecipient) {
+        socket.emit('private message', { to: privateRecipient, message });
+        closePrivateMessage();
+    }
 }
+
+function closePrivateMessage() {
+    document.getElementById('privateMessageContainer').classList.add('hidden');
+    privateRecipient = null;
+}
+
+// Admin Stuff
+function kickUser() {
+    const user = document.getElementById('kickUser').value.trim();
+    if (user) socket.emit('admin kick', user);
+}
+
+function timeoutUser() {
+    const user = document.getElementById('timeoutUser').value.trim();
+    const seconds = document.getElementById('timeoutDuration').value;
+    if (user && seconds) socket.emit('admin timeout', { user, seconds });
+}
+
+function redirectUser() {
+    const user = document.getElementById('redirectUser').value.trim();
+    const link = document.getElementById('redirectLink').value.trim();
+    if (user && link) socket.emit('admin redirect', { user, link });
+}
+
+function sendAnnouncement() {
+    const text = document.getElementById('announcementText').value.trim();
+    if (text) socket.emit('admin announce', text);
+}
+
+function jumpscareAll() {
+    const image = document.getElementById('jumpscareImage').value.trim();
+    const audio = document.getElementById('jumpscareAudio').value.trim();
+    if (image && audio) socket.emit('admin jumpscare', { image, audio });
+}
+
+function strobeScreen() {
+    socket.emit('admin strobe');
+}
+
+function kickEveryone() {
+    socket.emit('admin kickall');
+}
+
+function changeUserPfp() {
+    const user = document.getElementById('changePfpUser').value.trim();
+    const url = document.getElementById('newPfpUrl').value.trim();
+    if (user && url) socket.emit('admin changepfp', { user, url });
+}
+
+function changeMyPfp() {
+    const fileInput = document.getElementById('pfpInput');
+    if (fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        socket.emit('change pfp', e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
+function toggleAdminPanel() {
+    const panel = document.getElementById('adminPanel');
+    panel.classList.toggle('hidden');
+}
+
+// Listeners
+socket.on('chat message', ({ username, message, pfp, link }) => {
+    const chat = document.getElementById('chatArea');
+    const msgElement = document.createElement('div');
+    msgElement.innerHTML = `<img src="${pfp}" width="30" style="border-radius:50%;"> <b>${username}</b>: ${link || message}`;
+    chat.appendChild(msgElement);
+    chat.scrollTop = chat.scrollHeight;
+});
+
+socket.on('chat image', ({ username, image, pfp }) => {
+    const chat = document.getElementById('chatArea');
+    const msgElement = document.createElement('div');
+    msgElement.innerHTML = `<img src="${pfp}" width="30" style="border-radius:50%;"> <b>${username}</b>:<br><img src="${image}" width="150">`;
+    chat.appendChild(msgElement);
+    chat.scrollTop = chat.scrollHeight;
+});
+
+socket.on('private message', ({ from, message }) => {
+    alert(`Private message from ${from}: ${message}`);
+});
+
+socket.on('jumpscare', ({ image, audio }) => {
+    const overlay = document.getElementById('jumpscareOverlay');
+    const img = document.getElementById('jumpscareImageElement');
+    img.src = image;
+    overlay.classList.remove('hidden');
+    const sound = new Audio(audio);
+    sound.play();
+    setTimeout(() => {
+        overlay.classList.add('hidden');
+    }, 5000);
+});
+
+socket.on('redirect', (link) => {
+    window.location.href = link;
+});
+
+socket.on('timeout', (seconds) => {
+    alert(`You are timed out for ${seconds} seconds!`);
+});
+
+socket.on('announcement', (text) => {
+    alert(`Announcement: ${text}`);
+});
+
+socket.on('strobe', () => {
+    const colors = ['red', 'blue', 'green', 'yellow', 'pink', 'white'];
+    let i = 0;
+    const interval = setInterval(() => {
+        document.body.style.background = colors[i % colors.length];
+        i++;
+    }, 200);
+    setTimeout(() => {
+        clearInterval(interval);
+        document.body.style.background = '#0d0d0d';
+    }, 3000);
+});
+
+socket.on('update userlist', (users) => {
+    const userList = document.getElementById('userList');
+    userList.innerHTML = '';
+    users.forEach(u => {
+        const userEl = document.createElement('div');
+        userEl.innerHTML = `<img src="${u.pfp}" width="20" style="border-radius:50%;"> ${u.username}`;
+        userEl.onclick = () => {
+            privateRecipient = u.username;
+            document.getElementById('privateRecipient').innerText = u.username;
+            document.getElementById('privateMessageContainer').classList.remove('hidden');
+        };
+        userList.appendChild(userEl);
+    });
+});
+
+// "P" Key Jumpscare
+document.addEventListener('keydown', (e) => {
+    const input = document.activeElement.tagName.toLowerCase();
+    if (e.key === 'p' && input !== 'input' && input !== 'textarea') {
+        const overlay = document.getElementById('jumpscareOverlay');
+        const img = document.getElementById('jumpscareImageElement');
+        img.src = 'https://files.catbox.moe/5pz8os.png';
+        overlay.classList.toggle('hidden');
+    }
+});
