@@ -1,35 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Sharcord Chat</title>
-    <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        #prankImage {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            display: none;
-            z-index: 9999;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Sharcord Chat</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+    }
+    #chat-container {
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    #messages {
+      border: 1px solid #555;
+      padding: 10px;
+      height: 400px;
+      overflow-y: scroll;
+      background: #222;
+      margin-bottom: 10px;
+    }
+    #messageInput {
+      width: 70%;
+      padding: 10px;
+      border: none;
+      outline: none;
+    }
+    #sendButton {
+      padding: 10px;
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #imageInput {
+      padding: 10px;
+      border: none;
+      background: #333;
+      color: white;
+      margin-left: 5px;
+    }
+    #admin-panel {
+      margin-top: 20px;
+      border-top: 2px solid red;
+      padding-top: 10px;
+    }
+    #prankImage, #jumpscareImage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      display: none;
+      z-index: 9999;
+      background-color: black;
+    }
+  </style>
 </head>
 <body>
-    <img id="prankImage" src="https://files.catbox.moe/5pz8os.png" alt="Prank Image">
-    <div id="chat-container">
-        <!-- your normal chat UI here -->
-    </div>
+  
+  <img id="prankImage" src="https://files.catbox.moe/5pz8os.png" alt="Prank Image">
+  <img id="jumpscareImage" src="" alt="Jumpscare Image">
 
-    <script>
-        document.addEventListener('keydown', function(event) {
-            if (event.key.toLowerCase() === 'p') {
-                document.getElementById('prankImage').style.display = 'block';
-            }
-        });
-    </script>
+  <div id="chat-container">
+    <h1>Sharcord</h1>
+    <div id="messages"></div>
+
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button id="sendButton">Send</button>
+    <input type="file" id="imageInput" accept="image/*">
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" style="display: none;">
+      <h2>Admin Panel</h2>
+      <button onclick="startStrobe()">Start Strobe</button>
+      <button onclick="stopStrobe()">Stop Strobe</button><br><br>
+
+      <input type="text" id="audioUrl" placeholder="YouTube Audio URL">
+      <button onclick="playAudio()">Play Audio</button><br><br>
+
+      <input type="text" id="timeoutUser" placeholder="Username to Timeout">
+      <input type="number" id="timeoutDuration" placeholder="Seconds">
+      <button onclick="timeoutUser()">Timeout User</button><br><br>
+
+      <input type="text" id="redirectUser" placeholder="Username to Redirect">
+      <input type="text" id="redirectLink" placeholder="Link">
+      <button onclick="redirectUser()">Redirect User</button><br><br>
+
+      <h3>Jumpscare</h3>
+      <input type="text" id="jumpscareImageUrl" placeholder="Image URL">
+      <input type="text" id="jumpscareAudioUrl" placeholder="Audio URL">
+      <button onclick="sendJumpscare()">Jumpscare!</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const prankImage = document.getElementById('prankImage');
+    const jumpscareImage = document.getElementById('jumpscareImage');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const imageInput = document.getElementById('imageInput');
+    const messages = document.getElementById('messages');
+
+    const username = localStorage.getItem('username');
+    const profilePic = localStorage.getItem('profilePic') || 'https://via.placeholder.com/50';
+
+    if (username === 'X12') {
+      document.getElementById('admin-panel').style.display = 'block';
+    }
+
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+      const msg = messageInput.value;
+      if (msg.trim() !== '') {
+        socket.emit('chat message', { username, profilePic, text: msg });
+        messageInput.value = '';
+      }
+    }
+
+    imageInput.addEventListener('change', function() {
+      const file = imageInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          socket.emit('chat image', { username, profilePic, image: e.target.result });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    socket.on('chat message', function(msg) {
+      const div = document.createElement('div');
+      div.innerHTML = `<img src="${msg.profilePic}" width="30" height="30" style="vertical-align: middle; border-radius: 50%;"> <strong>${msg.username}</strong>: ${msg.text}`;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    socket.on('chat image', function(msg) {
+      const div = document.createElement('div');
+      div.innerHTML = `<img src="${msg.profilePic}" width="30" height="30" style="vertical-align: middle; border-radius: 50%;"> <strong>${msg.username}</strong>: <br><img src="${msg.image}" width="200">`;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    function startStrobe() {
+      socket.emit('admin strobe');
+    }
+    function stopStrobe() {
+      socket.emit('admin stopstrobe');
+    }
+    function playAudio() {
+      const url = document.getElementById('audioUrl').value;
+      socket.emit('admin play audio', url);
+    }
+    function timeoutUser() {
+      const user = document.getElementById('timeoutUser').value;
+      const duration = document.getElementById('timeoutDuration').value;
+      socket.emit('admin timeout', { user, duration });
+    }
+    function redirectUser() {
+      const user = document.getElementById('redirectUser').value;
+      const link = document.getElementById('redirectLink').value;
+      socket.emit('admin redirect', { user, link });
+    }
+    function sendJumpscare() {
+      const imageUrl = document.getElementById('jumpscareImageUrl').value;
+      const audioUrl = document.getElementById('jumpscareAudioUrl').value;
+      socket.emit('admin jumpscare', { imageUrl, audioUrl });
+    }
+
+    socket.on('strobe', function() {
+      let flashing = true;
+      const flashInterval = setInterval(() => {
+        if (!flashing) {
+          clearInterval(flashInterval);
+          document.body.style.backgroundColor = '#111';
+          return;
+        }
+        document.body.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+      }, 100);
+      setTimeout(() => { flashing = false; }, 3000);
+    });
+
+    socket.on('play audio', function(url) {
+      const audio = new Audio(url);
+      audio.play();
+    });
+
+    socket.on('timeout', function(data) {
+      alert(`You have been timed out for ${data.duration} seconds`);
+    });
+
+    socket.on('redirect', function(link) {
+      window.location.href = link;
+    });
+
+    socket.on('jumpscare', function(data) {
+      const audio = new Audio(data.audioUrl);
+      audio.play();
+      jumpscareImage.src = data.imageUrl;
+      jumpscareImage.style.display = 'block';
+      setTimeout(() => {
+        jumpscareImage.style.display = 'none';
+      }, 5000);
+    });
+
+    document.addEventListener('keydown', function(event) {
+      const isTyping = document.activeElement === messageInput;
+      if (!isTyping && event.key.toLowerCase() === 'p') {
+        prankImage.style.display = prankImage.style.display === 'block' ? 'none' : 'block';
+      }
+    });
+
+  </script>
+
 </body>
 </html>
