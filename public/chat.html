@@ -6,43 +6,35 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <form id="message-form">
-      <input id="m" autocomplete="off" placeholder="Type a message..." /><button>Send</button>
-    </form>
 
-    <!-- 👇 New Profile Picture Changer (no UI change, fits in) -->
-    <div id="change-pfp" style="margin-top: 20px;">
-      <h3>Change Profile Picture</h3>
-      <input type="file" id="pfp-input" accept="image/*">
-      <button type="button" onclick="changePfp()">Upload</button>
-    </div>
+<div id="chat-box" style="overflow-y: scroll; height: 400px; border: 1px solid gray; padding: 10px;">
+  <!-- Messages will show here -->
+</div>
 
-    <!-- 👑 Admin Panel (only visible for admins) -->
-    <div id="admin-panel" style="display:none; margin-top: 20px;">
-      <h2>Admin Panel</h2>
+<input type="text" id="message" placeholder="Type a message...">
+<button onclick="sendMessage()">Send</button>
 
-      <input type="text" id="targetUser" placeholder="Username for actions">
-      <input type="text" id="redirectUrl" placeholder="Redirect URL">
-      <input type="text" id="spamCount" placeholder="Spam tab count">
-      <input type="text" id="announcementText" placeholder="Announcement Text">
-      <input type="text" id="timeoutDuration" placeholder="Timeout (sec)">
-      <input type="text" id="jumpscareImage" placeholder="Jumpscare Image URL">
-      <input type="text" id="jumpscareAudio" placeholder="Jumpscare Audio URL">
+<!-- Admin Panel -->
+<div id="admin-panel">
+  <h2>Admin Panel</h2>
+  <input type="text" id="targetUser" placeholder="Username">
+  <input type="text" id="announcementText" placeholder="Announcement Text">
+  <input type="text" id="secretUser" placeholder="Username for Secret Redirect">
+  
+  <button onclick="strobe()">Strobe</button>
+  <button onclick="timeoutUser()">Timeout</button>
+  <button onclick="kickUser()">Kick User</button>
+  <button onclick="redirectUser()">Redirect User</button>
+  <button onclick="spamTabs()">Spam Tabs</button>
+  <button onclick="clearChat()">Clear Chat</button>
+  <button onclick="sendAnnouncement()">Send Announcement</button>
+  <button onclick="secretRedirect()">Secret Redirect</button>
+  <button onclick="playJumpscare()">Jumpscare</button>
+</div>
 
-      <button onclick="strobeEffect()">Strobe All Screens</button>
-      <button onclick="timeoutUser()">Timeout User</button>
-      <button onclick="kickUser()">Kick User</button>
-      <button onclick="redirectUser()">Redirect User</button>
-      <button onclick="spamTabs()">Spam Tabs</button>
-      <button onclick="clearChat()">Clear Chat</button>
-      <button onclick="sendAnnouncement()">Send Announcement</button>
-      <button onclick="sendJumpscare()">Send Jumpscare</button>
-    </div>
-  </div>
+<div id="announcement" style="position: fixed; top: 0; width: 100%; text-align: center; background: yellow; display: none; z-index: 1000;"></div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
 </body>
 </html>
