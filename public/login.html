@@ -7,28 +7,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="login-container">
+  <div class="home-container">
+    <img src="https://cdn.discordapp.com/attachments/1135667081765185567/1229141457687863346/shark_sharcord.png" class="logo">
     <h1>Login to Sharcord</h1>
     <form id="loginForm">
       <input type="text" id="loginUsername" placeholder="Username" required>
       <input type="password" id="loginPassword" placeholder="Password" required>
-      <button type="submit">Login</button>
+      <button type="submit" class="btn">Login</button>
     </form>
     <p>Don't have an account? <a href="register.html">Register here</a></p>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value.trim();
 
-      if (!username || !password) {
-        alert('Please enter both username and password.');
-        return;
-      }
-
-      // Get users from localStorage
       let users = JSON.parse(localStorage.getItem('users')) || {};
 
       if (!users[username] || users[username].password !== password) {
@@ -36,10 +31,7 @@
         return;
       }
 
-      // Save logged-in user
       localStorage.setItem('loggedInUser', username);
-
-      // Redirect to chat
       window.location.href = 'chat.html';
     });
   </script>
