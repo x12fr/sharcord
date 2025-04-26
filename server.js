@@ -1,46 +1,103 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http').createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(http);
-const multer = require('multer');
-const path = require('path');
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
+const path = require("path");
+const fs = require("fs");
 
-const upload = multer({ dest: 'uploads/' });
-const users = {};
-const admins = {};
+const PORT = process.env.PORT || 3000;
 
-app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 app.use(express.json());
 
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-app.get('/login', (req, res) => res.sendFile(__dirname + '/public/login.html'));
-app.get('/register', (req, res) => res.sendFile(__dirname + '/public/register.html'));
-app.get('/chat', (req, res) => res.sendFile(__dirname + '/public/chat.html'));
+const users = {};
+const admins = ["X12"];
 
-app.post('/register', upload.none(), (req, res) => {
-  const { username, password } = req.body;
-  if (users[username]) return res.status(400).send('Username taken.');
-  users[username] = { password };
-  res.redirect('/login');
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
 });
 
-app.post('/login', upload.none(), (req, res) => {
+app.post("/register", (req, res) => {
+  const { username, password } = req.body;
+  if (users[username]) {
+    return res.status(400).json({ error: "Username taken" });
+  }
+  users[username] = { password, isAdmin: admins.includes(username) };
+  res.json({ success: true });
+});
+
+app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (!users[username] || users[username].password !== password) {
-    return res.status(400).send('Invalid credentials.');
+    return res.status(401).json({ error: "Invalid credentials" });
   }
-  res.send(`<script>sessionStorage.setItem("username", "${username}"); window.location.href="/chat";</script>`);
+  res.json({ success: true, isAdmin: users[username].isAdmin });
 });
 
-// socket.io
-io.on('connection', (socket) => {
-  socket.on('chat message', (data) => io.emit('chat message', data));
-  socket.on('admin action', (action) => io.emit('admin action', action));
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("chat message", (msg) => {
+    io.emit("chat message", msg);
+  });
+
+  socket.on("admin action", (action) => {
+    switch (action.type) {
+      case "strobe":
+        io.emit("admin action", { type: "strobe", duration: action.duration });
+        break;
+      case "timeout":
+        io.emit("admin action", {
+          type: "timeout",
+          user: action.user,
+          duration: action.duration,
+        });
+        break;
+      case "kick":
+        io.emit("admin action", { type: "kick", user: action.user });
+        break;
+      case "redirect":
+        io.emit("admin action", {
+          type: "redirect",
+          user: action.user,
+          link: action.link,
+        });
+        break;
+      case "spam":
+        io.emit("admin action", {
+          type: "spam",
+          user: action.user,
+          count: action.count,
+        });
+        break;
+      case "announcement":
+        io.emit("admin action", { type: "announcement", text: action.text });
+        break;
+      case "grant_admin":
+        io.emit("admin action", {
+          type: "grant_admin",
+          user: action.user,
+          time: action.time,
+        });
+        break;
+      case "jumpscare":
+        io.emit("admin action", {
+          type: "jumpscare",
+          image: action.image,
+          audio: action.audio,
+        });
+        break;
+      case "clear":
+        io.emit("admin action", { type: "clear" });
+        break;
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
-http.listen(process.env.PORT || 3000, () => {
-  console.log('Sharcord running');
+http.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
