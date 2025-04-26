@@ -1,43 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Sharcord Chat</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Sharcord</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Sharcord</h1>
-    <div id="chatBox" style="width: 80%; height: 400px; overflow-y: scroll; background: #111; padding: 10px; border-radius: 10px; margin: auto;"></div>
-    <input id="messageInput" placeholder="Type your message..." style="width: 75%; padding: 10px; margin-top: 10px;">
-    <button id="sendButton">Send</button>
+  <div class="chat-container">
+    <div id="chat-box" style="overflow-y: scroll; height: 400px; border: 1px solid #ccc; padding: 10px;">
+      <!-- Messages go here -->
+    </div>
+    <form id="message-form">
+      <input id="message-input" autocomplete="off" placeholder="Type a message..." />
+      <button>Send</button>
+    </form>
+    <button onclick="logout()">Logout</button>
+  </div>
 
-    <hr>
-
+  <div id="admin-panel" style="margin-top:20px;">
     <h2>Admin Panel</h2>
-    <div>
-        <input id="flashDuration" placeholder="Flash Duration (sec)">
-        <button id="flashButton">Flash Everyone's Screen</button>
-    </div>
-    <br>
-    <div>
-        <input id="announcementInput" placeholder="Announcement Text">
-        <button id="announceButton">Send Announcement</button>
-    </div>
-    <br>
-    <div>
-        <input id="jumpImageUrl" placeholder="Jump Scare Image URL">
-        <input id="jumpAudioUrl" placeholder="Jump Scare Audio URL">
-        <button id="jumpScareButton">Launch JumpScare</button>
-    </div>
-    <br>
-    <div>
-        <input id="targetUsername" placeholder="Target Username">
-        <input id="spamLink" placeholder="Link to Spam">
-        <input id="spamAmount" placeholder="Number of Tabs">
-        <button id="spamTabsButton">Spam Tabs</button>
-    </div>
+    <input id="target-user" placeholder="Username to target"><br><br>
+    <input id="redirect-url" placeholder="Redirect URL"><br><br>
+    <input id="spam-count" placeholder="Tabs to open"><br><br>
+    <input id="announcement-text" placeholder="Announcement text"><br><br>
+    <input id="jumpscare-image" placeholder="Jumpscare Image URL"><br><br>
+    <input id="jumpscare-audio" placeholder="Jumpscare Audio URL"><br><br>
+    
+    <button onclick="strobeScreens()">Strobe Screens</button>
+    <button onclick="timeoutUser()">Timeout User</button>
+    <button onclick="redirectUser()">Redirect User</button>
+    <button onclick="spamTabs()">Spam Tabs</button>
+    <button onclick="sendAnnouncement()">Send Announcement</button>
+    <button onclick="sendJumpscare()">Send Jumpscare</button>
+    <button onclick="clearChat()">Clear Chat</button>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
