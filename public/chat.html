@@ -2,41 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Home</title>
-  <link rel="icon" href="https://files.catbox.moe/5pz8os.png">
-  <link rel="stylesheet" href="/style.css">
+  <title>Sharcord</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.png"> <!-- Google Classroom Icon -->
 </head>
 <body>
+  <div id="chat-container">
+    <div id="messages"></div>
+    <div id="message-form">
+      <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
 
-<div id="chat-container">
-  <div id="messages"></div>
-  <input id="message-input" placeholder="Type a message..." autocomplete="off">
-  <button id="send-btn">Send</button>
-</div>
+  <div id="admin-panel" style="display: none;">
+    <h2>Admin Panel</h2>
+    <input id="strobeDuration" placeholder="Strobe Duration (seconds)">
+    <button onclick="startStrobe()">Start Strobe</button>
 
-<div id="admin-panel" style="display:none;">
-  <h3>Admin Panel</h3>
-  
-  <input id="announce-text" placeholder="Announcement text">
-  <button id="announce-btn">Send Announcement</button><br><br>
+    <input id="timeoutUser" placeholder="Username to Timeout">
+    <input id="timeoutDuration" placeholder="Timeout Duration (seconds)">
+    <button onclick="timeoutUser()">Timeout User</button>
 
-  <input id="strobe-duration" placeholder="Strobe Duration (ms)">
-  <button id="strobe-btn">Strobe</button><br><br>
+    <input id="redirectUser" placeholder="Username to Redirect">
+    <button onclick="redirectUser()">Redirect User</button>
 
-  <input id="timeout-user" placeholder="User to timeout">
-  <input id="timeout-duration" placeholder="Timeout (s)">
-  <button id="timeout-btn">Timeout User</button><br><br>
+    <input id="announcementText" placeholder="Announcement Text">
+    <button onclick="sendAnnouncement()">Send Announcement</button>
 
-  <input id="redirect-user" placeholder="User to redirect">
-  <input id="redirect-link" placeholder="Link to redirect">
-  <button id="redirect-btn">Redirect User</button><br><br>
+    <input id="jumpscareImage" placeholder="Jumpscare Image URL">
+    <input id="jumpscareAudio" placeholder="Jumpscare Audio URL">
+    <button onclick="triggerJumpscare()">Trigger Jumpscare</button>
+  </div>
 
-  <input id="jumpscare-img" placeholder="Jumpscare Image Link">
-  <input id="jumpscare-audio" placeholder="Jumpscare Audio Link">
-  <button id="jumpscare-btn">Jumpscare</button>
-</div>
+  <div id="profile-picture">
+    <input type="text" id="profilePicUrl" placeholder="New Profile Picture URL">
+    <button onclick="changeProfilePicture()">Change Profile Picture</button>
+  </div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/client.js"></script>
+<script src="client.js"></script>
 </body>
 </html>
