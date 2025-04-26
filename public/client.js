@@ -1,106 +1,115 @@
 const socket = io();
+const chatBox = document.getElementById('chat-box');
+const form = document.getElementById('message-form');
+const input = document.getElementById('message-input');
+const username = sessionStorage.getItem('username');
+const profilePic = sessionStorage.getItem('profilePic');
 
-let username = localStorage.getItem('username');
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (input.value.trim()) {
+    socket.emit('chat message', { username, profilePic, message: input.value });
+    input.value = '';
+  }
+});
 
-if (!username) {
-    window.location.href = '/login';
+socket.on('chat message', (data) => {
+  const item = document.createElement('div');
+  item.innerHTML = `<img src="${data.profilePic}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;"> <b>${data.username}</b>: ${data.message}`;
+  chatBox.appendChild(item);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// Admin actions
+function strobeScreens() {
+  socket.emit('admin action', { type: 'strobe' });
 }
 
-document.getElementById('sendButton').addEventListener('click', () => {
-    const input = document.getElementById('messageInput');
-    if (input.value.trim() !== '') {
-        socket.emit('sendMessage', { username, message: input.value });
-        input.value = '';
-    }
-});
+function timeoutUser() {
+  const target = document.getElementById('target-user').value;
+  socket.emit('admin action', { type: 'timeout', user: target });
+}
 
-document.getElementById('messageInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        document.getElementById('sendButton').click();
-    }
-});
+function redirectUser() {
+  const target = document.getElementById('target-user').value;
+  const url = document.getElementById('redirect-url').value;
+  socket.emit('admin action', { type: 'redirect', user: target, url });
+}
 
-socket.on('chatMessage', ({ username, message }) => {
-    const box = document.getElementById('chatBox');
-    const div = document.createElement('div');
-    div.innerHTML = `<strong>${username}:</strong> ${message}`;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
-});
+function spamTabs() {
+  const target = document.getElementById('target-user').value;
+  const count = parseInt(document.getElementById('spam-count').value);
+  socket.emit('admin action', { type: 'spam', user: target, count });
+}
 
-socket.on('announcement', ({ message }) => {
-    alert(`Announcement: ${message}`);
-});
+function sendAnnouncement() {
+  const text = document.getElementById('announcement-text').value;
+  socket.emit('admin action', { type: 'announcement', text });
+}
 
-socket.on('flashScreen', ({ duration }) => {
-    const original = document.body.style.backgroundColor;
-    let colors = ['red', 'blue', 'green', 'purple', 'yellow', 'pink', 'orange'];
-    let count = 0;
+function sendJumpscare() {
+  const image = document.getElementById('jumpscare-image').value;
+  const audio = document.getElementById('jumpscare-audio').value;
+  socket.emit('admin action', { type: 'jumpscare', image, audio });
+}
+
+function clearChat() {
+  socket.emit('admin action', { type: 'clear' });
+}
+
+socket.on('admin action', (action) => {
+  if (action.type === 'strobe') {
+    let colors = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'];
+    let i = 0;
     const interval = setInterval(() => {
-        document.body.style.backgroundColor = colors[count % colors.length];
-        count++;
-    }, 200);
+      document.body.style.backgroundColor = colors[i % colors.length];
+      i++;
+    }, 100);
     setTimeout(() => {
-        clearInterval(interval);
-        document.body.style.backgroundColor = original;
-    }, duration * 1000);
-});
+      clearInterval(interval);
+      document.body.style.backgroundColor = '';
+    }, 3000);
+  }
 
-socket.on('jumpScare', ({ imageUrl, audioUrl }) => {
-    const jumpscare = document.createElement('div');
-    jumpscare.style.position = 'fixed';
-    jumpscare.style.top = '0';
-    jumpscare.style.left = '0';
-    jumpscare.style.width = '100%';
-    jumpscare.style.height = '100%';
-    jumpscare.style.backgroundColor = 'black';
-    jumpscare.style.display = 'flex';
-    jumpscare.style.alignItems = 'center';
-    jumpscare.style.justifyContent = 'center';
-    jumpscare.style.zIndex = '9999';
+  if (action.type === 'timeout' && action.user === username) {
+    alert('You have been timed out!');
+    window.location.href = 'https://google.com';
+  }
 
+  if (action.type === 'redirect' && action.user === username) {
+    window.location.href = action.url;
+  }
+
+  if (action.type === 'spam' && action.user === username) {
+    for (let i = 0; i < action.count; i++) {
+      window.open(window.location.href, '_blank');
+    }
+  }
+
+  if (action.type === 'announcement') {
+    alert(`Announcement: ${action.text}`);
+  }
+
+  if (action.type === 'jumpscare') {
     const img = document.createElement('img');
-    img.src = imageUrl;
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
+    img.src = action.image;
+    img.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;';
+    document.body.appendChild(img);
 
-    jumpscare.appendChild(img);
-    document.body.appendChild(jumpscare);
-
-    const audio = new Audio(audioUrl);
+    const audio = new Audio(action.audio);
     audio.play();
 
     setTimeout(() => {
-        jumpscare.remove();
+      img.remove();
     }, 3000);
+  }
+
+  if (action.type === 'clear') {
+    chatBox.innerHTML = '';
+  }
 });
 
-socket.on('spamTabs', ({ link, amount }) => {
-    for (let i = 0; i < amount; i++) {
-        window.open(link, '_blank');
-    }
-});
-
-document.getElementById('flashButton').addEventListener('click', () => {
-    const duration = parseInt(document.getElementById('flashDuration').value) || 3;
-    socket.emit('adminFlash', { duration });
-});
-
-document.getElementById('announceButton').addEventListener('click', () => {
-    const message = document.getElementById('announcementInput').value;
-    socket.emit('adminAnnouncement', { message });
-});
-
-document.getElementById('jumpScareButton').addEventListener('click', () => {
-    const imageUrl = document.getElementById('jumpImageUrl').value;
-    const audioUrl = document.getElementById('jumpAudioUrl').value;
-    socket.emit('adminJumpScare', { imageUrl, audioUrl });
-});
-
-document.getElementById('spamTabsButton').addEventListener('click', () => {
-    const username = document.getElementById('targetUsername').value;
-    const link = document.getElementById('spamLink').value;
-    const amount = parseInt(document.getElementById('spamAmount').value) || 5;
-    socket.emit('adminSpamTabs', { username, link, amount });
-});
+function logout() {
+  sessionStorage.clear();
+  window.location.href = '/login';
+}
