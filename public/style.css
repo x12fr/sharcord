@@ -1,41 +1,56 @@
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #2f3136;
-  color: white;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+    background-color: #0d0d0d;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 50px;
 }
 
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
+input, button {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    color: white;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
 }
 
-.message-form {
-  display: flex;
-  padding: 10px;
-  background-color: #40444b;
+button:hover {
+    background-color: #333;
 }
 
-#message-input {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
+input::placeholder {
+    color: #aaa;
 }
 
-button {
-  background-color: #7289da;
-  border: none;
-  padding: 10px 15px;
-  margin-left: 10px;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
+a {
+    color: #4aa3df;
+    text-decoration: none;
 }
 
-#admin-panel {
-  padding: 20
+a:hover {
+    text-decoration: underline;
+}
+
+#chatBox {
+    width: 80%;
+    height: 400px;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    margin: 20px auto;
+    overflow-y: scroll;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#adminPanel {
+    margin-top: 20px;
+    background-color: #1f1f1f;
+    padding: 20px;
+    border: 1px solid #444;
+    border-radius: 10px;
+}
+
+#adminPanel input {
+    width: 200px;
+}
