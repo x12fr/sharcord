@@ -1,130 +1,86 @@
 const socket = io();
 
-// === HANDLE LOGIN ===
-document.addEventListener('DOMContentLoaded', () => {
-  const loginBtn = document.getElementById('login-button');
-  const registerBtn = document.getElementById('register-button');
+// Globals
+let currentServer = null;
+let currentChannel = null;
 
-  if (loginBtn) {
-    loginBtn.addEventListener('click', async () => {
-      const username = document.getElementById('login-username').value;
-      const password = document.getElementById('login-password').value;
-
-      try {
-        const res = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          localStorage.setItem('username', username);
-          window.location.href = '/chat.html';
-        } else {
-          alert(data.message);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
-
-  // === HANDLE REGISTER ===
-  if (registerBtn) {
-    registerBtn.addEventListener('click', async () => {
-      const username = document.getElementById('register-username').value;
-      const password = document.getElementById('register-password').value;
-
-      try {
-        const res = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          alert('Registration successful! Please log in.');
-          window.location.href = '/login.html';
-        } else {
-          alert(data.message);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    });
+// --- Handle creating a server ---
+document.getElementById('create-server-btn').addEventListener('click', () => {
+  const serverName = prompt('Enter server name:');
+  if (serverName) {
+    socket.emit('createServer', serverName);
   }
 });
 
-// === CHAT PAGE FUNCTIONALITY ===
-if (window.location.pathname === '/chat.html') {
-  const username = localStorage.getItem('username');
-  if (!username) {
-    window.location.href = '/login.html';
+// --- Handle creating a channel ---
+document.getElementById('create-channel-btn').addEventListener('click', () => {
+  const channelName = prompt('Enter channel name:');
+  if (channelName && currentServer) {
+    socket.emit('createChannel', { server: currentServer, channel: channelName });
   }
-  socket.emit('set username', username);
+});
 
-  const form = document.getElementById('chat-form');
-  const input = document.getElementById('chat-input');
+// --- Handle selecting a server ---
+socket.on('serverList', (servers) => {
+  const serverList = document.getElementById('server-list');
+  serverList.innerHTML = '';
+
+  servers.forEach((server) => {
+    const li = document.createElement('li');
+    li.textContent = server.name;
+    li.addEventListener('click', () => {
+      currentServer = server.name;
+      currentChannel = null;
+      socket.emit('joinServer', server.name);
+      document.getElementById('server-name').innerText = server.name;
+    });
+    serverList.appendChild(li);
+  });
+});
+
+// --- Handle selecting a channel ---
+socket.on('channelList', (channels) => {
+  const channelList = document.getElementById('channel-list');
+  channelList.innerHTML = '';
+
+  channels.forEach((channel) => {
+    const li = document.createElement('li');
+    li.textContent = `#${channel.name}`;
+    li.addEventListener('click', () => {
+      currentChannel = channel.name;
+      socket.emit('joinChannel', { server: currentServer, channel: channel.name });
+      document.getElementById('chat-input').placeholder = `Message #${channel.name}...`;
+      document.getElementById('messages').innerHTML = '';
+    });
+    channelList.appendChild(li);
+  });
+});
+
+// --- Handle receiving messages ---
+socket.on('message', (msg) => {
   const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.classList.add('message');
+  div.textContent = `${msg.username}: ${msg.content}`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+});
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (input.value) {
-      socket.emit('chat message', input.value);
-      input.value = '';
-    }
-  });
+// --- Send a chat message ---
+document.getElementById('chat-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
 
-  socket.on('chat message', (data) => {
-    const item = document.createElement('li');
-    item.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
-  });
+  if (message && currentServer && currentChannel) {
+    socket.emit('chatMessage', {
+      server: currentServer,
+      channel: currentChannel,
+      content: message
+    });
+    input.value = '';
+  }
+});
 
-  // === Admin Listening ===
-  socket.on('strobe', () => {
-    document.body.style.backgroundColor = 'black';
-    setTimeout(() => {
-      document.body.style.backgroundColor = 'white';
-    }, 100);
-  });
-
-  socket.on('announcement', (text) => {
-    alert(`📢 Announcement: ${text}`);
-  });
-
-  socket.on('kicked', () => {
-    alert('You have been kicked!');
-    window.location.href = '/login.html';
-  });
-
-  socket.on('timeout', (seconds) => {
-    alert(`You are timed out for ${seconds} seconds.`);
-    input.disabled = true;
-    setTimeout(() => {
-      input.disabled = false;
-    }, seconds * 1000);
-  });
-
-  socket.on('showMedia', ({ imageUrl, audioUrl }) => {
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.style.position = 'fixed';
-    img.style.top = '50%';
-    img.style.left = '50%';
-    img.style.transform = 'translate(-50%, -50%)';
-    img.style.width = '50%';
-    img.style.zIndex = 9999;
-    document.body.appendChild(img);
-
-    const audio = new Audio(audioUrl);
-    audio.play();
-
-    setTimeout(() => {
-      img.remove();
-    }, 10000); // 10 seconds
-  });
-}
+// --- On connect, request server list ---
+socket.emit('requestServers');
