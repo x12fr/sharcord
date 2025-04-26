@@ -4,53 +4,73 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '/')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '/public/index.html'));
-});
+const users = {};
 
 io.on('connection', (socket) => {
-  console.log('A user connected');
-
-  socket.on('chat message', (msg) => {
-    io.emit('chat message', msg);
+  socket.on('user-joined', (username) => {
+    users[socket.id] = { username, profilePic: '' };
+    io.emit('userList', Object.values(users));
   });
 
-  socket.on('chat image', (msg) => {
-    io.emit('chat image', msg);
+  socket.on('chat-message', (data) => {
+    io.emit('chat-message', { user: data.user, text: data.text, profilePic: users[socket.id].profilePic });
   });
 
-  socket.on('admin strobe', () => {
-    io.emit('strobe');
+  socket.on('private-message', ({ to, from, message }) => {
+    for (let id in users) {
+      if (users[id].username === to) {
+        io.to(id).emit('private-message', { from, message });
+        break;
+      }
+    }
   });
 
-  socket.on('admin stopstrobe', () => {
-    io.emit('stop strobe');
+  socket.on('chat-image', (data) => {
+    io.emit('chat-image', { user: data.user, imageUrl: data.imageUrl, profilePic: users[socket.id].profilePic });
   });
 
-  socket.on('admin play audio', (url) => {
-    io.emit('play audio', url);
+  socket.on('update-profile-pic', (data) => {
+    if (users[socket.id]) {
+      users[socket.id].profilePic = data.profilePic;
+    }
   });
 
-  socket.on('admin timeout', (data) => {
-    io.emit('timeout', data);
+  socket.on('kick-user', (username) => {
+    for (let id in users) {
+      if (users[id].username === username) {
+        io.to(id).emit('kicked');
+        io.sockets.sockets.get(id).disconnect();
+        delete users[id];
+        break;
+      }
+    }
   });
 
-  socket.on('admin redirect', (data) => {
-    io.emit('redirect', data.link);
+  socket.on('jumpscare-all', (data) => {
+    io.emit('jumpscare', { image: data.image, audio: data.audio });
   });
 
-  socket.on('admin jumpscare', (data) => {
-    io.emit('jumpscare', data);
+  socket.on('strobe-all', (duration) => {
+    io.emit('strobe', duration);
+  });
+
+  socket.on('redirect-user', ({ username, url }) => {
+    for (let id in users) {
+      if (users[id].username === username) {
+        io.to(id).emit('redirect', url);
+        break;
+      }
+    }
   });
 
   socket.on('disconnect', () => {
-    console.log('A user disconnected');
+    delete users[socket.id];
+    io.emit('userList', Object.values(users));
   });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+http.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
 });
