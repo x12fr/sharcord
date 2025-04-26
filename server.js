@@ -7,53 +7,87 @@ const path = require('path');
 
 const users = {};
 
-app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
 });
 
-app.get('/login.html', (req, res) => {
+app.get('/login', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
 });
 
-app.get('/register.html', (req, res) => {
+app.get('/register', (req, res) => {
     res.sendFile(__dirname + '/public/register.html');
 });
 
-app.get('/chat.html', (req, res) => {
+app.get('/chat', (req, res) => {
     res.sendFile(__dirname + '/public/chat.html');
 });
 
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     if (users[username]) {
-        return res.send('Username taken.');
+        return res.send('Username already taken.');
     }
-    users[username] = { password };
-    return res.redirect('/login.html');
+    users[username] = { password, profilePic: '/default.png', timeoutUntil: 0 };
+    res.redirect('/login');
 });
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (!users[username] || users[username].password !== password) {
-        return res.send('Invalid login.');
+        return res.send('Invalid username or password.');
     }
-    return res.redirect('/chat.html');
+    res.redirect(`/chat?username=${username}`);
 });
 
 io.on('connection', (socket) => {
     socket.on('join', ({ username, profilePic }) => {
         socket.username = username;
         socket.profilePic = profilePic;
+        io.emit('user joined', { username, profilePic });
     });
 
     socket.on('chat message', (data) => {
-        io.emit('chat message', data);
+        io.emit('chat message', { username: socket.username, message: data.message, profilePic: socket.profilePic });
+    });
+
+    socket.on('image upload', (data) => {
+        io.emit('image upload', { username: socket.username, image: data.image, profilePic: socket.profilePic });
+    });
+
+    socket.on('announcement', (data) => {
+        io.emit('announcement', { message: data });
+    });
+
+    socket.on('strobe', (data) => {
+        io.emit('strobe', data);
+    });
+
+    socket.on('play audio', (url) => {
+        io.emit('play audio', url);
+    });
+
+    socket.on('timeout user', ({ username, duration }) => {
+        io.emit('timeout user', { username, duration });
+    });
+
+    socket.on('redirect user', ({ username, url }) => {
+        io.emit('redirect user', { username, url });
+    });
+
+    socket.on('jumpscare', ({ image, audio }) => {
+        io.emit('jumpscare', { image, audio });
+    });
+
+    socket.on('disconnect', () => {
+        io.emit('user left', socket.username);
     });
 });
 
-http.listen(3000, () => {
-    console.log('Sharcord live on port 3000');
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
