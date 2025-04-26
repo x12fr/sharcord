@@ -1,90 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>Sharcord Chat</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages" class="chat-box"></div>
-    <form id="message-form">
-      <input id="message-input" placeholder="Type a message..." autocomplete="off" />
-      <button type="submit">Send</button>
-    </form>
+    <h1>Sharcord</h1>
+    <div id="chatBox" style="width: 80%; height: 400px; overflow-y: scroll; background: #111; padding: 10px; border-radius: 10px; margin: auto;"></div>
+    <input id="messageInput" placeholder="Type your message..." style="width: 75%; padding: 10px; margin-top: 10px;">
+    <button id="sendButton">Send</button>
 
-    <div id="admin-panel" style="display: none; margin-top: 20px;">
-      <h2>Admin Panel</h2>
+    <hr>
 
-      <div>
-        <label>Strobe Duration (ms):</label>
-        <input id="strobeDuration" type="number" value="3000" />
-        <button onclick="sendStrobe()">Strobe Screens</button>
-      </div>
-
-      <div>
-        <label>Timeout Username:</label>
-        <input id="timeoutUser" type="text" />
-        <label>Seconds:</label>
-        <input id="timeoutDuration" type="number" value="5" />
-        <button onclick="timeoutUser()">Timeout User</button>
-      </div>
-
-      <div>
-        <label>Kick Username:</label>
-        <input id="kickUser" type="text" />
-        <button onclick="kickUser()">Kick</button>
-      </div>
-
-      <div>
-        <label>Redirect Username:</label>
-        <input id="redirectUser" type="text" />
-        <input id="redirectLink" type="text" placeholder="https://example.com" />
-        <button onclick="redirectUser()">Redirect</button>
-      </div>
-
-      <div>
-        <label>Spam Username:</label>
-        <input id="spamUser" type="text" />
-        <input id="spamCount" type="number" value="5" />
-        <button onclick="spamUser()">Spam Tabs</button>
-      </div>
-
-      <div>
-        <label>Announcement:</label>
-        <input id="announcementText" type="text" />
-        <button onclick="sendAnnouncement()">Send</button>
-      </div>
-
-      <div>
-        <label>Grant Admin Username:</label>
-        <input id="grantAdminUser" type="text" />
-        <label>Time (sec):</label>
-        <input id="grantAdminTime" type="number" value="10" />
-        <button onclick="grantAdmin()">Grant Admin</button>
-      </div>
-
-      <div>
-        <label>JumpScare Image URL:</label>
-        <input id="jumpscareImg" type="text" />
-        <label>Audio URL:</label>
-        <input id="jumpscareAudio" type="text" />
-        <button onclick="sendJumpScare()">JumpScare</button>
-      </div>
-
-      <div>
-        <button onclick="clearChat()">Clear Chat</button>
-      </div>
+    <h2>Admin Panel</h2>
+    <div>
+        <input id="flashDuration" placeholder="Flash Duration (sec)">
+        <button id="flashButton">Flash Everyone's Screen</button>
     </div>
-  </div>
+    <br>
+    <div>
+        <input id="announcementInput" placeholder="Announcement Text">
+        <button id="announceButton">Send Announcement</button>
+    </div>
+    <br>
+    <div>
+        <input id="jumpImageUrl" placeholder="Jump Scare Image URL">
+        <input id="jumpAudioUrl" placeholder="Jump Scare Audio URL">
+        <button id="jumpScareButton">Launch JumpScare</button>
+    </div>
+    <br>
+    <div>
+        <input id="targetUsername" placeholder="Target Username">
+        <input id="spamLink" placeholder="Link to Spam">
+        <input id="spamAmount" placeholder="Number of Tabs">
+        <button id="spamTabsButton">Spam Tabs</button>
+    </div>
 
-  <div id="jumpscare-screen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:black;justify-content:center;align-items:center;">
-    <img id="jumpscare-img" src="" style="max-width:100%; max-height:100%;" />
-    <audio id="jumpscare-audio" autoplay></audio>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
 </body>
 </html>
