@@ -1,39 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sharcord - Chat</title>
-  <link rel="stylesheet" href="/style.css">
+    <meta charset="UTF-8">
+    <title>Sharcord Chat</title>
+    <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #prankImage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            display: none;
+            z-index: 9999;
+        }
+    </style>
 </head>
-<body class="chat-page">
-  <div class="sidebar">
-    <h2>Servers</h2>
-    <div id="serverList">
-      <button onclick="createServer()">+ Create Server</button>
+<body>
+    <img id="prankImage" src="https://files.catbox.moe/5pz8os.png" alt="Prank Image">
+    <div id="chat-container">
+        <!-- your normal chat UI here -->
     </div>
-  </div>
 
-  <div class="chat-container">
-    <div id="channelHeader"># general</div>
-    <div id="messages"></div>
-
-    <form id="messageForm">
-      <input type="text" id="messageInput" placeholder="Send a message..." autocomplete="off">
-      <button type="submit">Send</button>
-    </form>
-  </div>
-
-  <div id="adminMenu" class="admin-menu hidden">
-    <h2>Admin Panel</h2>
-    <button onclick="strobeScreens()">🔴 Strobe Screens</button>
-    <button onclick="sendAnnouncement()">📢 Send Announcement</button>
-    <button onclick="kickUser()">👢 Kick User</button>
-    <button onclick="timeoutUser()">⏰ Timeout User</button>
-    <input type="file" id="uploadFile" accept="image/*,audio/*">
-    <button onclick="uploadAndSend()">📤 Upload & Broadcast</button>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key.toLowerCase() === 'p') {
+                document.getElementById('prankImage').style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
