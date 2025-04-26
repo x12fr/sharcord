@@ -1,41 +1,194 @@
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #111, #222);
-  color: white;
-  text-align: center;
+/* RESET */
+* {
   margin: 0;
-  padding: 20px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-input, button {
-  margin: 5px;
-  padding: 10px;
+/* BODY */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #2c2f33;
+  color: #ffffff;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* SIDEBAR (Servers) */
+#serverList {
+  background-color: #202225;
+  width: 70px;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+#serverList button {
+  background-color: #36393f;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-button {
-  background-color: #7289da;
+#serverList button:hover {
+  background-color: #5865f2;
+}
+
+/* SERVER + CHANNELS */
+#serverChannels {
+  background-color: #2f3136;
+  width: 220px;
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.server-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #b9bbbe;
+}
+
+.channel {
+  background: none;
+  border: none;
+  color: #8e9297;
+  font-size: 14px;
+  padding: 5px 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.channel:hover {
+  color: #ffffff;
+  background-color: #393c43;
+  border-radius: 5px;
+}
+
+/* MAIN CHAT AREA */
+#chatArea {
+  background-color: #36393f;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* MESSAGE */
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.message img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-content .username {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.message-content .text {
+  color: #dcddde;
+}
+
+/* INPUT AREA */
+#inputArea {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #2f3136;
+}
+
+#inputMessage {
+  flex: 1;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  background-color: #40444b;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+#sendMessage {
+  background-color: #5865f2;
+  border: none;
+  padding: 10px 20px;
+  margin-left: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+}
+
+#sendMessage:hover {
+  background-color: #4752c4;
+}
+
+/* ANNOUNCEMENT BANNER */
+#announcementBanner {
+  background-color: #ff5555;
+  color: #fff;
+  padding: 8px;
+  text-align: center;
+  font-weight: bold;
+  display: none;
+}
+
+/* ADMIN PANEL */
+#adminPanel {
+  background-color: #2f3136;
+  padding: 10px;
+  border-top: 1px solid #2f3136;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#adminPanel input, #adminPanel button {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+#adminPanel button {
+  background-color: #5865f2;
   color: white;
   cursor: pointer;
 }
 
-button:hover {
-  background-color: #5b6eae;
-}
-
-#server-list, #channel-list {
-  margin: 10px 0;
-}
-
-#messages {
-  background: #333;
-  border-radius: 8px;
-  padding: 10px;
-  text-align: left;
-}
-
-.home, .login, .register {
-  margin-top: 100px;
+#adminPanel button:hover {
+  background-color: #4752c4;
 }
