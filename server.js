@@ -5,10 +5,7 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const path = require('path');
 
-let users = {}; // username -> { password, pfp }
-let sessions = {}; // sessionID -> username
-let timeouts = {}; // username -> timeout timestamp
-let admins = ["X12"]; // usernames who are admins
+const users = {}; // Store users { username: { password, profilePic, timeoutUntil } }
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -17,12 +14,16 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/login.html');
 });
 
-app.get('/chat', (req, res) => {
-    res.sendFile(__dirname + '/public/chat.html');
+app.get('/login', (req, res) => {
+    res.sendFile(__dirname + '/public/login.html');
 });
 
 app.get('/register', (req, res) => {
     res.sendFile(__dirname + '/public/register.html');
+});
+
+app.get('/chat', (req, res) => {
+    res.sendFile(__dirname + '/public/chat.html');
 });
 
 app.post('/register', (req, res) => {
@@ -30,54 +31,56 @@ app.post('/register', (req, res) => {
     if (users[username]) {
         return res.send('Username already taken.');
     }
-    users[username] = { password, pfp: '/default.png' };
-    res.redirect('/');
+    users[username] = { password, profilePic: '/default.png', timeoutUntil: 0 };
+    res.redirect('/login');
 });
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (!users[username] || users[username].password !== password) {
-        return res.send('Invalid login.');
+        return res.send('Invalid username or password.');
     }
-    const sessionID = Math.random().toString(36).substring(2);
-    sessions[sessionID] = username;
-    res.redirect(`/chat?session=${sessionID}`);
+    res.redirect(`/chat?username=${username}`);
 });
 
 io.on('connection', (socket) => {
-    socket.on('join', (sessionID) => {
-        const username = sessions[sessionID];
-        if (!username) {
-            socket.emit('forceLogout');
-            return;
-        }
+    socket.on('join', ({ username, profilePic }) => {
         socket.username = username;
-        socket.pfp = users[username].pfp;
-        socket.isAdmin = admins.includes(username);
-        socket.emit('init', { username, pfp: socket.pfp, isAdmin: socket.isAdmin });
-        io.emit('announcement', `${username} joined the chat.`);
+        socket.profilePic = profilePic;
+        io.emit('user joined', { username, profilePic });
     });
 
-    socket.on('sendMessage', (msg) => {
-        if (timeouts[socket.username] && timeouts[socket.username] > Date.now()) {
-            socket.emit('timeoutMessage', 'You are timed out.');
-            return;
-        }
-        io.emit('message', { username: socket.username, pfp: socket.pfp, text: msg });
+    socket.on('chat message', (data) => {
+        io.emit('chat message', { username: socket.username, message: data.message, profilePic: socket.profilePic });
     });
 
-    socket.on('updatePfp', (newPfp) => {
-        if (users[socket.username]) {
-            users[socket.username].pfp = newPfp;
-            socket.pfp = newPfp;
-        }
+    socket.on('image upload', (data) => {
+        io.emit('image upload', { username: socket.username, image: data.image, profilePic: socket.profilePic });
     });
 
     socket.on('disconnect', () => {
-        io.emit('announcement', `${socket.username} left the chat.`);
+        io.emit('user left', socket.username);
+    });
+
+    // Admin features
+    socket.on('strobe', (data) => {
+        io.emit('strobe', data);
+    });
+
+    socket.on('play audio', (url) => {
+        io.emit('play audio', url);
+    });
+
+    socket.on('timeout user', ({ username, duration }) => {
+        io.emit('timeout user', { username, duration });
+    });
+
+    socket.on('redirect user', ({ username, url }) => {
+        io.emit('redirect user', { username, url });
     });
 });
 
-http.listen(3000, () => {
-    console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
