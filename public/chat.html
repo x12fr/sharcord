@@ -1,61 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sharcord | Chat</title>
-  <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_48.png">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Sharcord Chat</title>
+    <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="chat-container">
-    <div class="sidebar">
-      <h2>Sharcord</h2>
-      <div id="userList"></div>
-      <button id="logoutBtn">Logout</button>
+<body class="chat-body">
+    <div id="adminPanel" class="admin-panel hidden">
+        <h2>⚙️ Admin Panel</h2>
+        <input id="kickUser" placeholder="Username to kick">
+        <button onclick="kickUser()">Kick</button>
+
+        <input id="timeoutUser" placeholder="Username to timeout">
+        <input id="timeoutDuration" type="number" placeholder="Seconds">
+        <button onclick="timeoutUser()">Timeout</button>
+
+        <input id="redirectUser" placeholder="Username to redirect">
+        <input id="redirectLink" placeholder="Link">
+        <button onclick="redirectUser()">Redirect</button>
+
+        <input id="announcementText" placeholder="Announcement text">
+        <button onclick="sendAnnouncement()">Announce</button>
+
+        <input id="jumpscareImage" placeholder="Image URL">
+        <input id="jumpscareAudio" placeholder="Audio URL">
+        <button onclick="jumpscareAll()">Jumpscare</button>
+
+        <input id="changePfpUser" placeholder="Username to change pfp">
+        <input id="newPfpUrl" placeholder="New PFP URL">
+        <button onclick="changeUserPfp()">Change User PFP</button>
+
+        <button onclick="strobeScreen()">Strobe</button>
+        <button onclick="kickEveryone()">Kick Everyone</button>
     </div>
 
-    <div class="chat-area">
-      <div class="messages" id="messages"></div>
+    <button id="toggleAdmin" onclick="toggleAdminPanel()">⚙️</button>
 
-      <div class="input-area">
-        <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
-        <button id="sendBtn">Send</button>
-        <input type="file" id="imageInput" accept="image/*">
-        <button id="uploadImageBtn">Upload Image</button>
-      </div>
+    <div class="chat-container">
+        <div id="userList" class="user-list"></div>
 
-      <div class="profile-settings">
-        <label>Profile Pic URL:</label>
-        <input type="text" id="profilePicInput" placeholder="Paste image URL...">
-        <button id="updatePicBtn">Update Picture</button>
-      </div>
+        <div id="chatArea" class="chat-area"></div>
+
+        <div id="privateMessageContainer" class="private-message-container hidden">
+            <h3>Private Message to <span id="privateRecipient"></span></h3>
+            <input id="privateMessageInput" placeholder="Type private message...">
+            <button onclick="sendPrivateMessage()">Send</button>
+            <button onclick="closePrivateMessage()">Cancel</button>
+        </div>
+
+        <div class="send-message">
+            <input id="messageInput" placeholder="Type your message..." autocomplete="off">
+            <input type="file" id="imageInput" accept="image/*">
+            <button onclick="sendImage()">Send Image</button>
+            <input type="file" id="pfpInput" accept="image/*">
+            <button onclick="changeMyPfp()">Change My PFP</button>
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
 
-    <div class="admin-panel" id="adminPanel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <input type="text" id="kickUserInput" placeholder="Username to Kick">
-      <button id="kickUserBtn">Kick</button>
-
-      <input type="text" id="jumpscareImage" placeholder="Image URL for jumpscare">
-      <input type="text" id="jumpscareAudio" placeholder="Audio URL for jumpscare">
-      <button id="jumpscareBtn">Jumpscare All</button>
-
-      <input type="text" id="redirectUserInput" placeholder="Username to Redirect">
-      <input type="text" id="redirectUrlInput" placeholder="URL to Redirect">
-      <button id="redirectBtn">Redirect User</button>
-
-      <input type="text" id="strobeDuration" placeholder="Strobe Duration (ms)">
-      <button id="strobeBtn">Strobe All</button>
+    <div id="jumpscareOverlay" class="hidden">
+        <img id="jumpscareImageElement" src="">
     </div>
-  </div>
 
-  <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; justify-content:center; align-items:center; z-index:9999;">
-    <img id="overlayImage" src="" style="max-width:90%; max-height:90%;">
-  </div>
-
-  <audio id="audioPlayer" src="" autoplay loop style="display:none;"></audio>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/client.js"></script>
 </body>
 </html>
