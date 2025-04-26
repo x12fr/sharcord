@@ -1,63 +1,55 @@
 const express = require('express');
 const app = express();
-const server = require('http').createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(server);
-const fs = require('fs');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const bodyParser = require('body-parser');
 const path = require('path');
 
-const PORT = process.env.PORT || 3000;
+const users = [];
 
-// MIDDLEWARE
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// HOME
+// Pages
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
-// REGISTER
-app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-
-  let users = {};
-  if (fs.existsSync('./users.json')) {
-    users = JSON.parse(fs.readFileSync('./users.json', 'utf8'));
-  }
-
-  if (users[username]) {
-    res.send('Username taken!');
-  } else {
-    users[username] = { password: password, pfp: '' };
-    fs.writeFileSync('./users.json', JSON.stringify(users, null, 2));
-    res.redirect('/login.html');
-  }
+app.get('/login.html', (req, res) => {
+  res.sendFile(__dirname + '/public/login.html');
 });
 
-// LOGIN (Fixed!)
+app.get('/register.html', (req, res) => {
+  res.sendFile(__dirname + '/public/register.html');
+});
+
+app.get('/chat.html', (req, res) => {
+  res.sendFile(__dirname + '/public/chat.html');
+});
+
+// Register
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+  if (users.find(u => u.username === username)) {
+    return res.send('Username already exists.');
+  }
+  users.push({ username, password });
+  res.redirect('/login.html');
+});
+
+// Login
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
+  const user = users.find(u => u.username === username && u.password === password);
 
-  let users = {};
-  if (fs.existsSync('./users.json')) {
-    users = JSON.parse(fs.readFileSync('./users.json', 'utf8'));
-  }
-
-  if (users[username] && users[username].password === password) {
-    res.redirect(`/chat.html?username=${encodeURIComponent(username)}`);
+  if (user) {
+    res.redirect('/chat.html?username=' + encodeURIComponent(username));
   } else {
     res.send('Invalid login!');
   }
 });
 
-// SECRET PAGE for redirection
-app.get('/secret.html', (req, res) => {
-  res.sendFile(__dirname + '/public/secret.html');
-});
-
-// SOCKET.IO CONNECTION
+// Socket.io (basic real-time chat example)
 io.on('connection', (socket) => {
   console.log('A user connected');
 
@@ -65,20 +57,12 @@ io.on('connection', (socket) => {
     io.emit('chat message', msg);
   });
 
-  socket.on('announcement', (msg) => {
-    io.emit('announcement', msg);
-  });
-
-  socket.on('redirectUser', (data) => {
-    io.to(data.targetId).emit('redirect', '/secret.html');
-  });
-
   socket.on('disconnect', () => {
     console.log('A user disconnected');
   });
 });
 
-// START SERVER
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+  console.log(`Sharcord server running on port ${PORT}`);
 });
