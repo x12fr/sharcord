@@ -1,69 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Sharcord Chat</title>
-    <link rel="icon" href="https://ssl.gstatic.com/classroom/ic_product_classroom_96.png">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Home - Sharcord</title>
+  <link rel="icon" href="/classroom.png">
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="chat-body">
-    <div id="adminPanel" class="admin-panel hidden">
-        <h2>⚙️ Admin Panel</h2>
-        <input id="kickUser" placeholder="Username to kick">
-        <button onclick="kickUser()">Kick</button>
+<body>
 
-        <input id="timeoutUser" placeholder="Username to timeout">
-        <input id="timeoutDuration" type="number" placeholder="Seconds">
-        <button onclick="timeoutUser()">Timeout</button>
-
-        <input id="redirectUser" placeholder="Username to redirect">
-        <input id="redirectLink" placeholder="Link">
-        <button onclick="redirectUser()">Redirect</button>
-
-        <input id="announcementText" placeholder="Announcement text">
-        <button onclick="sendAnnouncement()">Announce</button>
-
-        <input id="jumpscareImage" placeholder="Image URL">
-        <input id="jumpscareAudio" placeholder="Audio URL">
-        <button onclick="jumpscareAll()">Jumpscare</button>
-
-        <input id="changePfpUser" placeholder="Username to change pfp">
-        <input id="newPfpUrl" placeholder="New PFP URL">
-        <button onclick="changeUserPfp()">Change User PFP</button>
-
-        <button onclick="strobeScreen()">Strobe</button>
-        <button onclick="kickEveryone()">Kick Everyone</button>
+  <div id="chat-container">
+    <div id="user-bar">
+      <span id="welcome-user"></span>
+      <button id="logout-button">Logout</button>
     </div>
 
-    <button id="toggleAdmin" onclick="toggleAdminPanel()">⚙️</button>
+    <div id="messages"></div>
 
-    <div class="chat-container">
-        <div id="userList" class="user-list"></div>
-
-        <div id="chatArea" class="chat-area"></div>
-
-        <div id="privateMessageContainer" class="private-message-container hidden">
-            <h3>Private Message to <span id="privateRecipient"></span></h3>
-            <input id="privateMessageInput" placeholder="Type private message...">
-            <button onclick="sendPrivateMessage()">Send</button>
-            <button onclick="closePrivateMessage()">Cancel</button>
-        </div>
-
-        <div class="send-message">
-            <input id="messageInput" placeholder="Type your message..." autocomplete="off">
-            <input type="file" id="imageInput" accept="image/*">
-            <button onclick="sendImage()">Send Image</button>
-            <input type="file" id="pfpInput" accept="image/*">
-            <button onclick="changeMyPfp()">Change My PFP</button>
-            <button onclick="sendMessage()">Send</button>
-        </div>
+    <div id="input-area">
+      <input type="text" id="message-input" placeholder="Type your message...">
+      <button id="send-button">Send</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none;">
+      <button id="file-button">📷</button>
     </div>
 
-    <div id="jumpscareOverlay" class="hidden">
-        <img id="jumpscareImageElement" src="">
+    <div id="private-chat">
+      <input type="text" id="dm-username" placeholder="Username to DM...">
+      <input type="text" id="dm-message" placeholder="Your private message...">
+      <button id="send-dm-button">Send DM</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/client.js"></script>
+    <div id="profile-picture-change">
+      <input type="file" id="pfp-input" accept="image/*">
+      <button id="change-pfp-button">Change PFP</button>
+    </div>
+
+    <div id="admin-panel" style="display:none;">
+      <h2>Admin Panel</h2>
+
+      <div id="admin-controls">
+        <input type="text" id="kick-username" placeholder="Username to Kick">
+        <button id="kick-button">Kick User</button>
+
+        <input type="text" id="jumpscare-image" placeholder="Jumpscare Image URL">
+        <input type="text" id="jumpscare-audio" placeholder="Jumpscare Audio URL">
+        <button id="jumpscare-button">Jumpscare Everyone</button>
+
+        <input type="text" id="change-pfp-username" placeholder="Username to Prank">
+        <input type="text" id="new-pfp-url" placeholder="New PFP URL">
+        <button id="prank-pfp-button">Change User's PFP</button>
+
+        <button id="collapse-admin">Collapse Panel</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+
 </body>
 </html>
