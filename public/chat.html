@@ -2,46 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="/socket.io/socket.io.js"></script>
-  <script defer src="client.js"></script>
+  <title>Sharcord - Chat</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-
-<div id="app">
-  
-  <!-- Sidebar -->
-  <div id="sidebar">
-    <h2>Sharcord</h2>
-
-    <!-- Server List -->
+<body class="chat-page">
+  <div class="sidebar">
+    <h2>Servers</h2>
     <div id="serverList">
-      <h3>Servers</h3>
-      <div id="servers"></div>
-      <input id="serverNameInput" placeholder="New Server Name">
-      <button onclick="createServer()">Create Server</button>
-    </div>
-
-    <!-- Channel List -->
-    <div id="channelList">
-      <h3>Channels</h3>
-      <div id="channels"></div>
-      <input id="channelNameInput" placeholder="New Channel Name">
-      <button onclick="createChannel()">Create Channel</button>
+      <button onclick="createServer()">+ Create Server</button>
     </div>
   </div>
 
-  <!-- Main Chat -->
-  <div id="chatArea">
+  <div class="chat-container">
+    <div id="channelHeader"># general</div>
     <div id="messages"></div>
-    <div id="messageInputArea">
-      <input id="messageInput" type="text" placeholder="Type a message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
+
+    <form id="messageForm">
+      <input type="text" id="messageInput" placeholder="Send a message..." autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
   </div>
 
-</div>
+  <div id="adminMenu" class="admin-menu hidden">
+    <h2>Admin Panel</h2>
+    <button onclick="strobeScreens()">🔴 Strobe Screens</button>
+    <button onclick="sendAnnouncement()">📢 Send Announcement</button>
+    <button onclick="kickUser()">👢 Kick User</button>
+    <button onclick="timeoutUser()">⏰ Timeout User</button>
+    <input type="file" id="uploadFile" accept="image/*,audio/*">
+    <button onclick="uploadAndSend()">📤 Upload & Broadcast</button>
+  </div>
 
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
 </body>
 </html>
