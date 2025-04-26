@@ -1,128 +1,142 @@
 const socket = io();
-let username = "";
+const messages = document.getElementById('messages');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const uploadImageBtn = document.getElementById('uploadImageBtn');
+const imageInput = document.getElementById('imageInput');
+const profilePicInput = document.getElementById('profilePicInput');
+const updatePicBtn = document.getElementById('updatePicBtn');
+const overlay = document.getElementById('overlay');
+const overlayImage = document.getElementById('overlayImage');
+const audioPlayer = document.getElementById('audioPlayer');
+const logoutBtn = document.getElementById('logoutBtn');
 
-document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/login.html';
-    return;
-  }
+let loggedInUser = localStorage.getItem('loggedInUser');
 
-  fetch('/api/me', {
-    headers: { 'Authorization': `Bearer ${token}` }
-  }).then(res => res.json()).then(data => {
-    if (!data.success) {
-      window.location.href = '/login.html';
-      return;
-    }
+if (!loggedInUser) {
+  window.location.href = 'login.html';
+}
 
-    username = data.username;
-    if (username === "X12") {
-      document.getElementById('adminMenu').classList.remove('hidden');
-    }
+socket.emit('user-joined', loggedInUser);
 
-    socket.emit('join', { username });
-  });
-
-  document.getElementById('messageForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const msg = document.getElementById('messageInput').value;
-    if (msg.trim() !== "") {
-      socket.emit('chat message', { username, msg });
-      document.getElementById('messageInput').value = "";
-    }
-  });
-
-  socket.on('chat message', (data) => {
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('message');
-    msgDiv.innerHTML = `<strong>${data.username}:</strong> ${data.msg}`;
-    document.getElementById('messages').appendChild(msgDiv);
-    msgDiv.scrollIntoView();
-  });
-
-  socket.on('announcement', (msg) => {
-    alert(`📢 Admin Announcement: ${msg}`);
-  });
-
-  socket.on('strobe', () => {
-    let colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-    let i = 0;
-    const interval = setInterval(() => {
-      document.body.style.backgroundColor = colors[i % colors.length];
-      i++;
-    }, 100);
-    setTimeout(() => {
-      clearInterval(interval);
-      document.body.style.backgroundColor = '';
-    }, 3000);
-  });
-
-  socket.on('kick', () => {
-    alert("You have been kicked by admin!");
-    window.location.href = '/login.html';
-  });
-
-  socket.on('timeout', (duration) => {
-    alert(`You've been timed out for ${duration} seconds.`);
-    document.getElementById('messageInput').disabled = true;
-    setTimeout(() => {
-      document.getElementById('messageInput').disabled = false;
-    }, duration * 1000);
-  });
-
-  socket.on('broadcastMedia', (fileUrl, type) => {
-    if (type.startsWith('image/')) {
-      const img = document.createElement('img');
-      img.src = fileUrl;
-      img.classList.add('broadcast-img');
-      document.body.appendChild(img);
-      setTimeout(() => img.remove(), 10000);
-    } else if (type.startsWith('audio/')) {
-      const audio = new Audio(fileUrl);
-      audio.play();
-    }
-  });
+sendBtn.addEventListener('click', () => {
+  sendMessage();
 });
 
-function strobeScreens() {
-  socket.emit('admin strobe');
-}
+messageInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
 
-function sendAnnouncement() {
-  const msg = prompt("Enter announcement message:");
-  if (msg) socket.emit('admin announcement', msg);
-}
-
-function kickUser() {
-  const user = prompt("Enter username to kick:");
-  if (user) socket.emit('admin kick', user);
-}
-
-function timeoutUser() {
-  const user = prompt("Enter username to timeout:");
-  const duration = prompt("Enter duration (seconds):");
-  if (user && duration) socket.emit('admin timeout', { user, duration });
-}
-
-function uploadAndSend() {
-  const fileInput = document.getElementById('uploadFile');
-  const file = fileInput.files[0];
-  if (!file) return alert("No file selected!");
-
-  const formData = new FormData();
-  formData.append('file', file);
-
-  fetch('/api/upload', {
-    method: 'POST',
-    body: formData
-  }).then(res => res.json()).then(data => {
-    if (data.success) {
-      socket.emit('admin broadcast', { fileUrl: data.url, type: file.type });
+// P key fullscreen image
+let pImageActive = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'p' && document.activeElement !== messageInput) {
+    if (!pImageActive) {
+      overlayImage.src = 'https://files.catbox.moe/5pz8os.png';
+      overlay.style.display = 'flex';
+      pImageActive = true;
+    } else {
+      overlay.style.display = 'none';
+      pImageActive = false;
     }
-  });
+  }
+});
+
+function sendMessage() {
+  const text = messageInput.value.trim();
+  if (text !== '') {
+    if (text.startsWith('/dm')) {
+      const parts = text.split(' ');
+      const to = parts[1];
+      const dmMessage = parts.slice(2).join(' ');
+      socket.emit('private-message', { to, from: loggedInUser, message: dmMessage });
+    } else {
+      socket.emit('chat-message', { user: loggedInUser, text });
+    }
+    messageInput.value = '';
+  }
 }
 
-function createServer() {
-  alert("Feature coming soon: Create servers!");
+uploadImageBtn.addEventListener('click', () => {
+  const file = imageInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      socket.emit('chat-image', { user: loggedInUser, imageUrl: e.target.result });
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+updatePicBtn.addEventListener('click', () => {
+  const picUrl = profilePicInput.value.trim();
+  if (picUrl !== '') {
+    socket.emit('update-profile-pic', { user: loggedInUser, profilePic: picUrl });
+  }
+});
+
+logoutBtn.addEventListener('click', () => {
+  localStorage.removeItem('loggedInUser');
+  window.location.href = 'login.html';
+});
+
+socket.on('chat-message', (data) => {
+  addMessage(data.user, data.text, data.profilePic);
+});
+
+socket.on('chat-image', (data) => {
+  addImage(data.user, data.imageUrl, data.profilePic);
+});
+
+socket.on('private-message', (data) => {
+  alert(`DM from ${data.from}: ${data.message}`);
+});
+
+socket.on('kicked', () => {
+  alert('You were kicked by an admin.');
+  window.location.href = 'login.html';
+});
+
+socket.on('jumpscare', (data) => {
+  overlayImage.src = data.image;
+  overlay.style.display = 'flex';
+  audioPlayer.src = data.audio;
+  audioPlayer.style.display = 'block';
+  audioPlayer.play();
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 5000);
+});
+
+socket.on('strobe', (duration) => {
+  let colors = ['red', 'blue', 'green', 'yellow', 'purple', 'white'];
+  let index = 0;
+  const strobeInterval = setInterval(() => {
+    document.body.style.backgroundColor = colors[index++ % colors.length];
+  }, 100);
+  setTimeout(() => {
+    clearInterval(strobeInterval);
+    document.body.style.background = 'linear-gradient(to right, #000000, #4b0000)';
+  }, duration);
+});
+
+socket.on('redirect', (url) => {
+  window.location.href = url;
+});
+
+function addMessage(user, text, profilePic) {
+  const message = document.createElement('div');
+  message.innerHTML = `<img src="${profilePic}" style="width:30px; height:30px; border-radius:50%; margin-right:5px;"> <strong>${user}:</strong> ${text}`;
+  messages.appendChild(message);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function addImage(user, imageUrl, profilePic) {
+  const message = document.createElement('div');
+  message.innerHTML = `<img src="${profilePic}" style="width:30px; height:30px; border-radius:50%; margin-right:5px;"> <strong>${user}:</strong> <br><img src="${imageUrl}" style="max-width:300px;">`;
+  messages.appendChild(message);
+  messages.scrollTop = messages.scrollHeight;
 }
