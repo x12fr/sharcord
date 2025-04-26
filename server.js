@@ -5,7 +5,7 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const path = require('path');
 
-const users = {}; // Store users { username: { password, profilePic, timeoutUntil } }
+const users = {};
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -58,11 +58,10 @@ io.on('connection', (socket) => {
         io.emit('image upload', { username: socket.username, image: data.image, profilePic: socket.profilePic });
     });
 
-    socket.on('disconnect', () => {
-        io.emit('user left', socket.username);
+    socket.on('announcement', (data) => {
+        io.emit('announcement', { message: data });
     });
 
-    // Admin features
     socket.on('strobe', (data) => {
         io.emit('strobe', data);
     });
@@ -77,6 +76,14 @@ io.on('connection', (socket) => {
 
     socket.on('redirect user', ({ username, url }) => {
         io.emit('redirect user', { username, url });
+    });
+
+    socket.on('jumpscare', ({ image, audio }) => {
+        io.emit('jumpscare', { image, audio });
+    });
+
+    socket.on('disconnect', () => {
+        io.emit('user left', socket.username);
     });
 });
 
