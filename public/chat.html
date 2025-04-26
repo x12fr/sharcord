@@ -2,35 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sharcord - Chat</title>
+  <title>Sharcord | Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="profile">
-    <img id="profile-avatar" src="" alt="Profile" width="50" height="50">
-    <span id="profile-name"></span>
+  <div class="main-container">
+    
+    <!-- Sidebar: Servers -->
+    <div class="servers-bar">
+      <button id="create-server-btn">+</button>
+      <ul id="server-list">
+        <!-- Servers will appear here -->
+      </ul>
+    </div>
+
+    <!-- Server Content: Channels -->
+    <div class="channels-bar">
+      <h2 id="server-name">Sharcord</h2>
+      <ul id="channel-list">
+        <!-- Channels will appear here -->
+      </ul>
+      <button id="create-channel-btn">+ Channel</button>
+    </div>
+
+    <!-- Channel Content: Messages -->
+    <div class="chat-area">
+      <div id="messages"></div>
+
+      <form id="chat-form">
+        <input id="chat-input" autocomplete="off" placeholder="Message #general..." />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
   </div>
 
-  <div id="server-list"></div>
-  <button onclick="createServer()">+ Create Server</button>
-
-  <div id="channel-list"></div>
-  <button onclick="createChannel()">+ Create Channel</button>
-
-  <div id="messages" style="height:400px; overflow-y:scroll; background:#f0f0f0; padding:10px;"></div>
-
-  <input type="text" id="message-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendMessage();">
-  <button onclick="sendMessage()">Send</button>
-
-  <div id="admin-panel" style="display:none; margin-top:20px;">
-    <h2>Admin Panel</h2>
-    <button onclick="strobeScreen()">🌈 Strobe Screen</button>
-    <button onclick="sendAnnouncement()">📢 Send Announcement</button>
-    <button onclick="kickUser()">👢 Kick User</button>
-    <button onclick="timeoutUser()">⏳ Timeout User</button>
-    <button onclick="uploadMedia()">🖼️ Upload Image and Audio</button>
-  </div>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
