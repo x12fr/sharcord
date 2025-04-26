@@ -1,96 +1,155 @@
 const socket = io();
-const messages = document.getElementById('messages');
-const input = document.getElementById('message-input');
-const sendBtn = document.getElementById('send-button');
-const pImage = document.getElementById('p-image');
 
-let pImageVisible = false;
-let cooldown = false;
+const chatInput = document.getElementById('chat-input');
+const dmUser = document.getElementById('dm-user');
+const messagesDiv = document.getElementById('messages');
+const fileInput = document.getElementById('file-input');
+const sendFileBtn = document.getElementById('send-file-btn');
+const pfpUpload = document.getElementById('pfp-upload');
+const uploadPfpBtn = document.getElementById('upload-pfp-btn');
+const fullscreenImg = document.getElementById('fullscreen-img');
+const fullscreenImgContent = document.getElementById('fullscreen-img-content');
+const audioPlayer = document.getElementById('audio-player');
 
-// Send Message
-sendBtn.onclick = () => {
-  sendMessage();
+// Admin panel toggling
+const collapseBtn = document.getElementById('collapse-btn');
+const adminControls = document.getElementById('admin-controls');
+collapseBtn.onclick = () => {
+  adminControls.classList.toggle('hidden');
 };
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
+
+// Cooldown
+let canSend = true;
+
+// Message sending
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && canSend) {
     sendMessage();
-  }
-  if (e.key.toLowerCase() === 'p' && document.activeElement !== input) {
-    togglePImage();
+    canSend = false;
+    setTimeout(() => { canSend = true; }, 3000);
   }
 });
 
+// File sending
+sendFileBtn.onclick = () => {
+  const file = fileInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      socket.emit('image', evt.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+// Profile picture changing
+uploadPfpBtn.onclick = () => {
+  const file = pfpUpload.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      socket.emit('changePFP', evt.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+// Send message
 function sendMessage() {
-  if (cooldown) return;
-  const text = input.value.trim();
-  if (text) {
-    socket.emit('chat message', text);
-    input.value = '';
-    cooldown = true;
-    setTimeout(() => cooldown = false, 3000);
+  const text = chatInput.value;
+  const dm = dmUser.value;
+  if (text.trim() !== '') {
+    socket.emit('chatMessage', { text, to: dm });
+    chatInput.value = '';
   }
 }
 
-// Receive Messages
-socket.on('chat message', data => {
+// Listen for new messages
+socket.on('chatMessage', (data) => {
   const div = document.createElement('div');
-  div.innerHTML = `<strong>${data.username}:</strong> ${linkify(data.message)}`;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
+  div.innerHTML = `<strong>${data.username}</strong> ${data.tags || ''}: ${data.message}`;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-function linkify(text) {
-  return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-}
+// Listen for images
+socket.on('image', (data) => {
+  const div = document.createElement('div');
+  div.innerHTML = `<strong>${data.username}</strong> <img src="${data.img}" style="max-width: 200px;">`;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
 
-// Toggle P Image
-function togglePImage() {
-  if (pImageVisible) {
-    pImage.style.display = 'none';
-  } else {
-    pImage.style.display = 'flex';
-  }
-  pImageVisible = !pImageVisible;
-}
-
-// Admin Stuff
-function jumpscare() {
-  const imgUrl = document.getElementById('image-url').value;
-  const audioUrl = document.getElementById('audio-url').value;
-  socket.emit('jumpscare', { imgUrl, audioUrl });
-}
-
-function kickUser() {
-  const username = document.getElementById('kick-username').value;
-  socket.emit('kick user', username);
-}
-
-function changeOtherPfp() {
-  const target = document.getElementById('target-username').value;
-  const newPfp = document.getElementById('new-pfp-url').value;
-  socket.emit('change pfp', { target, newPfp });
-}
-
-// Jumpscare Action
-socket.on('do jumpscare', data => {
-  const jumpscareDiv = document.createElement('div');
-  jumpscareDiv.style.position = 'fixed';
-  jumpscareDiv.style.top = 0;
-  jumpscareDiv.style.left = 0;
-  jumpscareDiv.style.width = '100vw';
-  jumpscareDiv.style.height = '100vh';
-  jumpscareDiv.style.backgroundColor = 'black';
-  jumpscareDiv.style.display = 'flex';
-  jumpscareDiv.style.justifyContent = 'center';
-  jumpscareDiv.style.alignItems = 'center';
-  jumpscareDiv.style.zIndex = 10000;
-  jumpscareDiv.innerHTML = `<img src="${data.imgUrl}" style="max-width:90%; max-height:90%;">`;
-  document.body.appendChild(jumpscareDiv);
-
-  const audio = new Audio(data.audioUrl);
-  audio.play();
-
+// Jumpscare
+socket.on('jumpscare', (data) => {
+  fullscreenImgContent.src = data.img;
+  fullscreenImg.classList.remove('hidden');
+  audioPlayer.src = data.audio;
+  audioPlayer.play();
   setTimeout(() => {
-    document.body.removeChild(jumpscareDiv);
+    fullscreenImg.classList.add('hidden');
   }, 5000);
 });
+
+// P toggle
+let pActive = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'p' && document.activeElement !== chatInput && document.activeElement !== dmUser) {
+    if (pActive) {
+      fullscreenImg.classList.add('hidden');
+      pActive = false;
+    } else {
+      fullscreenImgContent.src = 'https://files.catbox.moe/5pz8os.png';
+      fullscreenImg.classList.remove('hidden');
+      pActive = true;
+    }
+  }
+});
+
+// Admin controls
+document.getElementById('redirect-btn').onclick = () => {
+  socket.emit('adminRedirect', {
+    user: document.getElementById('redirect-username').value,
+    url: document.getElementById('redirect-url').value
+  });
+};
+
+document.getElementById('kick-btn').onclick = () => {
+  socket.emit('adminKick', document.getElementById('kick-username').value);
+};
+
+document.getElementById('timeout-btn').onclick = () => {
+  socket.emit('adminTimeout', {
+    user: document.getElementById('timeout-username').value,
+    time: document.getElementById('timeout-time').value
+  });
+};
+
+document.getElementById('play-audio-btn').onclick = () => {
+  socket.emit('adminPlayAudio', document.getElementById('yt-url').value);
+};
+
+document.getElementById('strobe-btn').onclick = () => {
+  socket.emit('adminStrobe', {
+    duration: document.getElementById('strobe-duration').value
+  });
+};
+
+document.getElementById('strobe-all-btn').onclick = () => {
+  socket.emit('adminStrobeAll', {});
+};
+
+document.getElementById('change-pfp-btn').onclick = () => {
+  socket.emit('adminChangePFP', {
+    user: document.getElementById('pfp-target').value,
+    pfp: document.getElementById('pfp-url').value
+  });
+};
+
+document.getElementById('jumpscare-btn').onclick = () => {
+  socket.emit('adminJumpscare', {
+    img: document.getElementById('jumpscare-img').value,
+    audio: document.getElementById('jumpscare-audio').value
+  });
+};
+
