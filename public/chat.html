@@ -2,27 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sharcord</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Sharcord Chat</title>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div id="chatContainer">
-        <div id="chatMessages" style="overflow-y: auto; height: 80vh;"></div>
-        <input id="messageInput" placeholder="Type your message..." autocomplete="off">
-        <button onclick="sendMessage()">Send</button>
+    <div id="announcement-bar"></div>
+    <div id="chat-box"></div>
+
+    <form id="message-form">
+        <input id="message-input" autocomplete="off" placeholder="Type a message..." />
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="admin-panel" style="display:none;">
+        <h2>Admin Panel</h2>
+        <button onclick="strobe()">Strobe All Screens</button>
+        <button onclick="sendAnnouncement()">Send Announcement</button>
+        <button onclick="timeoutUser()">Timeout User</button>
+        <button onclick="redirectUser()">Redirect User</button>
         <br><br>
-        <input id="pfpInput" placeholder="New profile picture URL...">
-        <button onclick="changePfp()">Change PFP</button>
-        <div id="adminPanel" style="display:none;">
-            <h3>Admin Panel</h3>
-            <button onclick="clearChat()">Clear Chat</button>
-            <button onclick="strobeAll()">Strobe Screens</button>
-            <input id="announcementInput" placeholder="Announcement text">
-            <button onclick="sendAnnouncement()">Send Announcement</button>
-        </div>
+        <input type="text" id="jumpscare-image" placeholder="Image URL">
+        <input type="text" id="jumpscare-audio" placeholder="Audio URL">
+        <button onclick="jumpscare()">Jumpscare</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
+    <script src="/client.js"></script>
 </body>
 </html>
