@@ -96,11 +96,6 @@ button:hover {
   z-index: 10000; /* Ensure admin panel is above the strobe effect */
 }
 
-#admin-panel h3 {
-  color: #1f80ff; /* Bright blue for Admin panel title */
-  text-align: center;
-}
-
 /* === Messages === */
 .message {
   margin-bottom: 15px;
@@ -171,9 +166,4 @@ img {
   50% { background-color: black; }
   75% { background-color: orange; }
   100% { background-color: red; }
-}
-
-/* === JavaScript for Dynamic Toggling of Strobe Effect === */
-body.admin-active .strobe-effect {
-  visibility: visible; /* Show strobe effect only when admin panel is NOT open */
 }
