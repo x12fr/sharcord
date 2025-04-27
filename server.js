@@ -4,6 +4,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
 const fs = require('fs');
+const session = require('express-session');
 const bodyParser = require('body-parser');
 
 const PORT = process.env.PORT || 3000;
@@ -12,7 +13,14 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Load users from users.json
+// Sessions
+app.use(session({
+    secret: 'sharcord-secret-key', // (you can change this)
+    resave: false,
+    saveUninitialized: true
+}));
+
+// Load users
 let users = [];
 const USERS_FILE = path.join(__dirname, 'users.json');
 
@@ -22,6 +30,7 @@ if (fs.existsSync(USERS_FILE)) {
     fs.writeFileSync(USERS_FILE, JSON.stringify(users));
 }
 
+// Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -35,7 +44,11 @@ app.get('/register', (req, res) => {
 });
 
 app.get('/chat', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+    if (req.session.user) {
+        res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+    } else {
+        res.redirect('/login');
+    }
 });
 
 // Handle login
@@ -44,6 +57,7 @@ app.post('/login', (req, res) => {
     const user = users.find(u => u.username === username && u.password === password);
 
     if (user) {
+        req.session.user = user; // Save user into session
         res.redirect('/chat');
     } else {
         res.send('Login failed. <a href="/login">Try again</a>');
@@ -62,14 +76,18 @@ app.post('/register', (req, res) => {
         const newUser = { username, password };
         users.push(newUser);
 
-        // Save updated users list to users.json
         fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-
         res.redirect('/login');
     }
 });
 
-// Socket.io stuff
+// Handle logout
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+});
+
+// Socket.io
 io.on('connection', (socket) => {
     console.log('A user connected.');
 
