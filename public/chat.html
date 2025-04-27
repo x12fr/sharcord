@@ -1,46 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Chat</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Sharcord Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="chat-container">
-        <div id="adminPanel" class="admin-panel">
-            <h2>Admin Panel</h2>
-            <button onclick="strobeAll()">🔥 Strobe All</button><br>
-            <input id="audioUrl" placeholder="YouTube Audio URL"><br>
-            <button onclick="playAudio()">🔥 Play YouTube Audio</button><br>
-            <input id="timeoutUser" placeholder="Username to Timeout"><br>
-            <input id="timeoutDuration" placeholder="Duration (s)"><br>
-            <button onclick="timeoutUser()">🔥 Timeout User</button><br>
-            <input id="redirectUser" placeholder="Username to Redirect"><br>
-            <input id="redirectLink" placeholder="Redirect URL"><br>
-            <button onclick="redirectUser()">🔥 Redirect User</button><br>
-            <input id="pfpUser" placeholder="Username to Change PFP"><br>
-            <input id="pfpUrl" placeholder="New PFP URL"><br>
-            <button onclick="changePFP()">🔥 Change Profile Pic</button><br>
-            <input id="jumpImg" placeholder="Jump Image URL"><br>
-            <input id="jumpAudio" placeholder="Jump Audio URL"><br>
-            <button onclick="jumpScare()">🔥 Jumpscare</button><br>
-        </div>
+  <div id="main">
+    <div id="chat-box"></div>
 
-        <div id="chat-box" class="chat-box"></div>
-
-        <div id="input-area">
-            <input type="text" id="messageInput" placeholder="Type your message...">
-            <input type="file" id="imageInput">
-            <input type="text" id="profilePicInput" placeholder="Profile Picture URL">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+    <div id="message-controls">
+      <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+      <button id="send-button">Send</button>
+      <input type="text" id="image-url" placeholder="Image URL...">
+      <button id="send-image-button">Send Image</button>
+      <input type="text" id="pfp-url" placeholder="Set Profile Pic URL">
+      <button id="set-pfp-button">Set PFP</button>
     </div>
 
-    <div id="jumpscareScreen" class="jumpscare-screen" style="display: none;">
-        <img id="jumpscareImage" src="">
+    <div id="admin-panel">
+      <h3>Admin Panel</h3>
+      <button onclick="strobe()">🔥 Strobe all screens</button><br><br>
+      <input id="audio-url" type="text" placeholder="YouTube Audio URL">
+      <button onclick="playAudio()">🔥 Play Audio</button><br><br>
+      <input id="timeout-user" type="text" placeholder="Username">
+      <input id="timeout-duration" type="number" placeholder="Seconds">
+      <button onclick="timeout()">🔥 Timeout User</button><br><br>
+      <input id="redirect-user" type="text" placeholder="Username">
+      <input id="redirect-link" type="text" placeholder="Redirect Link">
+      <button onclick="redirect()">🔥 Redirect User</button><br><br>
+      <input id="change-pfp-user" type="text" placeholder="Username">
+      <input id="change-pfp-url" type="text" placeholder="New PFP URL">
+      <button onclick="changePFP()">🔥 Change PFP</button><br><br>
+      <input id="jumpscare-img" type="text" placeholder="Image URL">
+      <input id="jumpscare-audio" type="text" placeholder="Audio URL">
+      <button onclick="jumpScare()">🔥 Jumpscare</button><br><br>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
 </body>
 </html>
