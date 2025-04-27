@@ -1,165 +1,143 @@
 const socket = io();
+let myUsername = localStorage.getItem('username') || '';
+let myProfilePic = localStorage.getItem('profilePic') || '';
+let isAdmin = myUsername === 'X12';
+let canSend = true;
 
-let username = sessionStorage.getItem('username');
-if (!username) {
-  window.location.href = '/login';
-}
-
-socket.emit('new-user', username);
-
-const messages = document.getElementById('messages');
-const form = document.getElementById('send-form');
-const input = document.getElementById('send-input');
-const adminPanel = document.getElementById('admin-panel');
-const profileInput = document.getElementById('profile-input');
-const profileButton = document.getElementById('set-pfp-btn');
-
-let cooldown = false;
-let adminVisible = true;
-
-form.addEventListener('submit', e => {
-  e.preventDefault();
-  if (input.value.trim() === '' || cooldown) return;
-  socket.emit('send-chat-message', input.value);
-  input.value = '';
-  cooldown = true;
-  setTimeout(() => cooldown = false, 3000);
+// Update PFP
+document.getElementById('set-pfp-btn')?.addEventListener('click', () => {
+  const newPic = document.getElementById('profile-input').value;
+  if (newPic) {
+    myProfilePic = newPic;
+    localStorage.setItem('profilePic', myProfilePic);
+    alert('Profile picture updated!');
+  }
 });
 
-socket.on('chat-message', data => {
-  const msg = document.createElement('div');
-  msg.innerHTML = `<img src="${data.user.pfp}" class="pfp"> <b>${data.user.username}</b>: ${data.message}`;
-  messages.appendChild(msg);
-  messages.scrollTop = messages.scrollHeight;
+// Admin panel toggle with "]"
+document.addEventListener('keydown', (e) => {
+  if (e.key === ']' && isAdmin) {
+    const panel = document.getElementById('admin-panel');
+    if (panel.style.display === 'none') panel.style.display = 'block';
+    else panel.style.display = 'none';
+  }
 });
 
-socket.on('chat-image', data => {
-  const msg = document.createElement('div');
-  msg.innerHTML = `<img src="${data.user.pfp}" class="pfp"> <b>${data.user.username}</b>: <br><img src="${data.url}" class="chat-image">`;
-  messages.appendChild(msg);
-  messages.scrollTop = messages.scrollHeight;
-});
-
-socket.on('private-message', data => {
-  alert(`Private message from ${data.from}: ${data.message}`);
-});
-
-socket.on('pfp-changed', data => {
-  const all = document.querySelectorAll('.pfp');
-  all.forEach(img => {
-    if (img.alt === data.username) {
-      img.src = data.url;
+// "P" image toggle (admin only)
+let pImageVisible = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'p' && isAdmin && !document.activeElement.matches('input')) {
+    pImageVisible = !pImageVisible;
+    if (pImageVisible) {
+      const img = document.createElement('img');
+      img.src = 'https://files.catbox.moe/5pz8os.png';
+      img.style.position = 'fixed';
+      img.style.top = 0;
+      img.style.left = 0;
+      img.style.width = '100vw';
+      img.style.height = '100vh';
+      img.style.zIndex = 9999;
+      img.id = 'pImage';
+      document.body.appendChild(img);
+    } else {
+      document.getElementById('pImage')?.remove();
     }
-  });
+  }
 });
 
-socket.on('redirect', url => {
-  window.location.href = url;
+// Sending messages
+document.getElementById('send-form')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('send-input');
+  if (input.value.trim() && canSend) {
+    socket.emit('chatMessage', {
+      username: myUsername,
+      text: input.value.trim(),
+      pfp: myProfilePic
+    });
+    input.value = '';
+    canSend = false;
+    setTimeout(() => canSend = true, 3000); // 3 second cooldown
+  }
 });
 
-socket.on('strobe', () => {
-  let colors = ['red', 'blue', 'green', 'purple', 'yellow'];
-  let i = 0;
-  let interval = setInterval(() => {
-    document.body.style.backgroundColor = colors[i % colors.length];
-    i++;
-  }, 200);
+// Receiving messages
+socket.on('chatMessage', (data) => {
+  const msgBox = document.getElementById('messages');
+  const msg = document.createElement('div');
+  msg.innerHTML = `<img class="pfp" src="${data.pfp || 'https://via.placeholder.com/32'}"> <strong>${data.username}:</strong> ${linkify(data.text)}`;
+  msgBox.appendChild(msg);
+  msgBox.scrollTop = msgBox.scrollHeight;
+});
+
+// Receiving images
+socket.on('imageMessage', (data) => {
+  const msgBox = document.getElementById('messages');
+  const msg = document.createElement('div');
+  msg.innerHTML = `<img class="pfp" src="${data.pfp || 'https://via.placeholder.com/32'}"> <strong>${data.username}:</strong><br><img class="chat-image" src="${data.imageUrl}">`;
+  msgBox.appendChild(msg);
+  msgBox.scrollTop = msgBox.scrollHeight;
+});
+
+// Jumpscare
+socket.on('jumpscare', (data) => {
+  const img = document.createElement('img');
+  img.src = data.imageUrl;
+  img.style.position = 'fixed';
+  img.style.top = 0;
+  img.style.left = 0;
+  img.style.width = '100vw';
+  img.style.height = '100vh';
+  img.style.zIndex = 9999;
+  img.id = 'jumpImage';
+  document.body.appendChild(img);
+
+  const audio = new Audio(data.audioUrl);
+  audio.play();
+
   setTimeout(() => {
-    clearInterval(interval);
-    document.body.style.backgroundColor = '';
-  }, 3000);
-});
-
-socket.on('play-audio', url => {
-  new Audio(url).play();
-});
-
-socket.on('jumpscare', ({ img, audio }) => {
-  const scare = document.createElement('div');
-  scare.id = 'scare';
-  scare.style.position = 'fixed';
-  scare.style.top = 0;
-  scare.style.left = 0;
-  scare.style.width = '100%';
-  scare.style.height = '100%';
-  scare.style.background = `url(${img}) center center / cover no-repeat`;
-  scare.style.zIndex = 9999;
-  document.body.appendChild(scare);
-  new Audio(audio).play();
-  setTimeout(() => {
-    document.getElementById('scare')?.remove();
+    document.getElementById('jumpImage')?.remove();
   }, 5000);
 });
 
-// ADMIN TOGGLES
-document.addEventListener('keydown', e => {
-  if (username === "X12" && e.key === "]") {
-    adminPanel.style.display = adminVisible ? 'none' : 'block';
-    adminVisible = !adminVisible;
-  }
-  if (username === "X12" && e.key.toLowerCase() === 'p') {
-    togglePImage();
-  }
-});
-
-let pActive = false;
-function togglePImage() {
-  if (pActive) {
-    document.getElementById('p-img')?.remove();
-    pActive = false;
-  } else {
-    const img = document.createElement('img');
-    img.src = "https://files.catbox.moe/5pz8os.png";
-    img.id = "p-img";
-    img.style.position = 'fixed';
-    img.style.top = 0;
-    img.style.left = 0;
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'cover';
-    img.style.zIndex = 9999;
-    document.body.appendChild(img);
-    pActive = true;
-  }
+// Helper: Make links clickable
+function linkify(text) {
+  return text.replace(/(https?:\/\/[^\s]+)/g, `<a href="$1" target="_blank" style="color: red;">$1</a>`);
 }
 
-// ADMIN BUTTON FUNCTIONS
+// ADMIN COMMANDS:
+
 function strobeAll() {
-  socket.emit('strobe-all');
+  socket.emit('strobeAll');
 }
 
 function playAudio() {
-  const url = prompt('YouTube Audio URL:');
-  socket.emit('play-audio', url);
+  const url = prompt('YouTube Audio URL?');
+  if (url) socket.emit('playAudio', url);
 }
 
 function timeoutUser() {
-  const user = prompt('Username to timeout:');
-  socket.emit('timeout-user', user);
+  const user = prompt('Username to timeout?');
+  const secs = prompt('How many seconds?');
+  if (user && secs) socket.emit('timeoutUser', { user, seconds: parseInt(secs) });
 }
 
 function redirectUser() {
-  const user = prompt('Username to redirect:');
-  const url = prompt('Redirect URL:');
-  socket.emit('redirect-user', { username: user, url });
+  const user = prompt('Username to redirect?');
+  const url = prompt('URL to redirect to?');
+  if (user && url) socket.emit('redirectUser', { user, url });
 }
 
 function changeUserPfp() {
-  const user = prompt('Username to change PFP:');
-  const url = prompt('New PFP URL:');
-  socket.emit('force-change-pfp', { username: user, url });
+  const user = prompt('Username to change PFP?');
+  const newPfp = prompt('New PFP URL?');
+  if (user && newPfp) socket.emit('changeUserPfp', { user, newPfp });
 }
 
 function doJumpscare() {
-  const img = prompt('Image URL for jumpscare:');
-  const audio = prompt('Audio URL for jumpscare:');
-  socket.emit('jumpscare', { img, audio });
-}
-
-profileButton.onclick = () => {
-  const url = profileInput.value;
-  if (url) {
-    socket.emit('change-pfp', url);
-    profileInput.value = '';
+  const imageUrl = prompt('Image URL for jumpscare?');
+  const audioUrl = prompt('Audio URL for jumpscare?');
+  if (imageUrl && audioUrl) {
+    socket.emit('jumpscare', { imageUrl, audioUrl });
   }
-};
+}
