@@ -145,3 +145,41 @@ body, html {
     max-width: 90%;
     max-height: 90%;
 }
+#chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px;
+    background-color: #0a0a0a;
+}
+
+#chat-box {
+    flex: 1;
+    background-color: black;
+    border: 2px solid red;
+    overflow-y: auto;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+#chat-input {
+    display: flex;
+    gap: 10px;
+}
+
+#chat-input input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    background-color: #111;
+    color: white;
+    border: 1px solid red;
+}
+
+#chat-input button, #chat-input input[type="file"] {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
