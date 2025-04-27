@@ -171,3 +171,8 @@ img {
   75% { background-color: orange; }
   100% { background-color: red; }
 }
+
+/* === Prevent Strobe Effect from overlapping Admin Panel === */
+#admin-panel:focus-within ~ .strobe-effect {
+  display: none; /* Hide strobe when admin panel is focused */
+}
