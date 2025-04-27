@@ -11,35 +11,43 @@
 
     <div id="message-controls">
       <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
-      <button id="send-button">Send</button>
+      <button id="send-button" class="button">Send</button>
+
       <input type="text" id="image-url" placeholder="Image URL...">
-      <button id="send-image-button">Send Image</button>
+      <button id="send-image-button" class="button">Send Image</button>
+
       <input type="text" id="pfp-url" placeholder="Set Profile Pic URL">
-      <button id="set-pfp-button">Set PFP</button>
+      <button id="set-pfp-button" class="button">Set PFP</button>
     </div>
 
     <div id="admin-panel">
       <h3>Admin Panel</h3>
-      <button onclick="strobe()">🔥 Strobe all screens</button><br><br>
+
+      <button class="button" onclick="strobe()">🔥 Strobe all screens</button><br><br>
+
       <input id="audio-url" type="text" placeholder="YouTube Audio URL">
-      <button onclick="playAudio()">🔥 Play Audio</button><br><br>
+      <button class="button" onclick="playAudio()">🔥 Play Audio</button><br><br>
+
       <input id="timeout-user" type="text" placeholder="Username">
       <input id="timeout-duration" type="number" placeholder="Seconds">
-      <button onclick="timeout()">🔥 Timeout User</button><br><br>
+      <button class="button" onclick="timeout()">🔥 Timeout User</button><br><br>
+
       <input id="redirect-user" type="text" placeholder="Username">
       <input id="redirect-link" type="text" placeholder="Redirect Link">
-      <button onclick="redirect()">🔥 Redirect User</button><br><br>
+      <button class="button" onclick="redirect()">🔥 Redirect User</button><br><br>
+
       <input id="change-pfp-user" type="text" placeholder="Username">
       <input id="change-pfp-url" type="text" placeholder="New PFP URL">
-      <button onclick="changePFP()">🔥 Change PFP</button><br><br>
+      <button class="button" onclick="changePFP()">🔥 Change PFP</button><br><br>
+
       <input id="jumpscare-img" type="text" placeholder="Image URL">
       <input id="jumpscare-audio" type="text" placeholder="Audio URL">
-      <button onclick="jumpScare()">🔥 Jumpscare</button><br><br>
+      <button class="button" onclick="jumpScare()">🔥 Jumpscare</button><br><br>
     </div>
 
   </div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
