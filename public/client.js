@@ -1,143 +1,160 @@
 const socket = io();
 let myUsername = localStorage.getItem('username') || '';
-let myProfilePic = localStorage.getItem('profilePic') || '';
-let isAdmin = myUsername === 'X12';
-let canSend = true;
+let myPfp = localStorage.getItem('profilePic') || '';
+let cooldown = false;
+let isAdmin = (myUsername === "X12");
+let pImageVisible = false;
 
-// Update PFP
-document.getElementById('set-pfp-btn')?.addEventListener('click', () => {
-  const newPic = document.getElementById('profile-input').value;
-  if (newPic) {
-    myProfilePic = newPic;
-    localStorage.setItem('profilePic', myProfilePic);
-    alert('Profile picture updated!');
-  }
-});
+// Set username and PFP on connect
+socket.emit('setUsername', { username: myUsername, profilePic: myPfp });
 
 // Admin panel toggle with "]"
 document.addEventListener('keydown', (e) => {
-  if (e.key === ']' && isAdmin) {
-    const panel = document.getElementById('admin-panel');
-    if (panel.style.display === 'none') panel.style.display = 'block';
-    else panel.style.display = 'none';
+  if (e.key === "]" && isAdmin) {
+    document.getElementById('adminPanel').classList.toggle('hidden');
   }
 });
 
 // "P" image toggle (admin only)
-let pImageVisible = false;
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'p' && isAdmin && !document.activeElement.matches('input')) {
+  if (e.key === "p" && isAdmin) {
+    if (document.activeElement.id === "messageInput") return;
     pImageVisible = !pImageVisible;
-    if (pImageVisible) {
-      const img = document.createElement('img');
-      img.src = 'https://files.catbox.moe/5pz8os.png';
-      img.style.position = 'fixed';
-      img.style.top = 0;
-      img.style.left = 0;
-      img.style.width = '100vw';
-      img.style.height = '100vh';
-      img.style.zIndex = 9999;
-      img.id = 'pImage';
-      document.body.appendChild(img);
-    } else {
-      document.getElementById('pImage')?.remove();
-    }
+    document.getElementById('pImage').classList.toggle('hidden', !pImageVisible);
   }
 });
 
-// Sending messages
-document.getElementById('send-form')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const input = document.getElementById('send-input');
-  if (input.value.trim() && canSend) {
-    socket.emit('chatMessage', {
-      username: myUsername,
-      text: input.value.trim(),
-      pfp: myProfilePic
-    });
-    input.value = '';
-    canSend = false;
-    setTimeout(() => canSend = true, 3000); // 3 second cooldown
+function sendMessage() {
+  if (cooldown) return;
+  const message = document.getElementById('messageInput').value;
+  const imageUrl = document.getElementById('imageUrl').value;
+
+  if (imageUrl.trim() !== '') {
+    socket.emit('sendImage', { username: myUsername, imageUrl: imageUrl, pfp: myPfp });
+  } else if (message.trim() !== '') {
+    socket.emit('chatMessage', { username: myUsername, text: message, pfp: myPfp });
   }
-});
 
-// Receiving messages
-socket.on('chatMessage', (data) => {
-  const msgBox = document.getElementById('messages');
-  const msg = document.createElement('div');
-  msg.innerHTML = `<img class="pfp" src="${data.pfp || 'https://via.placeholder.com/32'}"> <strong>${data.username}:</strong> ${linkify(data.text)}`;
-  msgBox.appendChild(msg);
-  msgBox.scrollTop = msgBox.scrollHeight;
-});
+  document.getElementById('messageInput').value = '';
+  document.getElementById('imageUrl').value = '';
 
-// Receiving images
-socket.on('imageMessage', (data) => {
-  const msgBox = document.getElementById('messages');
-  const msg = document.createElement('div');
-  msg.innerHTML = `<img class="pfp" src="${data.pfp || 'https://via.placeholder.com/32'}"> <strong>${data.username}:</strong><br><img class="chat-image" src="${data.imageUrl}">`;
-  msgBox.appendChild(msg);
-  msgBox.scrollTop = msgBox.scrollHeight;
-});
-
-// Jumpscare
-socket.on('jumpscare', (data) => {
-  const img = document.createElement('img');
-  img.src = data.imageUrl;
-  img.style.position = 'fixed';
-  img.style.top = 0;
-  img.style.left = 0;
-  img.style.width = '100vw';
-  img.style.height = '100vh';
-  img.style.zIndex = 9999;
-  img.id = 'jumpImage';
-  document.body.appendChild(img);
-
-  const audio = new Audio(data.audioUrl);
-  audio.play();
-
-  setTimeout(() => {
-    document.getElementById('jumpImage')?.remove();
-  }, 5000);
-});
-
-// Helper: Make links clickable
-function linkify(text) {
-  return text.replace(/(https?:\/\/[^\s]+)/g, `<a href="$1" target="_blank" style="color: red;">$1</a>`);
+  cooldown = true;
+  setTimeout(() => cooldown = false, 3000);
 }
 
-// ADMIN COMMANDS:
+function updateProfilePic() {
+  const newPfp = document.getElementById('profilePicUrl').value;
+  if (newPfp.trim() !== '') {
+    myPfp = newPfp;
+    localStorage.setItem('profilePic', newPfp);
+    socket.emit('setUsername', { username: myUsername, profilePic: myPfp });
+  }
+}
 
+// Admin functions
 function strobeAll() {
   socket.emit('strobeAll');
 }
 
 function playAudio() {
-  const url = prompt('YouTube Audio URL?');
-  if (url) socket.emit('playAudio', url);
+  const url = document.getElementById('audioUrl').value;
+  socket.emit('playAudio', url);
 }
 
 function timeoutUser() {
-  const user = prompt('Username to timeout?');
-  const secs = prompt('How many seconds?');
-  if (user && secs) socket.emit('timeoutUser', { user, seconds: parseInt(secs) });
+  const user = document.getElementById('timeoutUser').value;
+  const seconds = document.getElementById('timeoutSeconds').value;
+  socket.emit('timeoutUser', { user, seconds });
 }
 
 function redirectUser() {
-  const user = prompt('Username to redirect?');
-  const url = prompt('URL to redirect to?');
-  if (user && url) socket.emit('redirectUser', { user, url });
+  const user = document.getElementById('redirectUser').value;
+  const link = document.getElementById('redirectLink').value;
+  socket.emit('redirectUser', { user, url: link });
 }
 
 function changeUserPfp() {
-  const user = prompt('Username to change PFP?');
-  const newPfp = prompt('New PFP URL?');
-  if (user && newPfp) socket.emit('changeUserPfp', { user, newPfp });
+  const user = document.getElementById('changePfpUser').value;
+  const newPfp = document.getElementById('newPfp').value;
+  socket.emit('changeUserPfp', { user, newPfp });
 }
 
-function doJumpscare() {
-  const imageUrl = prompt('Image URL for jumpscare?');
-  const audioUrl = prompt('Audio URL for jumpscare?');
-  if (imageUrl && audioUrl) {
-    socket.emit('jumpscare', { imageUrl, audioUrl });
-  }
+function jumpscare() {
+  const imageUrl = document.getElementById('jumpscareImg').value;
+  const audioUrl = document.getElementById('jumpscareAudio').value;
+  socket.emit('jumpscare', { imageUrl, audioUrl });
+}
+
+// Listen for messages
+socket.on('chatMessage', (data) => {
+  const chatBox = document.getElementById('chatBox');
+  const el = document.createElement('div');
+  el.innerHTML = `<img src="${data.pfp}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;"> <strong>${data.username}</strong>: ${linkify(data.text)}`;
+  chatBox.appendChild(el);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+socket.on('imageMessage', (data) => {
+  const chatBox = document.getElementById('chatBox');
+  const el = document.createElement('div');
+  el.innerHTML = `<img src="${data.pfp}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;"> <strong>${data.username}</strong>:<br><img src="${data.imageUrl}" style="max-width:200px;">`;
+  chatBox.appendChild(el);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+socket.on('strobeAll', () => {
+  let colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+  let count = 0;
+  let interval = setInterval(() => {
+    document.body.style.backgroundColor = colors[count % colors.length];
+    count++;
+    if (count > 10) {
+      clearInterval(interval);
+      document.body.style.backgroundColor = 'black';
+    }
+  }, 300);
+});
+
+socket.on('playAudio', (url) => {
+  const audio = document.getElementById('audioPlayer');
+  audio.src = url;
+  audio.play();
+});
+
+socket.on('timeout', (seconds) => {
+  document.body.innerHTML = `<h1>You've been timed out for ${seconds} seconds</h1>`;
+  setTimeout(() => {
+    location.reload();
+  }, seconds * 1000);
+});
+
+socket.on('redirect', (url) => {
+  window.location.href = url;
+});
+
+socket.on('changePfp', (newPfp) => {
+  myPfp = newPfp;
+  localStorage.setItem('profilePic', newPfp);
+});
+
+socket.on('jumpscare', ({ imageUrl, audioUrl }) => {
+  const overlay = document.getElementById('jumpscareOverlay');
+  overlay.innerHTML = `<img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  overlay.classList.remove('hidden');
+
+  const audio = document.getElementById('audioPlayer');
+  audio.src = audioUrl;
+  audio.play();
+
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+  }, 5000);
+});
+
+// Linkify URLs in chat
+function linkify(text) {
+  var urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, function(url) {
+    return `<a href="${url}" target="_blank">${url}</a>`;
+  });
 }
