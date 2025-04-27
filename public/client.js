@@ -1,160 +1,165 @@
 const socket = io();
 
-const form = document.getElementById('message-form');
-const input = document.getElementById('message-input');
+let username = sessionStorage.getItem('username');
+if (!username) {
+  window.location.href = '/login';
+}
+
+socket.emit('new-user', username);
+
 const messages = document.getElementById('messages');
-const sendImageBtn = document.getElementById('send-image-btn');
-const imageUrlInput = document.getElementById('image-url-input');
-const pfpUrlInput = document.getElementById('pfp-url-input');
-const setPfpBtn = document.getElementById('set-pfp-btn');
+const form = document.getElementById('send-form');
+const input = document.getElementById('send-input');
 const adminPanel = document.getElementById('admin-panel');
+const profileInput = document.getElementById('profile-input');
+const profileButton = document.getElementById('set-pfp-btn');
 
-let username = localStorage.getItem('username');
-let pfp = localStorage.getItem('pfp') || 'https://cdn.discordapp.com/embed/avatars/0.png'; 
-let isAdmin = username === 'X12'; // Replace with your real admin username
+let cooldown = false;
+let adminVisible = true;
 
-// Set PFP
-setPfpBtn.addEventListener('click', () => {
-    const url = pfpUrlInput.value;
-    if (url) {
-        pfp = url;
-        localStorage.setItem('pfp', pfp);
-        alert('Profile picture updated!');
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  if (input.value.trim() === '' || cooldown) return;
+  socket.emit('send-chat-message', input.value);
+  input.value = '';
+  cooldown = true;
+  setTimeout(() => cooldown = false, 3000);
+});
+
+socket.on('chat-message', data => {
+  const msg = document.createElement('div');
+  msg.innerHTML = `<img src="${data.user.pfp}" class="pfp"> <b>${data.user.username}</b>: ${data.message}`;
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on('chat-image', data => {
+  const msg = document.createElement('div');
+  msg.innerHTML = `<img src="${data.user.pfp}" class="pfp"> <b>${data.user.username}</b>: <br><img src="${data.url}" class="chat-image">`;
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on('private-message', data => {
+  alert(`Private message from ${data.from}: ${data.message}`);
+});
+
+socket.on('pfp-changed', data => {
+  const all = document.querySelectorAll('.pfp');
+  all.forEach(img => {
+    if (img.alt === data.username) {
+      img.src = data.url;
     }
+  });
 });
 
-// Toggle Admin Panel
-document.addEventListener('keydown', (e) => {
-    if (e.key === ']') {
-        if (isAdmin) {
-            adminPanel.style.display = adminPanel.style.display === 'none' ? 'block' : 'none';
-        }
-    }
-});
-
-// Sending text messages
-form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (input.value) {
-        socket.emit('chat message', { text: input.value, username, pfp });
-        input.value = '';
-    }
-});
-
-// Sending image messages
-sendImageBtn.addEventListener('click', () => {
-    const url = imageUrlInput.value;
-    if (url) {
-        socket.emit('chat image', { image: url, username, pfp });
-        imageUrlInput.value = '';
-    }
-});
-
-// Display incoming messages
-socket.on('chat message', (msg) => {
-    const item = document.createElement('div');
-    item.innerHTML = `<img src="${msg.pfp}" width="30" style="border-radius:50%; vertical-align:middle;"> <b>${msg.username}</b>: ${msg.text}`;
-    messages.appendChild(item);
-    messages.scrollTop = messages.scrollHeight;
-});
-
-socket.on('chat image', (data) => {
-    const item = document.createElement('div');
-    item.innerHTML = `<img src="${data.pfp}" width="30" style="border-radius:50%; vertical-align:middle;"> <b>${data.username}</b>:<br><img src="${data.image}" style="max-width:200px;">`;
-    messages.appendChild(item);
-    messages.scrollTop = messages.scrollHeight;
-});
-
-// Admin Buttons
-document.getElementById('jumpscare-btn').addEventListener('click', () => {
-    const img = document.getElementById('jumpscare-img').value;
-    const audio = document.getElementById('jumpscare-audio').value;
-    socket.emit('jumpscare', { img, audio });
-});
-
-document.getElementById('kick-btn').addEventListener('click', () => {
-    const user = document.getElementById('kick-user').value;
-    socket.emit('kick', user);
-});
-
-document.getElementById('force-pfp-btn').addEventListener('click', () => {
-    const user = document.getElementById('force-pfp-user').value;
-    const newPfp = document.getElementById('force-pfp-url').value;
-    socket.emit('force pfp', { user, newPfp });
-});
-
-document.getElementById('strobe-btn').addEventListener('click', () => {
-    socket.emit('strobe');
-});
-
-// Admin-Only "P" key image toggle
-let pImageToggled = false;
-document.addEventListener('keydown', (e) => {
-    if (e.key.toLowerCase() === 'p' && isAdmin && document.activeElement !== input) {
-        if (!pImageToggled) {
-            const img = document.createElement('img');
-            img.src = 'https://files.catbox.moe/5pz8os.png';
-            img.id = 'fullscreen-p-img';
-            img.style.position = 'fixed';
-            img.style.top = '0';
-            img.style.left = '0';
-            img.style.width = '100vw';
-            img.style.height = '100vh';
-            img.style.objectFit = 'cover';
-            img.style.zIndex = '9999';
-            document.body.appendChild(img);
-            pImageToggled = true;
-        } else {
-            const existing = document.getElementById('fullscreen-p-img');
-            if (existing) existing.remove();
-            pImageToggled = false;
-        }
-    }
-});
-
-// Socket listeners for admin actions
-socket.on('do jumpscare', (data) => {
-    const img = document.createElement('img');
-    img.src = data.img;
-    img.style.position = 'fixed';
-    img.style.top = '0';
-    img.style.left = '0';
-    img.style.width = '100vw';
-    img.style.height = '100vh';
-    img.style.objectFit = 'cover';
-    img.style.zIndex = '9999';
-    document.body.appendChild(img);
-
-    const audio = new Audio(data.audio);
-    audio.play();
-
-    setTimeout(() => {
-        img.remove();
-    }, 5000);
-});
-
-socket.on('kicked', () => {
-    alert('You have been kicked!');
-    window.location.href = '/';
-});
-
-socket.on('force pfp', (data) => {
-    if (username === data.user) {
-        pfp = data.newPfp;
-        localStorage.setItem('pfp', pfp);
-        alert('Admin changed your profile picture!');
-    }
+socket.on('redirect', url => {
+  window.location.href = url;
 });
 
 socket.on('strobe', () => {
-    let colors = ['red', 'black', 'white'];
-    let i = 0;
-    const interval = setInterval(() => {
-        document.body.style.backgroundColor = colors[i % colors.length];
-        i++;
-    }, 200);
-    setTimeout(() => {
-        clearInterval(interval);
-        document.body.style.backgroundColor = '#000';
-    }, 3000);
+  let colors = ['red', 'blue', 'green', 'purple', 'yellow'];
+  let i = 0;
+  let interval = setInterval(() => {
+    document.body.style.backgroundColor = colors[i % colors.length];
+    i++;
+  }, 200);
+  setTimeout(() => {
+    clearInterval(interval);
+    document.body.style.backgroundColor = '';
+  }, 3000);
 });
+
+socket.on('play-audio', url => {
+  new Audio(url).play();
+});
+
+socket.on('jumpscare', ({ img, audio }) => {
+  const scare = document.createElement('div');
+  scare.id = 'scare';
+  scare.style.position = 'fixed';
+  scare.style.top = 0;
+  scare.style.left = 0;
+  scare.style.width = '100%';
+  scare.style.height = '100%';
+  scare.style.background = `url(${img}) center center / cover no-repeat`;
+  scare.style.zIndex = 9999;
+  document.body.appendChild(scare);
+  new Audio(audio).play();
+  setTimeout(() => {
+    document.getElementById('scare')?.remove();
+  }, 5000);
+});
+
+// ADMIN TOGGLES
+document.addEventListener('keydown', e => {
+  if (username === "X12" && e.key === "]") {
+    adminPanel.style.display = adminVisible ? 'none' : 'block';
+    adminVisible = !adminVisible;
+  }
+  if (username === "X12" && e.key.toLowerCase() === 'p') {
+    togglePImage();
+  }
+});
+
+let pActive = false;
+function togglePImage() {
+  if (pActive) {
+    document.getElementById('p-img')?.remove();
+    pActive = false;
+  } else {
+    const img = document.createElement('img');
+    img.src = "https://files.catbox.moe/5pz8os.png";
+    img.id = "p-img";
+    img.style.position = 'fixed';
+    img.style.top = 0;
+    img.style.left = 0;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.zIndex = 9999;
+    document.body.appendChild(img);
+    pActive = true;
+  }
+}
+
+// ADMIN BUTTON FUNCTIONS
+function strobeAll() {
+  socket.emit('strobe-all');
+}
+
+function playAudio() {
+  const url = prompt('YouTube Audio URL:');
+  socket.emit('play-audio', url);
+}
+
+function timeoutUser() {
+  const user = prompt('Username to timeout:');
+  socket.emit('timeout-user', user);
+}
+
+function redirectUser() {
+  const user = prompt('Username to redirect:');
+  const url = prompt('Redirect URL:');
+  socket.emit('redirect-user', { username: user, url });
+}
+
+function changeUserPfp() {
+  const user = prompt('Username to change PFP:');
+  const url = prompt('New PFP URL:');
+  socket.emit('force-change-pfp', { username: user, url });
+}
+
+function doJumpscare() {
+  const img = prompt('Image URL for jumpscare:');
+  const audio = prompt('Audio URL for jumpscare:');
+  socket.emit('jumpscare', { img, audio });
+}
+
+profileButton.onclick = () => {
+  const url = profileInput.value;
+  if (url) {
+    socket.emit('change-pfp', url);
+    profileInput.value = '';
+  }
+};
