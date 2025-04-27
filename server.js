@@ -3,123 +3,98 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
-const fs = require('fs');
-const session = require('express-session');
-const bodyParser = require('body-parser');
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static files
 app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
-// Sessions
-app.use(session({
-    secret: 'sharcord-secret-key', // (you can change this)
-    resave: false,
-    saveUninitialized: true
-}));
+const users = {};
+const timeouts = {};
 
-// Load users
-let users = [];
-const USERS_FILE = path.join(__dirname, 'users.json');
-
-if (fs.existsSync(USERS_FILE)) {
-    users = JSON.parse(fs.readFileSync(USERS_FILE));
-} else {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users));
-}
-
-// Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+  res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
-app.get('/chat', (req, res) => {
-    if (req.session.user) {
-        res.sendFile(path.join(__dirname, 'public', 'chat.html'));
-    } else {
-        res.redirect('/login');
+io.on('connection', socket => {
+  socket.on('new-user', (username) => {
+    socket.username = username;
+    users[socket.id] = { username, pfp: '/defaultpfp.png' };
+    io.emit('user-connected', users[socket.id]);
+  });
+
+  socket.on('send-chat-message', message => {
+    if (timeouts[socket.username]) return;
+    io.emit('chat-message', { message, user: users[socket.id] });
+  });
+
+  socket.on('send-image', url => {
+    if (timeouts[socket.username]) return;
+    io.emit('chat-image', { url, user: users[socket.id] });
+  });
+
+  socket.on('private-message', ({ to, message }) => {
+    if (timeouts[socket.username]) return;
+    for (const id in users) {
+      if (users[id].username === to) {
+        io.to(id).emit('private-message', { from: users[socket.id].username, message });
+      }
     }
-});
+  });
 
-// Handle login
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = users.find(u => u.username === username && u.password === password);
+  socket.on('change-pfp', url => {
+    users[socket.id].pfp = url;
+    io.emit('pfp-changed', { username: users[socket.id].username, url });
+  });
 
-    if (user) {
-        req.session.user = user; // Save user into session
-        res.redirect('/chat');
-    } else {
-        res.send('Login failed. <a href="/login">Try again</a>');
+  socket.on('force-change-pfp', ({ username, url }) => {
+    for (const id in users) {
+      if (users[id].username === username) {
+        users[id].pfp = url;
+        io.emit('pfp-changed', { username, url });
+      }
     }
-});
+  });
 
-// Handle register
-app.post('/register', (req, res) => {
-    const { username, password } = req.body;
+  socket.on('timeout-user', username => {
+    timeouts[username] = true;
+    setTimeout(() => {
+      delete timeouts[username];
+    }, 10000);
+  });
 
-    const userExists = users.some(u => u.username === username);
-
-    if (userExists) {
-        res.send('Username already taken. <a href="/register">Try again</a>');
-    } else {
-        const newUser = { username, password };
-        users.push(newUser);
-
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-        res.redirect('/login');
+  socket.on('redirect-user', ({ username, url }) => {
+    for (const id in users) {
+      if (users[id].username === username) {
+        io.to(id).emit('redirect', url);
+      }
     }
+  });
+
+  socket.on('strobe-all', () => {
+    io.emit('strobe');
+  });
+
+  socket.on('play-audio', url => {
+    io.emit('play-audio', url);
+  });
+
+  socket.on('jumpscare', ({ img, audio }) => {
+    io.emit('jumpscare', { img, audio });
+  });
+
+  socket.on('disconnect', () => {
+    delete users[socket.id];
+    io.emit('user-disconnected', socket.username);
+  });
 });
 
-// Handle logout
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/');
-});
-
-// Socket.io
-io.on('connection', (socket) => {
-    console.log('A user connected.');
-
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
-    });
-
-    socket.on('chat image', (data) => {
-        io.emit('chat image', data);
-    });
-
-    socket.on('jumpscare', (data) => {
-        io.emit('do jumpscare', data);
-    });
-
-    socket.on('kick', (usernameToKick) => {
-        io.emit('kicked user', usernameToKick);
-    });
-
-    socket.on('force pfp', (data) => {
-        io.emit('force pfp', data);
-    });
-
-    socket.on('strobe', () => {
-        io.emit('strobe');
-    });
-
-    socket.on('disconnect', () => {
-        console.log('A user disconnected.');
-    });
-});
-
-http.listen(PORT, () => {
-    console.log(`Sharcord server running on port ${PORT}`);
-});
+http.listen(PORT, () => console.log('Sharcord running on port', PORT));
