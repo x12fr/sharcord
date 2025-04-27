@@ -1,64 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sharcord - Chat</title>
-  <link rel="stylesheet" href="/style.css">
+    <meta charset="UTF-8">
+    <title>Sharcord Chat</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="chat-container">
     <div id="admin-panel" class="collapsed">
-      <button id="collapse-btn">≡ Admin Panel</button>
-      <div id="admin-controls" class="hidden">
-        <input id="redirect-username" placeholder="Username to redirect">
-        <input id="redirect-url" placeholder="URL to redirect">
-        <button id="redirect-btn">Redirect User</button>
-
-        <input id="kick-username" placeholder="Username to kick">
-        <button id="kick-btn">Kick User</button>
-
-        <input id="timeout-username" placeholder="Username to timeout">
-        <input id="timeout-time" placeholder="Seconds">
-        <button id="timeout-btn">Timeout User</button>
-
-        <input id="pfp-target" placeholder="Username to change PFP">
-        <input id="pfp-url" placeholder="New PFP URL">
-        <button id="change-pfp-btn">Change PFP</button>
-
-        <input id="yt-url" placeholder="YouTube Audio URL">
-        <button id="play-audio-btn">Play Audio</button>
-
-        <input id="strobe-duration" placeholder="Strobe Duration (seconds)">
-        <button id="strobe-btn">Strobe</button>
-        <button id="strobe-all-btn">Strobe All</button>
-
-        <input id="jumpscare-img" placeholder="Image URL">
-        <input id="jumpscare-audio" placeholder="Audio URL">
-        <button id="jumpscare-btn">Jumpscare</button>
-      </div>
+        <button id="collapse-btn">☰</button>
+        <div id="admin-controls" style="display: none;">
+            <h3>Admin Panel</h3>
+            <button id="strobeAll">Strobe All</button>
+            <button id="playAudio">Play YouTube Audio</button>
+            <button id="timeoutUser">Timeout User</button>
+            <button id="redirectUser">Redirect User</button>
+            <button id="changeUserPfp">Change User PFP</button>
+        </div>
     </div>
 
-    <div id="chat-box">
-      <div id="messages"></div>
+    <div id="chat-container">
+        <div id="chat-box"></div> <!-- 🔥 Message box here -->
+        <div id="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button id="sendBtn">Send</button>
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="sendImageBtn">Send Image</button>
+        </div>
     </div>
 
-    <div id="user-panel">
-      <input id="dm-user" placeholder="DM user (optional)">
-      <input id="chat-input" placeholder="Type a message...">
-      <input id="file-input" type="file" accept="image/*">
-      <button id="send-file-btn">Send Image</button>
-      <input id="pfp-upload" type="file" accept="image/*">
-      <button id="upload-pfp-btn">Change PFP</button>
-    </div>
-
-    <div id="fullscreen-img" class="hidden">
-      <img id="fullscreen-img-content" src="" alt="Fullscreen">
-    </div>
-  </div>
-
-  <audio id="audio-player" controls hidden></audio>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
 </body>
 </html>
