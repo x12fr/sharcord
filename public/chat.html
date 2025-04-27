@@ -4,26 +4,48 @@
     <meta charset="UTF-8">
     <title>Sharcord Chat</title>
     <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script defer src="client.js"></script>
 </head>
-<body style="background-color: black; color: white; font-family: Arial, sans-serif;">
+<body>
+    <div id="chat-container">
+        <h1>Sharcord</h1>
 
-    <div id="chat-container" style="max-width: 800px; margin: 50px auto; background-color: #1a1a1a; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px red;">
-        <h1 style="text-align: center; color: red;">Sharcord</h1>
+        <div id="messages"></div>
 
-        <div id="messages" style="height: 400px; overflow-y: auto; background-color: #121212; border: 1px solid red; padding: 10px; border-radius: 8px; margin-bottom: 15px;"></div>
-
-        <form id="message-form" style="display: flex;">
-            <input id="message-input" type="text" placeholder="Type your message..." autocomplete="off" style="flex: 1; padding: 10px; border: 1px solid red; border-radius: 5px 0 0 5px; background-color: #1a1a1a; color: white;">
-            <button type="submit" style="padding: 10px; background-color: red; border: none; color: white; border-radius: 0 5px 5px 0;">Send</button>
+        <form id="message-form">
+            <input id="message-input" autocomplete="off" placeholder="Type a message..." />
+            <button type="submit">Send</button>
         </form>
 
-        <div style="margin-top: 10px;">
-            <input id="image-url-input" type="text" placeholder="Image URL..." style="width: 70%; padding: 8px; border: 1px solid red; border-radius: 5px; background-color: #1a1a1a; color: white;">
-            <button id="send-image-btn" style="padding: 8px 12px; background-color: red; border: none; color: white; border-radius: 5px;">Send Image</button>
+        <input type="text" id="image-url-input" placeholder="Paste image URL here">
+        <button id="send-image-btn">Send Image</button>
+
+        <div style="margin-top: 20px;">
+            <input type="text" id="pfp-url-input" placeholder="Enter PFP Image URL">
+            <button id="set-pfp-btn">Set Profile Picture</button>
+        </div>
+
+        <div id="admin-panel" style="display: none; margin-top: 20px;">
+            <h3>Admin Panel</h3>
+
+            <input type="text" id="jumpscare-img" placeholder="Image URL for jumpscare">
+            <input type="text" id="jumpscare-audio" placeholder="Audio URL for jumpscare">
+            <button id="jumpscare-btn">Jumpscare Everyone</button>
+            <br><br>
+
+            <input type="text" id="kick-user" placeholder="Username to kick">
+            <button id="kick-btn">Kick User</button>
+            <br><br>
+
+            <input type="text" id="force-pfp-user" placeholder="Username to change PFP">
+            <input type="text" id="force-pfp-url" placeholder="New PFP URL">
+            <button id="force-pfp-btn">Force Change PFP</button>
+            <br><br>
+
+            <button id="strobe-btn">Strobe All</button>
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
 </body>
 </html>
