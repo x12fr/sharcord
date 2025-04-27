@@ -1,185 +1,95 @@
-body, html {
+body {
     margin: 0;
-    padding: 0;
+    background-color: #000;
+    color: white;
     font-family: 'Arial', sans-serif;
-    background-color: #0d0d0d;
-    color: #f2f2f2;
 }
 
-/* Home / Login / Register pages */
-.home-body, .auth-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: #121212;
-}
-
-.home-container, .auth-container {
-    text-align: center;
-    background: #1a1a1a;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
-}
-
-.logo {
-    width: 120px;
-    margin-bottom: 20px;
-}
-
-.button, button {
-    background-color: #ff0000;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    margin: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: 0.3s;
-}
-
-.button:hover, button:hover {
-    background-color: #cc0000;
-}
-
-/* Chat Page */
-.chat-body {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    margin: 10px;
-}
-
-#chatArea {
-    flex: 1;
-    background: #1a1a1a;
-    border: 2px solid red;
-    padding: 15px;
-    overflow-y: auto;
-    margin-bottom: 10px;
-    border-radius: 10px;
-}
-
-.send-message {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.send-message input[type="text"], .send-message input[type="file"] {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ff0000;
-    background: #0d0d0d;
-    color: white;
-    border-radius: 6px;
-}
-
-.user-list {
-    background: #1a1a1a;
-    border: 2px solid red;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    max-height: 100px;
-    overflow-y: auto;
-}
-
-.admin-panel {
-    background: #1a1a1a;
-    border: 2px solid #ff0000;
-    padding: 15px;
-    border-radius: 10px;
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 300px;
-    z-index: 10;
-}
-
-.hidden {
-    display: none;
-}
-
-#toggleAdmin {
-    position: absolute;
-    top: 10px;
-    left: 320px;
-    background: #ff0000;
-    padding: 10px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-}
-
-#privateMessageContainer {
-    background: #1a1a1a;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 2px solid red;
-    border-radius: 10px;
-}
-
-#jumpscareOverlay {
-    background: black;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    justify-content: center;
-    align-items: center;
-    display: flex;
-}
-
-#jumpscareOverlay img {
-    max-width: 90%;
-    max-height: 90%;
-}
 #chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    padding: 10px;
-    background-color: #0a0a0a;
-}
-
-#chat-box {
-    flex: 1;
-    background-color: black;
+    max-width: 800px;
+    margin: 50px auto;
+    background-color: #1a1a1a;
+    padding: 20px;
+    border-radius: 10px;
     border: 2px solid red;
+    box-shadow: 0 0 20px red;
+}
+
+#messages {
+    height: 400px;
     overflow-y: auto;
+    background-color: #121212;
+    border: 1px solid red;
     padding: 10px;
-    margin-bottom: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    scroll-behavior: smooth;
 }
 
-#chat-input {
+#messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+#messages::-webkit-scrollbar-thumb {
+    background-color: red;
+    border-radius: 10px;
+}
+
+#messages::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+#message-form {
     display: flex;
-    gap: 10px;
 }
 
-#chat-input input[type="text"] {
+#message-input {
     flex: 1;
     padding: 10px;
-    background-color: #111;
+    background-color: #1a1a1a;
     color: white;
     border: 1px solid red;
+    border-radius: 5px 0 0 5px;
+    outline: none;
+    transition: background-color 0.2s ease;
 }
 
-#chat-input button, #chat-input input[type="file"] {
+#message-input:focus {
+    background-color: #2a2a2a;
+}
+
+button {
     background-color: red;
-    color: white;
     border: none;
-    padding: 10px;
+    color: white;
+    padding: 10px 20px;
     cursor: pointer;
+    border-radius: 0 5px 5px 0;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
+button:hover {
+    background-color: #ff1a1a;
+    transform: scale(1.05);
+}
+
+#send-image-btn {
+    margin-left: 5px;
+    border-radius: 5px;
+}
+
+#image-url-input {
+    width: 70%;
+    padding: 8px;
+    border: 1px solid red;
+    border-radius: 5px;
+    background-color: #1a1a1a;
+    color: white;
+    margin-top: 10px;
+}
+
+h1 {
+    text-align: center;
+    color: red;
+    font-size: 32px;
+}
