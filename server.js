@@ -116,6 +116,13 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ✅ NEW! Admin stop audio
+    socket.on('adminStopAudio', () => {
+        if (currentUser === "X12") {
+            io.emit('stopAudio');
+        }
+    });
+
     socket.on('disconnect', () => {
         if (currentUser) {
             delete users[currentUser];
