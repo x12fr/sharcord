@@ -1,155 +1,119 @@
 const socket = io();
+const urlParams = new URLSearchParams(window.location.search);
+const username = urlParams.get('username');
+socket.emit('register-user', username);
 
-const chatInput = document.getElementById('chat-input');
-const dmUser = document.getElementById('dm-user');
-const messagesDiv = document.getElementById('messages');
-const fileInput = document.getElementById('file-input');
-const sendFileBtn = document.getElementById('send-file-btn');
-const pfpUpload = document.getElementById('pfp-upload');
-const uploadPfpBtn = document.getElementById('upload-pfp-btn');
-const fullscreenImg = document.getElementById('fullscreen-img');
-const fullscreenImgContent = document.getElementById('fullscreen-img-content');
-const audioPlayer = document.getElementById('audio-player');
+const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const messagesContainer = document.getElementById('messages');
 
-// Admin panel toggling
-const collapseBtn = document.getElementById('collapse-btn');
-const adminControls = document.getElementById('admin-controls');
-collapseBtn.onclick = () => {
-  adminControls.classList.toggle('hidden');
-};
+let lastSentTime = 0;
 
-// Cooldown
-let canSend = true;
-
-// Message sending
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && canSend) {
-    sendMessage();
-    canSend = false;
-    setTimeout(() => { canSend = true; }, 3000);
-  }
+messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const now = Date.now();
+    if (now - lastSentTime < 3000) {
+        alert('You must wait 3 seconds between messages!');
+        return;
+    }
+    const message = messageInput.value.trim();
+    if (message) {
+        socket.emit('chat-message', message);
+        lastSentTime = now;
+    }
+    messageInput.value = '';
 });
 
-// File sending
-sendFileBtn.onclick = () => {
-  const file = fileInput.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      socket.emit('image', evt.target.result);
-    };
-    reader.readAsDataURL(file);
-  }
-};
+document.getElementById('send-image-btn').addEventListener('click', () => {
+    const imgUrl = document.getElementById('image-url-input').value;
+    if (imgUrl) {
+        socket.emit('image-message', imgUrl);
+    }
+});
 
-// Profile picture changing
-uploadPfpBtn.onclick = () => {
-  const file = pfpUpload.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      socket.emit('changePFP', evt.target.result);
-    };
-    reader.readAsDataURL(file);
-  }
-};
+socket.on('chat-message', ({ user, pfp, msg }) => {
+    const msgElement = document.createElement('div');
+    msgElement.classList.add('message');
+    msgElement.innerHTML = `<img src="${pfp}" class="pfp"> <b>${user}:</b> ${formatMessage(msg)}`;
+    messagesContainer.appendChild(msgElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
 
-// Send message
-function sendMessage() {
-  const text = chatInput.value;
-  const dm = dmUser.value;
-  if (text.trim() !== '') {
-    socket.emit('chatMessage', { text, to: dm });
-    chatInput.value = '';
-  }
+socket.on('image-message', ({ user, pfp, imgUrl }) => {
+    const imgElement = document.createElement('div');
+    imgElement.classList.add('message');
+    imgElement.innerHTML = `<img src="${pfp}" class="pfp"> <b>${user}:</b><br><img src="${imgUrl}" class="chat-image">`;
+    messagesContainer.appendChild(imgElement);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
+
+socket.on('error-message', (errMsg) => {
+    alert(errMsg);
+});
+
+socket.on('redirect', (url) => {
+    window.location.href = url;
+});
+
+socket.on('kicked', () => {
+    alert('You were kicked!');
+    window.location.href = '/';
+});
+
+socket.on('strobe', () => {
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+    let i = 0;
+    const interval = setInterval(() => {
+        document.body.style.backgroundColor = colors[i % colors.length];
+        i++;
+    }, 100);
+    setTimeout(() => {
+        clearInterval(interval);
+        document.body.style.backgroundColor = '';
+    }, 3000);
+});
+
+socket.on('play-audio', (audioUrl) => {
+    const audio = new Audio(audioUrl);
+    audio.play();
+});
+
+socket.on('jumpscare', () => {
+    const img = document.createElement('img');
+    img.src = 'https://i.imgur.com/Z4oql7y.png'; 
+    img.style.position = 'fixed';
+    img.style.top = '0';
+    img.style.left = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.zIndex = '9999';
+    document.body.appendChild(img);
+    setTimeout(() => {
+        document.body.removeChild(img);
+    }, 2000);
+});
+
+function formatMessage(msg) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return msg.replace(urlRegex, (url) => `<a href="${url}" target="_blank">${url}</a>`);
 }
 
-// Listen for new messages
-socket.on('chatMessage', (data) => {
-  const div = document.createElement('div');
-  div.innerHTML = `<strong>${data.username}</strong> ${data.tags || ''}: ${data.message}`;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
-
-// Listen for images
-socket.on('image', (data) => {
-  const div = document.createElement('div');
-  div.innerHTML = `<strong>${data.username}</strong> <img src="${data.img}" style="max-width: 200px;">`;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
-
-// Jumpscare
-socket.on('jumpscare', (data) => {
-  fullscreenImgContent.src = data.img;
-  fullscreenImg.classList.remove('hidden');
-  audioPlayer.src = data.audio;
-  audioPlayer.play();
-  setTimeout(() => {
-    fullscreenImg.classList.add('hidden');
-  }, 5000);
-});
-
-// P toggle
-let pActive = false;
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'p' && document.activeElement !== chatInput && document.activeElement !== dmUser) {
-    if (pActive) {
-      fullscreenImg.classList.add('hidden');
-      pActive = false;
-    } else {
-      fullscreenImgContent.src = 'https://files.catbox.moe/5pz8os.png';
-      fullscreenImg.classList.remove('hidden');
-      pActive = true;
-    }
-  }
-});
-
-// Admin controls
-document.getElementById('redirect-btn').onclick = () => {
-  socket.emit('adminRedirect', {
-    user: document.getElementById('redirect-username').value,
-    url: document.getElementById('redirect-url').value
-  });
-};
-
-document.getElementById('kick-btn').onclick = () => {
-  socket.emit('adminKick', document.getElementById('kick-username').value);
-};
-
-document.getElementById('timeout-btn').onclick = () => {
-  socket.emit('adminTimeout', {
-    user: document.getElementById('timeout-username').value,
-    time: document.getElementById('timeout-time').value
-  });
-};
-
-document.getElementById('play-audio-btn').onclick = () => {
-  socket.emit('adminPlayAudio', document.getElementById('yt-url').value);
-};
-
-document.getElementById('strobe-btn').onclick = () => {
-  socket.emit('adminStrobe', {
-    duration: document.getElementById('strobe-duration').value
-  });
-};
-
-document.getElementById('strobe-all-btn').onclick = () => {
-  socket.emit('adminStrobeAll', {});
-};
-
-document.getElementById('change-pfp-btn').onclick = () => {
-  socket.emit('adminChangePFP', {
-    user: document.getElementById('pfp-target').value,
-    pfp: document.getElementById('pfp-url').value
-  });
-};
-
-document.getElementById('jumpscare-btn').onclick = () => {
-  socket.emit('adminJumpscare', {
-    img: document.getElementById('jumpscare-img').value,
-    audio: document.getElementById('jumpscare-audio').value
-  });
-};
-
+// ADMIN ONLY "P" toggle
+if (username === "X12") {
+    document.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === 'p') {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.background = 'url(https://i.imgur.com/qHj4fZ9.png) center center / cover no-repeat';
+            overlay.style.zIndex = '9999';
+            document.body.appendChild(overlay);
+            setTimeout(() => {
+                document.body.removeChild(overlay);
+            }, 3000);
+        }
+    });
+}
