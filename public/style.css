@@ -93,6 +93,7 @@ button:hover {
   background-color: #191919;
   border: 2px solid #1f80ff; /* Blue border for admin panel */
   border-radius: 10px;
+  z-index: 10000; /* Ensure admin panel is above the strobe effect */
 }
 
 #admin-panel h3 {
@@ -157,7 +158,7 @@ img {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 99998; /* Slightly lower than jumpscare */
+  z-index: 9998; /* Lower z-index to allow admin panel to appear on top */
   background-color: red;
   animation: strobe-animation 0.2s infinite;
 }
