@@ -3,6 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
+const fs = require('fs');
 const bodyParser = require('body-parser');
 
 const PORT = process.env.PORT || 3000;
@@ -11,8 +12,15 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Fake simple database (you can make this better later)
+// Load users from users.json
 let users = [];
+const USERS_FILE = path.join(__dirname, 'users.json');
+
+if (fs.existsSync(USERS_FILE)) {
+    users = JSON.parse(fs.readFileSync(USERS_FILE));
+} else {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users));
+}
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -46,13 +54,17 @@ app.post('/login', (req, res) => {
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
 
-    // Check if username is taken
     const userExists = users.some(u => u.username === username);
 
     if (userExists) {
         res.send('Username already taken. <a href="/register">Try again</a>');
     } else {
-        users.push({ username, password });
+        const newUser = { username, password };
+        users.push(newUser);
+
+        // Save updated users list to users.json
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
         res.redirect('/login');
     }
 });
