@@ -1,129 +1,128 @@
 const express = require('express');
 const app = express();
-const http = require('http').createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(http);
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 const path = require('path');
 const bodyParser = require('body-parser');
 
-let users = {}; // username -> socketId
-let pfps = {}; // username -> profilePic
-
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Routes
+let users = {}; // username: { socketId, profilePic }
+
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(__dirname + '/public/index.html');
 });
 
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(__dirname + '/public/login.html');
 });
 
 app.get('/register', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+    res.sendFile(__dirname + '/public/register.html');
 });
 
-app.get('/chat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
-});
-
-// Login system (very simple for now)
-const registeredUsers = {};
+let registeredUsers = {}; // username: password
 
 app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (registeredUsers[username] && registeredUsers[username] === password) {
-    res.redirect('/chat');
-  } else {
-    res.send('Invalid login.');
-  }
+    const { username, password } = req.body;
+    if (registeredUsers[username] && registeredUsers[username] === password) {
+        res.redirect(`/chat.html?username=${username}`);
+    } else {
+        res.send("Invalid credentials. <a href='/login'>Try again</a>");
+    }
 });
 
 app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-  if (!registeredUsers[username]) {
-    registeredUsers[username] = password;
-    res.redirect('/login');
-  } else {
-    res.send('Username already taken.');
-  }
+    const { username, password } = req.body;
+    if (registeredUsers[username]) {
+        res.send("Username already taken. <a href='/register'>Try again</a>");
+    } else {
+        registeredUsers[username] = password;
+        res.redirect(`/chat.html?username=${username}`);
+    }
 });
 
-// Socket.io connection
 io.on('connection', (socket) => {
-  console.log('A user connected.');
+    let currentUser = "";
 
-  socket.on('setUsername', ({ username, profilePic }) => {
-    users[username] = socket.id;
-    pfps[username] = profilePic;
-    socket.username = username;
-    socket.profilePic = profilePic;
-  });
-
-  socket.on('chatMessage', (data) => {
-    io.emit('chatMessage', {
-      username: data.username,
-      text: data.text,
-      pfp: data.pfp || pfps[data.username] || ''
+    socket.on('setUsername', (username) => {
+        currentUser = username;
+        users[username] = { socketId: socket.id, profilePic: "https://via.placeholder.com/30" };
     });
-  });
 
-  socket.on('sendImage', (data) => {
-    io.emit('imageMessage', {
-      username: data.username,
-      imageUrl: data.imageUrl,
-      pfp: data.pfp || pfps[data.username] || ''
+    socket.on('chatMessage', (msg) => {
+        if (users[currentUser]) {
+            io.emit('chatMessage', {
+                username: currentUser,
+                message: msg,
+                profilePic: users[currentUser].profilePic
+            });
+        }
     });
-  });
 
-  socket.on('strobeAll', () => {
-    io.emit('strobeAll');
-  });
+    socket.on('chatImage', (image) => {
+        if (users[currentUser]) {
+            io.emit('chatImage', {
+                username: currentUser,
+                image: image,
+                profilePic: users[currentUser].profilePic
+            });
+        }
+    });
 
-  socket.on('playAudio', (url) => {
-    io.emit('playAudio', url);
-  });
+    socket.on('setProfilePic', (url) => {
+        if (users[currentUser]) {
+            users[currentUser].profilePic = url;
+            socket.emit('updatePFP', url);
+        }
+    });
 
-  socket.on('timeoutUser', ({ user, seconds }) => {
-    if (users[user]) {
-      io.to(users[user]).emit('timeout', seconds);
-    }
-  });
+    // ADMIN CONTROLS
+    socket.on('adminStrobe', () => {
+        if (currentUser === "X12") {
+            io.emit('strobe');
+        }
+    });
 
-  socket.on('redirectUser', ({ user, url }) => {
-    if (users[user]) {
-      io.to(users[user]).emit('redirect', url);
-    }
-  });
+    socket.on('adminAudio', (url) => {
+        if (currentUser === "X12") {
+            io.emit('playAudio', url);
+        }
+    });
 
-  socket.on('changeUserPfp', ({ user, newPfp }) => {
-    if (users[user]) {
-      pfps[user] = newPfp;
-      io.to(users[user]).emit('changePfp', newPfp);
-    }
-  });
+    socket.on('adminTimeout', ({ user, duration }) => {
+        if (currentUser === "X12" && users[user]) {
+            io.to(users[user].socketId).emit('timeout', duration);
+        }
+    });
 
-  socket.on('jumpscare', ({ imageUrl, audioUrl }) => {
-    io.emit('jumpscare', { imageUrl, audioUrl });
-  });
+    socket.on('adminRedirect', ({ user, link }) => {
+        if (currentUser === "X12" && users[user]) {
+            io.to(users[user].socketId).emit('redirect', link);
+        }
+    });
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected.');
-    for (const user in users) {
-      if (users[user] === socket.id) {
-        delete users[user];
-        delete pfps[user];
-        break;
-      }
-    }
-  });
+    socket.on('adminChangePFP', ({ user, url }) => {
+        if (currentUser === "X12" && users[user]) {
+            users[user].profilePic = url;
+            io.to(users[user].socketId).emit('updatePFP', url);
+        }
+    });
+
+    socket.on('adminJumpScare', ({ img, audio }) => {
+        if (currentUser === "X12") {
+            io.emit('jumpScare', { img, audio });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        if (currentUser) {
+            delete users[currentUser];
+        }
+    });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+http.listen(3000, () => {
+    console.log('Sharcord Server listening on *:3000');
 });
