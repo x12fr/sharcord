@@ -1,95 +1,55 @@
 body {
-    margin: 0;
-    background-color: #000;
-    color: white;
-    font-family: 'Arial', sans-serif;
+  background: black;
+  color: white;
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-#chat-container {
-    max-width: 800px;
-    margin: 50px auto;
-    background-color: #1a1a1a;
-    padding: 20px;
-    border-radius: 10px;
-    border: 2px solid red;
-    box-shadow: 0 0 20px red;
+.chat-box {
+  background: black;
+  border: 2px solid red;
+  margin: 20px;
+  height: 70vh;
+  overflow-y: auto;
+  padding: 10px;
 }
 
-#messages {
-    height: 400px;
-    overflow-y: auto;
-    background-color: #121212;
-    border: 1px solid red;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    scroll-behavior: smooth;
+#send-form {
+  display: flex;
+  justify-content: center;
+  margin: 10px;
 }
 
-#messages::-webkit-scrollbar {
-    width: 8px;
-}
-
-#messages::-webkit-scrollbar-thumb {
-    background-color: red;
-    border-radius: 10px;
-}
-
-#messages::-webkit-scrollbar-track {
-    background: #1a1a1a;
-}
-
-#message-form {
-    display: flex;
-}
-
-#message-input {
-    flex: 1;
-    padding: 10px;
-    background-color: #1a1a1a;
-    color: white;
-    border: 1px solid red;
-    border-radius: 5px 0 0 5px;
-    outline: none;
-    transition: background-color 0.2s ease;
-}
-
-#message-input:focus {
-    background-color: #2a2a2a;
+#send-input {
+  width: 70%;
+  padding: 10px;
+  font-size: 16px;
 }
 
 button {
-    background-color: red;
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 0 5px 5px 0;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+  padding: 10px;
+  background: red;
+  color: white;
+  border: none;
+  cursor: pointer;
 }
 
 button:hover {
-    background-color: #ff1a1a;
-    transform: scale(1.05);
+  background: darkred;
 }
 
-#send-image-btn {
-    margin-left: 5px;
-    border-radius: 5px;
+.pfp {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 8px;
 }
 
-#image-url-input {
-    width: 70%;
-    padding: 8px;
-    border: 1px solid red;
-    border-radius: 5px;
-    background-color: #1a1a1a;
-    color: white;
-    margin-top: 10px;
-}
-
-h1 {
-    text-align: center;
-    color: red;
-    font-size: 32px;
+.chat-image {
+  max-width: 300px;
+  max-height: 300px;
+  display: block;
+  margin-top: 5px;
 }
