@@ -1,17 +1,19 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const { Server } = require('socket.io');
+const io = new Server(http);
 const path = require('path');
+const bodyParser = require('body-parser');
 
-const PORT = process.env.PORT || 3000;
+let users = {}; // username -> socketId
+let pfps = {}; // username -> profilePic
 
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use(express.urlencoded({ extended: true }));
 
-const users = {};
-const timeouts = {};
-
+// Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -24,77 +26,104 @@ app.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
-io.on('connection', socket => {
-  socket.on('new-user', (username) => {
+app.get('/chat', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'chat.html'));
+});
+
+// Login system (very simple for now)
+const registeredUsers = {};
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (registeredUsers[username] && registeredUsers[username] === password) {
+    res.redirect('/chat');
+  } else {
+    res.send('Invalid login.');
+  }
+});
+
+app.post('/register', (req, res) => {
+  const { username, password } = req.body;
+  if (!registeredUsers[username]) {
+    registeredUsers[username] = password;
+    res.redirect('/login');
+  } else {
+    res.send('Username already taken.');
+  }
+});
+
+// Socket.io connection
+io.on('connection', (socket) => {
+  console.log('A user connected.');
+
+  socket.on('setUsername', ({ username, profilePic }) => {
+    users[username] = socket.id;
+    pfps[username] = profilePic;
     socket.username = username;
-    users[socket.id] = { username, pfp: '/defaultpfp.png' };
-    io.emit('user-connected', users[socket.id]);
+    socket.profilePic = profilePic;
   });
 
-  socket.on('send-chat-message', message => {
-    if (timeouts[socket.username]) return;
-    io.emit('chat-message', { message, user: users[socket.id] });
+  socket.on('chatMessage', (data) => {
+    io.emit('chatMessage', {
+      username: data.username,
+      text: data.text,
+      pfp: data.pfp || pfps[data.username] || ''
+    });
   });
 
-  socket.on('send-image', url => {
-    if (timeouts[socket.username]) return;
-    io.emit('chat-image', { url, user: users[socket.id] });
+  socket.on('sendImage', (data) => {
+    io.emit('imageMessage', {
+      username: data.username,
+      imageUrl: data.imageUrl,
+      pfp: data.pfp || pfps[data.username] || ''
+    });
   });
 
-  socket.on('private-message', ({ to, message }) => {
-    if (timeouts[socket.username]) return;
-    for (const id in users) {
-      if (users[id].username === to) {
-        io.to(id).emit('private-message', { from: users[socket.id].username, message });
-      }
+  socket.on('strobeAll', () => {
+    io.emit('strobeAll');
+  });
+
+  socket.on('playAudio', (url) => {
+    io.emit('playAudio', url);
+  });
+
+  socket.on('timeoutUser', ({ user, seconds }) => {
+    if (users[user]) {
+      io.to(users[user]).emit('timeout', seconds);
     }
   });
 
-  socket.on('change-pfp', url => {
-    users[socket.id].pfp = url;
-    io.emit('pfp-changed', { username: users[socket.id].username, url });
-  });
-
-  socket.on('force-change-pfp', ({ username, url }) => {
-    for (const id in users) {
-      if (users[id].username === username) {
-        users[id].pfp = url;
-        io.emit('pfp-changed', { username, url });
-      }
+  socket.on('redirectUser', ({ user, url }) => {
+    if (users[user]) {
+      io.to(users[user]).emit('redirect', url);
     }
   });
 
-  socket.on('timeout-user', username => {
-    timeouts[username] = true;
-    setTimeout(() => {
-      delete timeouts[username];
-    }, 10000);
-  });
-
-  socket.on('redirect-user', ({ username, url }) => {
-    for (const id in users) {
-      if (users[id].username === username) {
-        io.to(id).emit('redirect', url);
-      }
+  socket.on('changeUserPfp', ({ user, newPfp }) => {
+    if (users[user]) {
+      pfps[user] = newPfp;
+      io.to(users[user]).emit('changePfp', newPfp);
     }
   });
 
-  socket.on('strobe-all', () => {
-    io.emit('strobe');
-  });
-
-  socket.on('play-audio', url => {
-    io.emit('play-audio', url);
-  });
-
-  socket.on('jumpscare', ({ img, audio }) => {
-    io.emit('jumpscare', { img, audio });
+  socket.on('jumpscare', ({ imageUrl, audioUrl }) => {
+    io.emit('jumpscare', { imageUrl, audioUrl });
   });
 
   socket.on('disconnect', () => {
-    delete users[socket.id];
-    io.emit('user-disconnected', socket.username);
+    console.log('A user disconnected.');
+    for (const user in users) {
+      if (users[user] === socket.id) {
+        delete users[user];
+        delete pfps[user];
+        break;
+      }
+    }
   });
 });
 
-http.listen(PORT, () => console.log('Sharcord running on port', PORT));
+// Start server
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
