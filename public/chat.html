@@ -4,31 +4,26 @@
     <meta charset="UTF-8">
     <title>Sharcord Chat</title>
     <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="admin-panel" class="collapsed">
-        <button id="collapse-btn">☰</button>
-        <div id="admin-controls" style="display: none;">
-            <h3>Admin Panel</h3>
-            <button id="strobeAll">Strobe All</button>
-            <button id="playAudio">Play YouTube Audio</button>
-            <button id="timeoutUser">Timeout User</button>
-            <button id="redirectUser">Redirect User</button>
-            <button id="changeUserPfp">Change User PFP</button>
-        </div>
-    </div>
-
-    <div id="chat-container">
-        <div id="chat-box"></div> <!-- 🔥 Message box here -->
-        <div id="chat-input">
-            <input type="text" id="messageInput" placeholder="Type your message...">
-            <button id="sendBtn">Send</button>
-            <input type="file" id="imageInput" accept="image/*">
-            <button id="sendImageBtn">Send Image</button>
-        </div>
-    </div>
-
     <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
+    <script defer src="client.js"></script>
+</head>
+<body style="background-color: black; color: white; font-family: Arial, sans-serif;">
+
+    <div id="chat-container" style="max-width: 800px; margin: 50px auto; background-color: #1a1a1a; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px red;">
+        <h1 style="text-align: center; color: red;">Sharcord</h1>
+
+        <div id="messages" style="height: 400px; overflow-y: auto; background-color: #121212; border: 1px solid red; padding: 10px; border-radius: 8px; margin-bottom: 15px;"></div>
+
+        <form id="message-form" style="display: flex;">
+            <input id="message-input" type="text" placeholder="Type your message..." autocomplete="off" style="flex: 1; padding: 10px; border: 1px solid red; border-radius: 5px 0 0 5px; background-color: #1a1a1a; color: white;">
+            <button type="submit" style="padding: 10px; background-color: red; border: none; color: white; border-radius: 0 5px 5px 0;">Send</button>
+        </form>
+
+        <div style="margin-top: 10px;">
+            <input id="image-url-input" type="text" placeholder="Image URL..." style="width: 70%; padding: 8px; border: 1px solid red; border-radius: 5px; background-color: #1a1a1a; color: white;">
+            <button id="send-image-btn" style="padding: 8px 12px; background-color: red; border: none; color: white; border-radius: 5px;">Send Image</button>
+        </div>
+    </div>
+
 </body>
 </html>
