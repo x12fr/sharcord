@@ -61,6 +61,12 @@ if (username === "X12") {
         if (e.key === ']') {
             const panel = document.getElementById('admin-panel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            // Toggle strobe effect visibility based on admin panel visibility
+            if (panel.style.display === 'block') {
+                document.body.classList.add('admin-active'); // Admin panel open
+            } else {
+                document.body.classList.remove('admin-active'); // Admin panel closed
+            }
         }
     });
 }
