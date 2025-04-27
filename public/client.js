@@ -1,26 +1,26 @@
 const socket = io();
 let username = new URLSearchParams(window.location.search).get('username');
 let canSend = true;
+let currentAudio = null;
 
 socket.emit('setUsername', username);
 
-document.getElementById('send-button').onclick = () => {
+document.getElementById('send-button').onclick = sendMessage;
+document.getElementById('message-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
+
+function sendMessage() {
     if (canSend) {
         const msg = document.getElementById('message-input').value;
-        socket.emit('chatMessage', msg);
-        document.getElementById('message-input').value = '';
-        canSend = false;
-        setTimeout(() => { canSend = true }, 3000); // 3 second cooldown
+        if (msg.trim() !== '') {
+            socket.emit('chatMessage', msg);
+            document.getElementById('message-input').value = '';
+            canSend = false;
+            setTimeout(() => { canSend = true }, 3000);
+        }
     }
-};
-
-// ✨ Add Enter Key sending
-document.getElementById('message-input').addEventListener('keydown', function (event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        document.getElementById('send-button').click();
-    }
-});
+}
 
 document.getElementById('send-image-button').onclick = () => {
     const img = document.getElementById('image-url').value;
@@ -36,14 +36,8 @@ document.getElementById('set-pfp-button').onclick = () => {
 socket.on('chatMessage', data => {
     const box = document.getElementById('chat-box');
     const msg = document.createElement('div');
-
-    // ✨ Add purple [owner] name if X12
-    let displayName = data.username;
-    if (data.username === 'X12') {
-        displayName = '<span style="color: purple;">X12 [owner]</span>';
-    }
-
-    msg.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b>${displayName}:</b> ${formatMessage(data.message)}`;
+    const isOwner = data.username === "X12";
+    msg.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b style="color:${isOwner ? 'purple' : 'white'};">${data.username}${isOwner ? ' [owner]' : ''}:</b> ${formatMessage(data.message)}`;
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
 });
@@ -51,13 +45,8 @@ socket.on('chatMessage', data => {
 socket.on('chatImage', data => {
     const box = document.getElementById('chat-box');
     const img = document.createElement('div');
-
-    let displayName = data.username;
-    if (data.username === 'X12') {
-        displayName = '<span style="color: purple;">X12 [owner]</span>';
-    }
-
-    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b>${displayName}:</b><br><img src="${data.image}" style="max-width:300px;">`;
+    const isOwner = data.username === "X12";
+    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b style="color:${isOwner ? 'purple' : 'white'};">${data.username}${isOwner ? ' [owner]' : ''}:</b><br><img src="${data.image}" style="max-width:300px;">`;
     box.appendChild(img);
     box.scrollTop = box.scrollHeight;
 });
@@ -85,6 +74,10 @@ function playAudio() {
     socket.emit('adminAudio', url);
 }
 
+function stopAudio() {
+    socket.emit('adminStopAudio');
+}
+
 function timeout() {
     const user = document.getElementById('timeout-user').value;
     const duration = document.getElementById('timeout-duration').value;
@@ -110,7 +103,7 @@ function jumpScare() {
 }
 
 socket.on('strobe', () => {
-    let colors = ['red', 'yellow', 'black', 'orange'];
+    let colors = ['black', 'yellow'];
     let i = 0;
     const interval = setInterval(() => {
         document.body.style.backgroundColor = colors[i % colors.length];
@@ -123,8 +116,16 @@ socket.on('strobe', () => {
 });
 
 socket.on('playAudio', (url) => {
-    const audio = new Audio(url);
-    audio.play();
+    if (currentAudio) currentAudio.pause();
+    currentAudio = new Audio(url);
+    currentAudio.play();
+});
+
+socket.on('stopAudio', () => {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
 });
 
 socket.on('timeout', (duration) => {
@@ -139,7 +140,7 @@ socket.on('redirect', (link) => {
 });
 
 socket.on('updatePFP', (url) => {
-    // PFP Updated
+    // Profile picture updated
 });
 
 socket.on('jumpScare', (data) => {
@@ -153,8 +154,9 @@ socket.on('jumpScare', (data) => {
     img.style.zIndex = '9999';
     document.body.appendChild(img);
 
-    const audio = new Audio(data.audio);
-    audio.play();
+    if (currentAudio) currentAudio.pause();
+    currentAudio = new Audio(data.audio);
+    currentAudio.play();
 
     setTimeout(() => {
         img.remove();
