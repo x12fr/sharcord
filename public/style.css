@@ -161,6 +161,7 @@ img {
   z-index: 9998; /* Lower z-index to allow admin panel to appear on top */
   background-color: red;
   animation: strobe-animation 0.2s infinite;
+  visibility: hidden; /* Default state, hidden when admin panel is visible */
 }
 
 /* Strobe animation */
@@ -172,7 +173,8 @@ img {
   100% { background-color: red; }
 }
 
-/* === Prevent Strobe Effect from overlapping Admin Panel === */
-#admin-panel:focus-within ~ .strobe-effect {
-  display: none; /* Hide strobe when admin panel is focused */
+/* === Show strobe effect only when admin panel is NOT visible === */
+#admin-panel:focus-within ~ .strobe-effect,
+#admin-panel:focus ~ .strobe-effect {
+  visibility: visible; /* Show strobe effect only when admin panel is NOT open */
 }
