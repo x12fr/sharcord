@@ -5,28 +5,42 @@ body {
 }
 
 /* ===== Homepage (index.html) ===== */
-.homepage {
+.home-container {
     background-color: #4a6cf7;
     color: white;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
 }
 
-.homepage img {
-    width: 200px;
+.logo-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-.homepage h1 {
+.logo-title img {
+    width: 60px;
+    height: 60px;
+}
+
+.logo-title h1 {
     font-size: 64px;
-    margin: 10px 0;
+    margin: 0;
+}
+
+.subtitle {
+    margin-top: 10px;
+    font-size: 20px;
 }
 
 .buttons {
-    margin-top: 20px;
+    margin-top: 30px;
 }
 
 .button {
@@ -46,27 +60,50 @@ body {
 
 /* ===== Auth Pages (Login / Register) ===== */
 .auth-container {
-    background-color: black;
-    color: yellow;
-    width: 300px;
+    background-color: #4a6cf7;
+    color: white;
+    width: 350px;
     margin: 100px auto;
     text-align: center;
+    padding: 30px;
+    border-radius: 10px;
+}
+
+.auth-container h1 {
+    margin-bottom: 20px;
 }
 
 .auth-container input,
 .auth-container button {
     margin: 10px 0;
-    padding: 10px;
+    padding: 12px;
     width: 100%;
     border: none;
     border-radius: 5px;
+    font-size: 16px;
+}
+
+.auth-container input {
+    background-color: white;
+    color: black;
 }
 
 .auth-container button {
-    background-color: yellow;
-    color: black;
+    background-color: #1f2c52;
+    color: white;
     font-weight: bold;
     cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.auth-container button:hover {
+    background-color: #162042;
+}
+
+.auth-container a {
+    color: white;
+    text-decoration: underline;
+    font-size: 14px;
 }
 
 /* ===== Chat Page ===== */
