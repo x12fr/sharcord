@@ -1,109 +1,118 @@
-/* === General Body Styling === */
-body {
-  background-color: #1a1a1a; /* dark gray (not pure black) */
-  color: white;
-  font-family: Arial, sans-serif;
+/* === Global Reset === */
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
-/* === Main Container === */
-#main {
-  width: 90%;
-  max-width: 1200px;
-  margin: 20px auto;
+/* === Sharkcord Theme === */
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(to bottom right, #4f83ff, #6ecfff);
+  min-height: 100vh;
+  color: #333;
+}
+
+/* === Container === */
+.container, #main, #admin-panel {
+  max-width: 500px;
+  margin: 50px auto;
   padding: 20px;
-  background-color: #111;
-  border: 2px solid darkred;
+  background: white;
   border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* === Chat Box Styling === */
+/* === Headings === */
+h1, h2, h3, p {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* === Inputs & Buttons === */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="number"] {
+  background-color: #f9f9f9;
+}
+
+button {
+  background-color: #4f83ff;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+button:hover {
+  background-color: #3d6dd8;
+  transform: scale(1.03);
+}
+
+/* === Chat Page === */
 #chat-box {
   height: 400px;
   overflow-y: auto;
   padding: 10px;
-  background-color: #222;
-  border: 2px solid darkred;
+  background-color: #f0f4ff;
+  border: 2px solid #4f83ff;
   border-radius: 8px;
   margin-bottom: 20px;
 }
 
-/* === Message Input Section === */
+/* === Message Controls === */
 #message-controls {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* Text Inputs */
-#message-controls input[type="text"],
-#message-controls input[type="number"],
-#admin-panel input[type="text"],
-#admin-panel input[type="number"] {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  background-color: #111;
-  border: 1px solid darkred;
-  color: white;
-  border-radius: 5px;
-}
-
-/* Send Buttons */
-#message-controls button,
-#admin-panel button {
-  background-color: #1a1a40;
-  color: white;
-  border: 1px solid darkred;
-  padding: 10px;
-  width: 100%;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-}
-
-/* Button Hover Effect */
-#message-controls button:hover,
-#admin-panel button:hover {
-  background-color: #292961;
-  transform: scale(1.02);
-}
-
-/* === Admin Panel Section === */
+/* === Admin Panel === */
 #admin-panel {
   margin-top: 30px;
-  padding: 20px;
-  background-color: #191919;
-  border: 2px solid darkred;
+  background-color: #eef5ff;
+  border: 2px solid #4f83ff;
   border-radius: 10px;
 }
 
-/* Admin Panel Title */
 #admin-panel h3 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: crimson;
-  font-size: 24px;
+  color: #4f83ff;
 }
 
-/* === Message Display === */
+/* === Messages === */
 .message {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  padding: 8px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* Username Styling */
 .username {
   font-weight: bold;
-  margin-right: 5px;
+  color: #4f83ff;
 }
 
-/* Message Text */
 .text {
-  color: #ccc;
+  color: #555;
 }
 
-/* Image Message */
+/* === Profile Pictures === */
 img {
   max-width: 300px;
   max-height: 300px;
@@ -111,19 +120,14 @@ img {
   margin-top: 5px;
 }
 
-/* === Scrollbar Styling === */
+/* === Scrollbar === */
 #chat-box::-webkit-scrollbar {
   width: 8px;
 }
 #chat-box::-webkit-scrollbar-thumb {
-  background: darkred;
+  background: #4f83ff;
   border-radius: 5px;
 }
 #chat-box::-webkit-scrollbar-track {
-  background: #333;
-}
-
-/* === Inputs & Buttons Margin Fix === */
-input, button {
-  outline: none;
+  background: #d1e0ff;
 }
