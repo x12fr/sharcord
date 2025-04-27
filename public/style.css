@@ -173,8 +173,7 @@ img {
   100% { background-color: red; }
 }
 
-/* === Show strobe effect only when admin panel is NOT visible === */
-#admin-panel:focus-within ~ .strobe-effect,
-#admin-panel:focus ~ .strobe-effect {
+/* === JavaScript for Dynamic Toggling of Strobe Effect === */
+body.admin-active .strobe-effect {
   visibility: visible; /* Show strobe effect only when admin panel is NOT open */
 }
