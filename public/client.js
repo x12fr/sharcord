@@ -14,6 +14,14 @@ document.getElementById('send-button').onclick = () => {
     }
 };
 
+// ✨ Add Enter Key sending
+document.getElementById('message-input').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('send-button').click();
+    }
+});
+
 document.getElementById('send-image-button').onclick = () => {
     const img = document.getElementById('image-url').value;
     socket.emit('chatImage', img);
@@ -28,7 +36,14 @@ document.getElementById('set-pfp-button').onclick = () => {
 socket.on('chatMessage', data => {
     const box = document.getElementById('chat-box');
     const msg = document.createElement('div');
-    msg.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b>${data.username}:</b> ${formatMessage(data.message)}`;
+
+    // ✨ Add purple [owner] name if X12
+    let displayName = data.username;
+    if (data.username === 'X12') {
+        displayName = '<span style="color: purple;">X12 [owner]</span>';
+    }
+
+    msg.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b>${displayName}:</b> ${formatMessage(data.message)}`;
     box.appendChild(msg);
     box.scrollTop = box.scrollHeight;
 });
@@ -36,7 +51,13 @@ socket.on('chatMessage', data => {
 socket.on('chatImage', data => {
     const box = document.getElementById('chat-box');
     const img = document.createElement('div');
-    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b>${data.username}:</b><br><img src="${data.image}" style="max-width:300px;">`;
+
+    let displayName = data.username;
+    if (data.username === 'X12') {
+        displayName = '<span style="color: purple;">X12 [owner]</span>';
+    }
+
+    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b>${displayName}:</b><br><img src="${data.image}" style="max-width:300px;">`;
     box.appendChild(img);
     box.scrollTop = box.scrollHeight;
 });
