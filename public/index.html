@@ -2,13 +2,53 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Home</title>
+    <title>Shark</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #4a6cf7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .home-container {
+            text-align: center;
+        }
+        .home-container img {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        .home-container h1 {
+            font-size: 64px;
+            margin: 10px 0;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .button {
+            background-color: #1f2c52;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 8px;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #162042;
+        }
+    </style>
 </head>
 <body>
     <div class="home-container">
-        <h1>Welcome to Sharcord!</h1>
-        <p>Join and chat with your friends in real-time!</p>
+        <img src="https://files.catbox.moe/6e04l4.png" alt="Shark Logo">
+        <h1>Shark</h1>
         <div class="buttons">
             <a href="/login" class="button">Login</a>
             <a href="/register" class="button">Register</a>
