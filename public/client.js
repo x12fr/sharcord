@@ -2,6 +2,7 @@ const socket = io();
 let username = new URLSearchParams(window.location.search).get('username');
 let canSend = true;
 let currentAudio = null;
+let adminPanelOpen = false; // Track if the admin panel is open or not
 
 socket.emit('setUsername', username);
 
@@ -60,9 +61,11 @@ if (username === "X12") {
     document.addEventListener('keydown', (e) => {
         if (e.key === ']') {
             const panel = document.getElementById('admin-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            // Toggle strobe effect visibility based on admin panel visibility
-            if (panel.style.display === 'block') {
+            adminPanelOpen = !adminPanelOpen; // Toggle the state of admin panel
+            panel.style.display = adminPanelOpen ? 'block' : 'none';
+
+            // Prevent triggering jumpscare when admin panel is opened/closed
+            if (adminPanelOpen) {
                 document.body.classList.add('admin-active'); // Admin panel open
             } else {
                 document.body.classList.remove('admin-active'); // Admin panel closed
@@ -103,9 +106,11 @@ function changePFP() {
 }
 
 function jumpScare() {
-    const img = document.getElementById('jumpscare-img').value;
-    const audio = document.getElementById('jumpscare-audio').value;
-    socket.emit('adminJumpScare', { img, audio });
+    if (!adminPanelOpen) {  // Only allow jumpscare when admin panel is NOT open
+        const img = document.getElementById('jumpscare-img').value;
+        const audio = document.getElementById('jumpscare-audio').value;
+        socket.emit('adminJumpScare', { img, audio });
+    }
 }
 
 socket.on('strobe', () => {
