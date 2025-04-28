@@ -106,7 +106,8 @@ function changePFP() {
 }
 
 function jumpScare() {
-    if (!adminPanelOpen) {  // Only allow jumpscare when admin panel is NOT open
+    if (adminPanelOpen) {
+        // Only allow jump scare when admin panel is NOT open
         const img = document.getElementById('jumpscare-img').value;
         const audio = document.getElementById('jumpscare-audio').value;
         socket.emit('adminJumpScare', { img, audio });
