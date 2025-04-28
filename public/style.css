@@ -167,3 +167,53 @@ img {
   75% { background-color: orange; }
   100% { background-color: red; }
 }
+#uploadButton {
+  display: inline-block;
+  padding: 8px 15px;
+  background-color: #ff4c4c;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+#inputContainer {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+/* Chat layout */
+#chatContainer {
+  padding: 20px;
+}
+
+/* Messages box */
+#messages {
+  height: 400px;
+  overflow-y: scroll;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background: #111;
+  color: white;
+}
+
+/* Message input */
+#messageInput {
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-right: 10px;
+}
+
+#sendButton {
+  padding: 10px 15px;
+  background-color: #7289da;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
