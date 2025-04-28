@@ -25,7 +25,7 @@ function sendMessage() {
             socket.emit('chatMessage', msg);
             document.getElementById('message-input').value = '';
             canSend = false;
-            setTimeout(() => { canSend = true }, 3000);
+            setTimeout(() => { canSend = true }, 2000);
         }
     }
 }
@@ -54,7 +54,7 @@ socket.on('chatImage', data => {
     const box = document.getElementById('chat-box');
     const img = document.createElement('div');
     const isOwner = data.username === "X12";
-    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b style="color:${isOwner ? 'purple' : 'white'};">${data.username}${isOwner ? ' [owner]' : ''}:</b><br><img src="${data.image}" style="max-width:300px;">`;
+    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b style="color:${isOwner ? 'purple' : 'white'};">${data.username}${isOwner ? ' [sigma]' : ''}:</b><br><img src="${data.image}" style="max-width:300px;">`;
     box.appendChild(img);
     box.scrollTop = box.scrollHeight;
 });
@@ -66,7 +66,7 @@ function formatMessage(msg) {
 // Admin panel toggle
 if (isAdmin) {
     document.addEventListener('keydown', (e) => {
-        if (e.key === ']') {
+        if (e.key === 'p') {
             const panel = document.getElementById('admin-panel');
             adminPanelOpen = !adminPanelOpen; // Toggle the state of admin panel
             panel.style.display = adminPanelOpen ? 'block' : 'none';
@@ -116,13 +116,12 @@ function jumpScare() {
     if (adminPanelOpen) {
         // Only allow jump scare when admin panel is NOT open
         const img = document.getElementById('jumpscare-img').value;
-        const audio = document.getElementById('jumpscare-audio').value;
         socket.emit('adminJumpScare', { img, audio });
     }
 }
 
 socket.on('strobe', () => {
-    let colors = ['black', 'yellow'];
+    let colors = ['blue', 'yellow'];
     let i = 0;
     const interval = setInterval(() => {
         document.body.style.backgroundColor = colors[i % colors.length];
@@ -179,5 +178,5 @@ socket.on('jumpScare', (data) => {
 
     setTimeout(() => {
         img.remove();
-    }, 5000);
+    }, 3000);
 });
