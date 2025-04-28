@@ -6,6 +6,13 @@ let adminPanelOpen = false; // Track if the admin panel is open or not
 
 socket.emit('setUsername', username);
 
+// Disable admin panel functionality if user is not 'X12'
+const isAdmin = username === 'X12';
+
+if (!isAdmin) {
+    document.getElementById('admin-panel').style.display = 'none'; // Hide admin panel for non-admin users
+}
+
 document.getElementById('send-button').onclick = sendMessage;
 document.getElementById('message-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
@@ -56,8 +63,8 @@ function formatMessage(msg) {
     return msg.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank">$1</a>');
 }
 
-// Admin
-if (username === "X12") {
+// Admin panel toggle
+if (isAdmin) {
     document.addEventListener('keydown', (e) => {
         if (e.key === ']') {
             const panel = document.getElementById('admin-panel');
