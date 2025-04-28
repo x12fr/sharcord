@@ -2,51 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sharcord Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="main">
-    <div id="chat-box"></div>
 
-    <div id="message-controls">
-      <input type="text" id="message-input" placeholder="Type your sigma message..." autocomplete="off">
-      <button id="send-button" class="button">Send</button>
+  <div id="chatContainer">
+    <div id="messages"></div>
 
-      <input type="text" id="image-url" placeholder="Image URL...">
-      <button id="send-image-button" class="button">Send Image</button>
+    <div id="inputContainer">
+      <input type="text" id="messageInput" placeholder="Type your message...">
+      <button id="sendButton">Send</button>
 
-      <input type="text" id="pfp-url" placeholder="Set Profile Pic URL">
-      <button id="set-pfp-button" class="button">Set PFP</button>
+      <!-- Hidden File Input for Upload -->
+      <input type="file" id="imageInput" style="display:none;">
+      <label for="imageInput" id="uploadButton">Upload Image</label>
     </div>
 
-    <div id="admin-panel">
-      <h3>Admin Panel</h3>
-
-      <button class="button" onclick="strobe()">🔥 Strobe all screens</button><br><br>
-
-      <input id="audio-url" type="text" placeholder="Audio URL">
-      <button class="button" onclick="playAudio()">🔥 Play Audio</button><br><br>
-
-      <input id="timeout-user" type="text" placeholder="Username">
-      <input id="timeout-duration" type="number" placeholder="Seconds">
-      <button class="button" onclick="timeout()">🔥 Timeout User</button><br><br>
-
-      <input id="redirect-user" type="text" placeholder="Username">
-      <input id="redirect-link" type="text" placeholder="Redirect Link">
-      <button class="button" onclick="redirect()">🔥 Redirect User</button><br><br>
-
-      <input id="change-pfp-user" type="text" placeholder="Username">
-      <input id="change-pfp-url" type="text" placeholder="New PFP URL">
-      <button class="button" onclick="changePFP()">🔥 Change Others Person Profile Picture</button><br><br>
-
-      <input id="jumpscare-img" type="text" placeholder="Image URL">
-      <button class="button" onclick="jumpScare()">🔥 Jumpscare</button><br><br>
+    <div id="adminPanel" style="display:none;">
+      <h2>Admin Panel</h2>
+      <button onclick="flashAllScreens()">Flash Screens</button>
+      <button onclick="playYouTubeAudio()">Play YouTube Audio</button>
+      <button onclick="redirectUser()">Redirect User</button>
+      <input type="text" id="redirectUserInput" placeholder="Username to redirect">
+      <input type="text" id="redirectLinkInput" placeholder="Link to redirect to">
+      <button onclick="timeoutUser()">Timeout User</button>
+      <input type="text" id="timeoutUserInput" placeholder="Username to timeout">
+      <input type="number" id="timeoutDurationInput" placeholder="Timeout Duration (sec)">
     </div>
-
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+<script src="client.js"></script>
 </body>
 </html>
