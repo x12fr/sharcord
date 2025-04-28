@@ -8,31 +8,82 @@
 </head>
 <body>
 
-  <div id="chatContainer">
-    <div id="messages"></div>
+<div id="chatContainer">
+  
+  <div id="messages"></div>
 
-    <div id="inputContainer">
-      <input type="text" id="messageInput" placeholder="Type your message...">
-      <button id="sendButton">Send</button>
+  <div id="inputContainer">
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button id="sendButton">Send</button>
 
-      <!-- Hidden File Input for Upload -->
-      <input type="file" id="imageInput" style="display:none;">
-      <label for="imageInput" id="uploadButton">Upload Image</label>
-    </div>
-
-    <div id="adminPanel" style="display:none;">
-      <h2>Admin Panel</h2>
-      <button onclick="flashAllScreens()">Flash Screens</button>
-      <button onclick="playYouTubeAudio()">Play YouTube Audio</button>
-      <button onclick="redirectUser()">Redirect User</button>
-      <input type="text" id="redirectUserInput" placeholder="Username to redirect">
-      <input type="text" id="redirectLinkInput" placeholder="Link to redirect to">
-      <button onclick="timeoutUser()">Timeout User</button>
-      <input type="text" id="timeoutUserInput" placeholder="Username to timeout">
-      <input type="number" id="timeoutDurationInput" placeholder="Timeout Duration (sec)">
-    </div>
+    <!-- Hidden File Input -->
+    <input type="file" id="imageInput" style="display: none;">
+    <label for="imageInput" id="uploadButton">Upload Image</label>
   </div>
 
+  <!-- Admin Panel (Hidden by default) -->
+  <div id="adminPanel" style="display: none;">
+    <h2>Admin Panel</h2>
+
+    <button onclick="flashAllScreens()">Flash All Screens</button><br><br>
+
+    <input type="text" id="youtubeURL" placeholder="YouTube URL">
+    <button onclick="playYouTubeAudio()">Play Audio</button><br><br>
+
+    <input type="text" id="redirectUsername" placeholder="Username to redirect">
+    <input type="text" id="redirectLink" placeholder="Link to redirect to">
+    <button onclick="redirectUser()">Redirect User</button><br><br>
+
+    <input type="text" id="timeoutUsername" placeholder="Username to timeout">
+    <input type="number" id="timeoutDuration" placeholder="Timeout duration (sec)">
+    <button onclick="timeoutUser()">Timeout User</button><br><br>
+  </div>
+
+</div>
+
 <script src="client.js"></script>
+<script>
+  // Detect if user is admin (X12)
+  const urlParams = new URLSearchParams(window.location.search);
+  const username = urlParams.get('username');
+  if (username === "X12") {
+    document.getElementById('adminPanel').style.display = 'block';
+  }
+
+  // Image upload trigger
+  document.getElementById('uploadButton').addEventListener('click', () => {
+    document.getElementById('imageInput').click();
+  });
+
+  // Optional: If you want to preview uploaded image or handle upload event
+  document.getElementById('imageInput').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      uploadImage(file); // You should have uploadImage() function in client.js
+    }
+  });
+
+  // Send button sends the message
+  document.getElementById('sendButton').addEventListener('click', () => {
+    sendMessage();
+  });
+
+  // Enter key sends the message too
+  document.getElementById('messageInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+  function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    if (message !== "") {
+      sendChatMessage(message); // You must have sendChatMessage() function in client.js
+      messageInput.value = ""; // Clear after sending
+    }
+  }
+</script>
+
 </body>
 </html>
