@@ -1,51 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login - Chat</title>
-  <style>
-    body {
-      background-color: black;
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 100px;
-    }
-    input {
-      background-color: black;
-      color: white;
-      border: 1px solid red;
-      padding: 10px;
-      margin: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: red;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Login - Sharcord</title>
 </head>
-<body>
-  <h1>Claim a Username</h1>
-  <input id="adminKey" placeholder="Admin Key" />
-  <input id="username" placeholder="Username" />
-  <button onclick="claimUser()">Claim User</button>
+<body style="background-color: black; color: white; font-family: sans-serif; text-align: center; padding-top: 100px;">
+  <input type="text" id="adminKey" placeholder="Admin Key" style="background: black; color: white; border: 1px solid red; padding: 10px;"><br><br>
+  <input type="text" id="username" placeholder="Username" style="background: black; color: white; border: 1px solid red; padding: 10px;"><br><br>
+  <button onclick="claimUser()" style="background: black; color: red; border: 1px solid red; padding: 10px;">Claim User</button>
 
   <script>
     function claimUser() {
-      const username = document.getElementById("username").value;
-      const adminKey = document.getElementById("adminKey").value;
-      if (!username) {
-        alert("Please enter a username.");
-        return;
-      }
-      localStorage.setItem("username", username);
-      localStorage.setItem("isAdmin", adminKey === "331256444");
-      window.location.href = "chat.html";
+      const key = document.getElementById('adminKey').value;
+      const name = document.getElementById('username').value;
+      localStorage.setItem('username', name);
+      localStorage.setItem('isAdmin', key === '331256444');
+      window.location.href = 'chat.html';
     }
   </script>
 </body>
