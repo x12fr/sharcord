@@ -1,100 +1,73 @@
 const socket = io();
-const chatBox = document.getElementById('chatBox');
-const messageInput = document.getElementById('messageInput');
-const imageInput = document.getElementById('imageInput');
-const profileInput = document.getElementById('profileInput');
-
 const username = localStorage.getItem('username') || 'Guest';
 const isAdmin = localStorage.getItem('isAdmin') === 'true';
-let profilePic = localStorage.getItem('profilePic') || '';
+let profilePic = '';
 
-function appendMessage(msg) {
-  const msgContainer = document.createElement('div');
-  msgContainer.classList.add('message');
-  if (msg.isAdmin) msgContainer.classList.add('admin');
+const chatBox = document.getElementById('chatBox');
+const input = document.getElementById('messageInput');
 
-  const profileImg = document.createElement('img');
-  profileImg.src = msg.profilePic || '';
-  profileImg.classList.add('pfp');
+function appendMessage(data, isImage = false) {
+  const msg = document.createElement('div');
+  const nameColor = data.isAdmin ? 'red' : 'white';
+  const label = data.isAdmin ? '[staff] ' : '';
+  const imgTag = data.profilePic ? `<img src="${data.profilePic}" style="width: 25px; height: 25px; border-radius: 50%; vertical-align: middle;"> ` : '';
 
-  const msgText = document.createElement('span');
-  msgText.innerHTML = `${msg.isAdmin ? '<span class="staff-tag">[staff]</span> ' : ''}<strong>${msg.user}</strong>: ${msg.text}`;
+  msg.innerHTML = `${imgTag}<span style="color: ${nameColor}; font-weight: bold;">${label}${data.user}</span>: ${
+    isImage ? `<img src="${data.text}" style="max-height: 200px;">` : `<span style="color: white;">${data.text}</span>`
+  }`;
 
-  msgContainer.appendChild(profileImg);
-  msgContainer.appendChild(msgText);
-  chatBox.appendChild(msgContainer);
+  chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-socket.on('init', history => {
-  chatBox.innerHTML = '';
-  history.forEach(msg => appendMessage(msg));
-});
-
-socket.on('chat message', msg => {
-  appendMessage(msg);
-});
-
-socket.on('image message', msg => {
-  const msgContainer = document.createElement('div');
-  msgContainer.classList.add('message');
-  if (msg.isAdmin) msgContainer.classList.add('admin');
-
-  const profileImg = document.createElement('img');
-  profileImg.src = msg.profilePic || '';
-  profileImg.classList.add('pfp');
-
-  const msgText = document.createElement('div');
-  msgText.innerHTML = `${msg.isAdmin ? '<span class="staff-tag">[staff]</span> ' : ''}<strong>${msg.user}</strong>:`;
-
-  const image = document.createElement('img');
-  image.src = msg.text;
-  image.classList.add('chat-image');
-
-  msgContainer.appendChild(profileImg);
-  msgContainer.appendChild(msgText);
-  msgContainer.appendChild(image);
-  chatBox.appendChild(msgContainer);
-  chatBox.scrollTop = chatBox.scrollHeight;
-});
-
-messageInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && messageInput.value.trim()) {
-    socket.emit('chat message', {
-      user: username,
-      text: messageInput.value.trim(),
-      isAdmin: isAdmin,
-      profilePic: profilePic
-    });
-    messageInput.value = '';
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const msg = input.value.trim();
+    if (msg) {
+      socket.emit('chat message', {
+        user: username,
+        text: msg,
+        isAdmin,
+        profilePic
+      });
+      input.value = '';
+    }
   }
 });
 
-function sendImage(imgData) {
-  socket.emit('image message', {
-    user: username,
-    text: imgData,
-    isAdmin: isAdmin,
-    profilePic: profilePic
-  });
-}
+socket.on('init', (messages) => {
+  messages.forEach(m => appendMessage(m, m.text.startsWith('data:image')));
+});
 
-imageInput.addEventListener('change', () => {
-  const file = imageInput.files[0];
+socket.on('chat message', (data) => {
+  appendMessage(data);
+});
+
+socket.on('image message', (data) => {
+  appendMessage(data, true);
+});
+
+document.getElementById('imageInput').addEventListener('change', function () {
+  const file = this.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => sendImage(reader.result);
+  reader.onload = function () {
+    socket.emit('image message', {
+      user: username,
+      text: reader.result,
+      isAdmin,
+      profilePic
+    });
+  };
   reader.readAsDataURL(file);
 });
 
-profileInput.addEventListener('change', () => {
-  const file = profileInput.files[0];
+document.getElementById('profileInput').addEventListener('change', function () {
+  const file = this.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = function () {
     profilePic = reader.result;
-    localStorage.setItem('profilePic', profilePic);
-    alert('Profile picture set!');
   };
   reader.readAsDataURL(file);
 });
