@@ -2,59 +2,62 @@ const express = require("express");
 const app = express();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
+const fs = require("fs");
 const path = require("path");
 
+const PORT = process.env.PORT || 3000;
+const messagesFile = "messages.json";
+
+// Serve static files (HTML, CSS, JS, etc.)
 app.use(express.static(path.join(__dirname)));
 
-const users = {}; // username -> { profilePic, isAdmin }
-const messages = []; // stored message history
+// Serve the main page
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
+// Load saved messages
+let messages = [];
+if (fs.existsSync(messagesFile)) {
+  try {
+    const data = fs.readFileSync(messagesFile);
+    messages = JSON.parse(data);
+  } catch (err) {
+    console.error("Failed to load messages:", err);
+  }
+}
+
+// Socket.IO connection
 io.on("connection", (socket) => {
-  let username = null;
+  console.log("A user connected");
 
-  // Send chat history to newly connected user
-  socket.emit("chat history", messages);
+  // Send saved messages to new user
+  socket.emit("load messages", messages);
 
-  socket.on("claim user", ({ name, profilePic, isAdmin }, callback) => {
-    if (users[name]) {
-      return callback(false);
-    }
-    username = name;
-    users[username] = { profilePic, isAdmin };
-    callback(true);
-  });
-
+  // New chat message
   socket.on("chat message", (msg) => {
-    if (!username) return;
-    const messageData = {
-      user: username,
-      profilePic: users[username]?.profilePic || "",
-      text: msg,
-      isAdmin: users[username]?.isAdmin || false,
-      type: "text",
-    };
-    messages.push(messageData); // save message
-    io.emit("chat message", messageData);
+    messages.push(msg);
+
+    // Save messages
+    fs.writeFile(messagesFile, JSON.stringify(messages), (err) => {
+      if (err) console.error("Failed to save messages:", err);
+    });
+
+    io.emit("chat message", msg); // Broadcast to everyone
   });
 
-  socket.on("image message", (url) => {
-    if (!username) return;
-    const messageData = {
-      user: username,
-      profilePic: users[username]?.profilePic || "",
-      url: url,
-      isAdmin: users[username]?.isAdmin || false,
-      type: "image",
-    };
-    messages.push(messageData); // save image
-    io.emit("image message", messageData);
-  });
+  // Image messages
+  socket.on("chat image", (imgData) => {
+    messages.push(imgData);
 
-  socket.on("disconnect", () => {
-    if (username) delete users[username];
+    fs.writeFile(messagesFile, JSON.stringify(messages), (err) => {
+      if (err) console.error("Failed to save image messages:", err);
+    });
+
+    io.emit("chat image", imgData);
   });
 });
 
-http.listen(3000, () => {
-  console.log("Sharcord server running on port 3000");
+http.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
