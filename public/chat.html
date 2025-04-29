@@ -2,26 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sharcord Chat</title>
+  <title>Chat</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="/socket.io/socket.io.js"></script>
 </head>
-<body style="background-color: black; color: white; font-family: sans-serif;">
-  <div style="padding: 20px;">
-    <div id="chatBox" style="border: 3px solid red; height: 400px; overflow-y: auto; padding: 10px; background-color: #111;"></div>
+<body id="chat-bg">
+  <div id="messages" class="chat-box"></div>
+  <input id="messageInput" placeholder="Type your message..." />
 
-    <div id="inputBox" style="margin-top: 10px;">
-      <input type="text" id="messageInput" placeholder="Type a message..." style="width: 100%; padding: 10px; background: #222; color: white; border: 1px solid red;" />
-      <div style="margin-top: 10px;">
-        <button class="custom-btn" onclick="document.getElementById('imageInput').click()">Send Image</button>
-        <button class="custom-btn" onclick="document.getElementById('profileInput').click()">Set Profile Pic</button>
-        <input type="file" id="imageInput" accept="image/*" style="display: none;">
-        <input type="file" id="profileInput" accept="image/*" style="display: none;">
-      </div>
-    </div>
+  <!-- Admin GUI -->
+  <div id="adminToggle">&#x25B6;</div>
+  <div id="adminPanel" class="hidden">
+    <button onclick="showBackgroundPrompt()">Set Background</button>
+    <button onclick="toggleSoundboard()">🎵</button>
+  </div>
+  <div id="bgPrompt" class="hidden">
+    <input id="bgUrlInput" placeholder="Background URL..." />
   </div>
 
+  <!-- Soundboard -->
+  <div id="soundboard" class="hidden">
+    <button onclick="playSound('https://example.com/sound1.mp3')">Sound 1</button>
+    <button onclick="playSound('https://example.com/sound2.mp3')">Sound 2</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
