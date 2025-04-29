@@ -1,42 +1,31 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(http);
+const io = require('socket.io')(http);
+const path = require('path');
 
-const messages = [];
-
-app.use(express.static('public'));
+app.use(express.static(__dirname));
+let messages = [];
 
 io.on('connection', (socket) => {
-  socket.emit('init', messages);
+  messages.slice(-100).forEach(msg => socket.emit("message", msg));
 
-  socket.on('chat message', (data) => {
-    const msg = {
-      user: data.user,
-      text: data.text,
-      isAdmin: data.isAdmin,
-      profilePic: data.profilePic
-    };
+  socket.on("message", data => {
+    const msg = { ...data };
     messages.push(msg);
     if (messages.length > 100) messages.shift();
-    io.emit('chat message', msg);
+    io.emit("message", msg);
   });
 
-  socket.on('image message', (data) => {
-    const msg = {
-      user: data.user,
-      text: data.text,
-      isAdmin: data.isAdmin,
-      profilePic: data.profilePic
-    };
-    messages.push(msg);
-    if (messages.length > 100) messages.shift();
-    io.emit('image message', msg);
+  socket.on("setBackground", (url) => {
+    io.emit("changeBackground", url);
+  });
+
+  socket.on("playSound", (url) => {
+    io.emit("playSound", url);
   });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+http.listen(3000, () => {
+  console.log('Sharcord running on http://localhost:3000');
 });
