@@ -2,41 +2,37 @@ body {
   background-color: black;
   color: white;
   font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
 }
 
-.container {
-  text-align: center;
-  margin-top: 100px;
-}
-
-input, button {
-  margin: 5px;
+#chatBox {
+  width: 90%;
+  max-width: 800px;
+  height: 500px;
+  border: 3px solid red;
+  margin: 20px auto;
+  overflow-y: auto;
   padding: 10px;
-  border: 2px solid red;
+  background-color: #111;
+}
+
+#inputBox {
+  width: 90%;
+  max-width: 800px;
+  margin: auto;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid red;
   background-color: black;
   color: white;
 }
 
-.chat-box {
-  border: 2px solid red;
-  padding: 10px;
-  height: 400px;
-  overflow-y: scroll;
-  margin-bottom: 10px;
+.message {
+  margin: 5px 0;
 }
 
-.chat-pfp {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  vertical-align: middle;
-  margin-right: 10px;
-}
-
-.chat-img {
-  max-width: 200px;
-  display: block;
-  margin-top: 5px;
+.admin {
+  color: red;
 }
