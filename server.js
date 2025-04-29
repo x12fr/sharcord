@@ -2,56 +2,89 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const fs = require('fs');
 const path = require('path');
 
-const users = new Map();
-const ADMIN_KEY = 'supersecretkey'; // <- CHANGE THIS to your real secret admin key
+const PORT = process.env.PORT || 3000;
+const CHAT_HISTORY_FILE = 'chat-history.json';
 
-app.use(express.static('public'));
+let users = {};
+let chatHistory = [];
+
+// Load saved chat history
+function loadChatHistory() {
+  if (fs.existsSync(CHAT_HISTORY_FILE)) {
+    try {
+      chatHistory = JSON.parse(fs.readFileSync(CHAT_HISTORY_FILE, 'utf-8'));
+    } catch (err) {
+      console.error('Error reading chat history:', err);
+    }
+  }
+}
+
+// Save chat history (keep last 100 messages only)
+function saveChatHistory() {
+  fs.writeFileSync(CHAT_HISTORY_FILE, JSON.stringify(chatHistory.slice(-100), null, 2));
+}
+
+loadChatHistory();
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', (socket) => {
-  socket.on('claim-username', ({ username, profilePic, adminKey, isAdmin }, callback) => {
-    if (!username) return callback({ success: false, message: 'Username required' });
-    if ([...users.values()].find(u => u.username === username)) {
-      return callback({ success: false, message: 'Username already taken' });
+  let username = null;
+
+  socket.on('set-username', ({ name, profilePic, isAdmin }) => {
+    if (Object.values(users).some(user => user.name === name)) {
+      socket.emit('username-taken');
+      return;
     }
 
-    const adminStatus = (adminKey && adminKey === ADMIN_KEY) || isAdmin === true;
+    username = name;
+    users[socket.id] = { name, profilePic, isAdmin };
 
-    users.set(socket.id, { username, profilePic, isAdmin: adminStatus });
-    callback({ success: true, isAdmin: adminStatus });
+    // Send chat history to new user
+    socket.emit('chat-history', chatHistory);
+
+    console.log(`${name} connected.`);
   });
 
-  socket.on('send-message', ({ message, profilePic, isAdmin }) => {
-    const user = users.get(socket.id);
-    if (!user) return;
-
-    io.emit('new-message', {
-      username: user.username,
-      profilePic: user.profilePic,
-      message,
-      isAdmin: user.isAdmin
-    });
+  socket.on('send-message', (text) => {
+    if (!username) return;
+    const msg = {
+      type: 'text',
+      name: users[socket.id].name,
+      profilePic: users[socket.id].profilePic,
+      isAdmin: users[socket.id].isAdmin,
+      content: text
+    };
+    chatHistory.push(msg);
+    saveChatHistory();
+    io.emit('chat-message', msg);
   });
 
-  socket.on('send-image', ({ imageUrl, profilePic, isAdmin }) => {
-    const user = users.get(socket.id);
-    if (!user) return;
-
-    io.emit('new-message', {
-      username: user.username,
-      profilePic: user.profilePic,
-      image: imageUrl,
-      isAdmin: user.isAdmin
-    });
+  socket.on('send-image', (imgUrl) => {
+    if (!username) return;
+    const msg = {
+      type: 'image',
+      name: users[socket.id].name,
+      profilePic: users[socket.id].profilePic,
+      isAdmin: users[socket.id].isAdmin,
+      content: imgUrl
+    };
+    chatHistory.push(msg);
+    saveChatHistory();
+    io.emit('chat-message', msg);
   });
 
   socket.on('disconnect', () => {
-    users.delete(socket.id);
+    if (username) {
+      console.log(`${username} disconnected.`);
+      delete users[socket.id];
+    }
   });
 });
 
-const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
