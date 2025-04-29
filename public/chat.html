@@ -2,21 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sharcord Chat</title>
   <link rel="stylesheet" href="style.css" />
-  <script defer src="/socket.io/socket.io.js"></script>
-  <script defer src="client.js"></script>
 </head>
 <body>
-  <div class="chat-container">
-    <div id="chatBox" class="chat-box"></div>
-
-    <input type="text" id="messageInput" placeholder="Type a message..." />
-    
-    <div class="image-send-container">
-      <input type="text" id="imageURLInput" placeholder="Paste image URL here..." />
-      <button id="sendImageButton">Send Image</button>
-    </div>
+  <!-- Username Claim Section -->
+  <div id="claim-section">
+    <input id="username" placeholder="Enter username" />
+    <input id="admin-key" placeholder="Admin Key (optional)" />
+    <input id="profile-pic" placeholder="Image URL for profile pic" />
+    <button id="claim-button">Claim User</button>
   </div>
+
+  <!-- Main Chat Area -->
+  <div id="chat-section" style="display:none;">
+    <div id="chat-box" style="height: 400px; overflow-y: auto; border: 2px solid red; background: black; padding: 10px;"></div>
+
+    <form id="message-form">
+      <input id="message-input" placeholder="Type a message..." autocomplete="off" />
+    </form>
+
+    <form id="image-form">
+      <input id="image-url" placeholder="Paste image URL..." />
+      <button type="submit">Send Image</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
