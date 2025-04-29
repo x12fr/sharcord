@@ -13,7 +13,25 @@
     <input type="text" id="adminKeyInput" placeholder="Enter admin key (optional)" />
     <button id="claimBtn">Enter Chat</button>
   </div>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <script>
+    document.getElementById('claimBtn').addEventListener('click', () => {
+      const username = document.getElementById('usernameInput').value.trim();
+      const adminKey = document.getElementById('adminKeyInput').value.trim();
+
+      if (!username) {
+        alert('Please enter a username.');
+        return;
+      }
+
+      localStorage.setItem('username', username);
+      if (adminKey) {
+        localStorage.setItem('adminKey', adminKey);
+      } else {
+        localStorage.removeItem('adminKey');
+      }
+
+      window.location.href = 'chat.html';
+    });
+  </script>
 </body>
 </html>
