@@ -1,73 +1,70 @@
 const socket = io();
-const username = localStorage.getItem('username') || 'Guest';
-const isAdmin = localStorage.getItem('isAdmin') === 'true';
-let profilePic = '';
+const messageInput = document.getElementById("messageInput");
+const messagesDiv = document.getElementById("messages");
 
-const chatBox = document.getElementById('chatBox');
-const input = document.getElementById('messageInput');
+const username = localStorage.getItem("username");
+const isAdmin = localStorage.getItem("isAdmin") === "true";
 
-function appendMessage(data, isImage = false) {
-  const msg = document.createElement('div');
-  const nameColor = data.isAdmin ? 'red' : 'white';
-  const label = data.isAdmin ? '[staff] ' : '';
-  const imgTag = data.profilePic ? `<img src="${data.profilePic}" style="width: 25px; height: 25px; border-radius: 50%; vertical-align: middle;"> ` : '';
+if (!username) window.location.href = "index.html";
 
-  msg.innerHTML = `${imgTag}<span style="color: ${nameColor}; font-weight: bold;">${label}${data.user}</span>: ${
-    isImage ? `<img src="${data.text}" style="max-height: 200px;">` : `<span style="color: white;">${data.text}</span>`
-  }`;
-
-  chatBox.appendChild(msg);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const msg = input.value.trim();
-    if (msg) {
-      socket.emit('chat message', {
-        user: username,
-        text: msg,
-        isAdmin,
-        profilePic
-      });
-      input.value = '';
+// Send message
+messageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const text = messageInput.value;
+    if (text.trim()) {
+      socket.emit("message", { user: username, text, isAdmin });
+      messageInput.value = "";
     }
   }
 });
 
-socket.on('init', (messages) => {
-  messages.forEach(m => appendMessage(m, m.text.startsWith('data:image')));
+// Receive messages
+socket.on("message", (data) => {
+  const msg = document.createElement("div");
+  const nameStyle = data.isAdmin ? "color:red" : "color:white";
+  const tag = data.isAdmin ? "[staff]" : "";
+  msg.innerHTML = `<strong style="${nameStyle}">${data.user} ${tag}:</strong> ${data.text}`;
+  messagesDiv.appendChild(msg);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-socket.on('chat message', (data) => {
-  appendMessage(data);
+// Admin GUI
+if (!isAdmin) {
+  document.getElementById("adminToggle").style.display = "none";
+}
+
+document.getElementById("adminToggle").onclick = () => {
+  const panel = document.getElementById("adminPanel");
+  panel.classList.toggle("hidden");
+};
+
+function showBackgroundPrompt() {
+  document.getElementById("bgPrompt").classList.toggle("hidden");
+}
+
+document.getElementById("bgUrlInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const url = e.target.value;
+    socket.emit("setBackground", url);
+    e.target.value = "";
+    document.getElementById("bgPrompt").classList.add("hidden");
+  }
 });
 
-socket.on('image message', (data) => {
-  appendMessage(data, true);
+socket.on("changeBackground", (url) => {
+  document.getElementById("chat-bg").style.backgroundImage = `url('${url}')`;
+  document.getElementById("chat-bg").style.backgroundSize = "cover";
 });
 
-document.getElementById('imageInput').addEventListener('change', function () {
-  const file = this.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function () {
-    socket.emit('image message', {
-      user: username,
-      text: reader.result,
-      isAdmin,
-      profilePic
-    });
-  };
-  reader.readAsDataURL(file);
-});
+function toggleSoundboard() {
+  document.getElementById("soundboard").classList.toggle("hidden");
+}
 
-document.getElementById('profileInput').addEventListener('change', function () {
-  const file = this.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function () {
-    profilePic = reader.result;
-  };
-  reader.readAsDataURL(file);
+function playSound(url) {
+  socket.emit("playSound", url);
+}
+
+socket.on("playSound", (url) => {
+  const audio = new Audio(url);
+  audio.play();
 });
