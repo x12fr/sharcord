@@ -7,7 +7,13 @@
 </head>
 <body id="chat-bg">
   <div id="messages" class="chat-box"></div>
+
   <input id="messageInput" placeholder="Type your message..." />
+  <div class="chat-buttons">
+    <input type="file" id="imageInput" accept="image/*" />
+    <button onclick="uploadImage()">Send Image</button>
+    <button onclick="setProfilePic()">Set Profile Picture</button>
+  </div>
 
   <!-- Admin GUI -->
   <div id="adminToggle">&#x25B6;</div>
