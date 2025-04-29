@@ -1,63 +1,57 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 const path = require('path');
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const users = new Map();
+const ADMIN_KEY = 'supersecretkey'; // <- CHANGE THIS to your real secret admin key
 
-const users = new Map(); // username -> socket.id
-const userProfiles = new Map(); // username -> profilePic
-
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
 io.on('connection', (socket) => {
-    socket.on('claim-username', ({ username, profilePic }, callback) => {
-        if (users.has(username)) {
-            return callback({ success: false, message: 'Username already taken' });
-        }
+  socket.on('claim-username', ({ username, profilePic, adminKey, isAdmin }, callback) => {
+    if (!username) return callback({ success: false, message: 'Username required' });
+    if ([...users.values()].find(u => u.username === username)) {
+      return callback({ success: false, message: 'Username already taken' });
+    }
 
-        users.set(username, socket.id);
-        userProfiles.set(username, profilePic);
-        socket.username = username;
+    const adminStatus = (adminKey && adminKey === ADMIN_KEY) || isAdmin === true;
 
-        callback({ success: true });
-        io.emit('user-joined', username);
+    users.set(socket.id, { username, profilePic, isAdmin: adminStatus });
+    callback({ success: true, isAdmin: adminStatus });
+  });
+
+  socket.on('send-message', ({ message, profilePic, isAdmin }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    io.emit('new-message', {
+      username: user.username,
+      profilePic: user.profilePic,
+      message,
+      isAdmin: user.isAdmin
     });
+  });
 
-    socket.on('send-message', ({ message, profilePic }) => {
-        if (socket.username) {
-            io.emit('new-message', {
-                username: socket.username,
-                message,
-                profilePic: profilePic || userProfiles.get(socket.username),
-                image: null
-            });
-        }
-    });
+  socket.on('send-image', ({ imageUrl, profilePic, isAdmin }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
 
-    socket.on('send-image', ({ imageUrl, profilePic }) => {
-        if (socket.username) {
-            io.emit('new-message', {
-                username: socket.username,
-                message: '',
-                profilePic: profilePic || userProfiles.get(socket.username),
-                image: imageUrl
-            });
-        }
+    io.emit('new-message', {
+      username: user.username,
+      profilePic: user.profilePic,
+      image: imageUrl,
+      isAdmin: user.isAdmin
     });
+  });
 
-    socket.on('disconnect', () => {
-        if (socket.username) {
-            users.delete(socket.username);
-            userProfiles.delete(socket.username);
-            io.emit('user-left', socket.username);
-        }
-    });
+  socket.on('disconnect', () => {
+    users.delete(socket.id);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+http.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
