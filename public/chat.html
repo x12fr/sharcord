@@ -7,27 +7,43 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Username Claim Section -->
-  <div id="claim-section">
-    <input id="username" placeholder="Enter username" />
-    <input id="admin-key" placeholder="Admin Key (optional)" />
-    <input id="profile-pic" placeholder="Image URL for profile pic" />
-    <button id="claim-button">Claim User</button>
+  <div id="chat-container">
+    <div id="announcement" style="display:none;"></div>
+
+    <div id="messages" class="chat-box"></div>
+
+    <div id="message-bar">
+      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <button id="sendImageBtn">Send Image</button>
+      <input type="text" id="imageURLInput" placeholder="Image URL..." />
+    </div>
+
+    <!-- Profile Picture Setting -->
+    <div id="profile-picture">
+      <input type="text" id="profilePictureUrl" placeholder="Profile Picture URL" />
+      <button id="setProfilePictureBtn">Set Profile Picture</button>
+    </div>
+
+    <!-- Admin Panel (Only visible if admin) -->
+    <div id="admin-panel" style="display:none; margin-top: 20px;">
+      <h2>Admin Panel</h2>
+      <input type="text" id="youtubeUrl" placeholder="YouTube URL" />
+      <button id="playAudioBtn">Play Audio</button>
+
+      <input type="number" id="strobeDuration" placeholder="Strobe Duration (sec)" />
+      <button id="strobeBtn">Strobe Screens</button>
+
+      <input type="text" id="targetUser" placeholder="Username to redirect" />
+      <input type="text" id="redirectUrl" placeholder="Redirect URL" />
+      <button id="redirectBtn">Redirect User</button>
+
+      <input type="text" id="timeoutUser" placeholder="Username to timeout" />
+      <input type="number" id="timeoutDuration" placeholder="Timeout (sec)" />
+      <button id="timeoutBtn">Timeout User</button>
+    </div>
   </div>
 
-  <!-- Main Chat Area -->
-  <div id="chat-section" style="display:none;">
-    <div id="chat-box" style="height: 400px; overflow-y: auto; border: 2px solid red; background: black; padding: 10px;"></div>
-
-    <form id="message-form">
-      <input id="message-input" placeholder="Type a message..." autocomplete="off" />
-    </form>
-
-    <form id="image-form">
-      <input id="image-url" placeholder="Paste image URL..." />
-      <button type="submit">Send Image</button>
-    </form>
-  </div>
+  <audio id="globalAudio" autoplay></audio>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
