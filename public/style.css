@@ -1,267 +1,38 @@
-/* === Global Reset === */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* === Body === */
 body {
-  background-color: #000000; /* OLED black background */
-  color: #e0e0e0; /* Light grey text for good contrast */
-  font-family: 'Arial', sans-serif;
-  min-height: 100vh;
-  position: relative; /* Required for absolute positioning elements */
+    background-color: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
-/* === Main Container === */
-.container, #main, #admin-panel {
-  max-width: 600px;
-  margin: 50px auto;
-  padding: 20px;
-  background: #121212; /* Darker container background */
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+.claim-container, .chat-container {
+    margin-top: 100px;
 }
 
-/* === Headings === */
-h1, h2, h3, p {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #fff; /* White text for headings */
+input, button {
+    background-color: black;
+    border: 2px solid red;
+    color: white;
+    padding: 10px;
+    margin: 5px;
 }
 
-/* === Inputs & Buttons === */
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="url"],
-input[type="number"],
-button {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 6px;
-  border: 1px solid #333; /* Dark border */
+.chat-box {
+    width: 80%;
+    height: 400px;
+    margin: 20px auto;
+    border: 2px solid red;
+    overflow-y: scroll;
+    background-color: #111;
+    padding: 10px;
 }
 
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="url"],
-input[type="number"] {
-  background-color: #1c1c1c; /* Dark input background */
-  color: #fff; /* Light text in inputs */
+#messageInput, #profilePicInput {
+    width: 60%;
 }
 
-button {
-  background-color: #1f80ff; /* Bright blue for buttons */
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s;
-  border: none;
+#sendImageButton {
+    width: 30%;
 }
-
-button:hover {
-  background-color: #2b99ff; /* Slightly lighter blue on hover */
-  transform: scale(1.05); /* Subtle zoom effect */
-}
-
-/* === Chat Page === */
-#chat-box {
-  height: 400px;
-  overflow-y: auto;
-  padding: 10px;
-  background-color: #1c1c1c; /* Dark gray background for chat */
-  border: 2px solid #333; /* Dark border */
-  border-radius: 10px;
-  margin-bottom: 20px;
-}
-
-/* === Message Controls === */
-#message-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* === Admin Panel === */
-#admin-panel {
-  margin-top: 30px;
-  padding: 20px;
-  background-color: #191919;
-  border: 2px solid #1f80ff; /* Blue border for admin panel */
-  border-radius: 10px;
-  z-index: 10000; /* Ensure admin panel is above the strobe effect */
-}
-
-/* === Messages === */
-.message {
-  margin-bottom: 15px;
-  padding: 8px;
-  background: #333; /* Dark message background */
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.username {
-  font-weight: bold;
-  color: #1f80ff; /* Bright blue for usernames */
-}
-
-.text {
-  color: #ddd; /* Light gray text for the message */
-}
-
-/* === Profile Pictures === */
-img {
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 5px;
-  margin-top: 5px;
-}
-
-/* === Scrollbar === */
-#chat-box::-webkit-scrollbar {
-  width: 8px;
-}
-#chat-box::-webkit-scrollbar-thumb {
-  background: #1f80ff; /* Blue scrollbar */
-  border-radius: 5px;
-}
-#chat-box::-webkit-scrollbar-track {
-  background: #2a2a2a; /* Slightly darker background for track */
-}
-
-/* === Full-Screen Jumpscare === */
-#jumpscare-img {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 99999; /* High z-index to overlap everything */
-  object-fit: cover; /* Make sure image covers the whole screen */
-  pointer-events: none; /* Makes sure it doesn't block any other clicks */
-}
-
-/* === Strobe Effect === */
-.strobe-effect {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9998; /* Lower z-index to allow admin panel to appear on top */
-  background-color: red;
-  animation: strobe-animation 0.2s infinite;
-  visibility: hidden; /* Default state, hidden when admin panel is visible */
-}
-
-/* Strobe animation */
-@keyframes strobe-animation {
-  0% { background-color: red; }
-  25% { background-color: yellow; }
-  50% { background-color: black; }
-  75% { background-color: orange; }
-  100% { background-color: red; }
-}
-#uploadButton {
-  display: inline-block;
-  padding: 8px 15px;
-  background-color: #ff4c4c;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-left: 10px;
-  font-size: 14px;
-}
-
-#inputContainer {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-}
-
-/* Chat layout */
-#chatContainer {
-  padding: 20px;
-}
-
-/* Messages box */
-#messages {
-  height: 400px;
-  overflow-y: scroll;
-  border: 1px solid #ccc;
-  padding: 10px;
-  background: #111;
-  color: white;
-}
-
-/* Message input */
-#messageInput {
-  flex-grow: 1;
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  margin-right: 10px;
-}
-
-#sendButton {
-  padding: 10px 15px;
-  background-color: #7289da;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-#uploadButton {
-  display: inline-block;
-  padding: 8px 15px;
-  background-color: #ff4c4c;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-left: 10px;
-  font-size: 14px;
-}
-
-#inputContainer {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-}
-
-#chatContainer {
-  padding: 20px;
-}
-
-#messages {
-  height: 400px;
-  overflow-y: scroll;
-  border: 1px solid #ccc;
-  padding: 10px;
-  background: #111;
-  color: white;
-  margin-bottom: 10px;
-}
-
-#messageInput {
-  flex-grow: 1;
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  margin-right: 10px;
-}
-
-#sendButton {
-  padding: 10px 15px;
-  background-color: #7289da;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-
