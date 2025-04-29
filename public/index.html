@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Login - Sharcord</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body style="background-color: black; color: white; font-family: sans-serif; text-align: center; padding-top: 100px;">
-  <input type="text" id="adminKey" placeholder="Admin Key" style="background: black; color: white; border: 1px solid red; padding: 10px;"><br><br>
-  <input type="text" id="username" placeholder="Username" style="background: black; color: white; border: 1px solid red; padding: 10px;"><br><br>
-  <button onclick="claimUser()" style="background: black; color: red; border: 1px solid red; padding: 10px;">Claim User</button>
-
+<body>
+  <div class="login-container">
+    <input type="text" id="adminKey" placeholder="Admin Key" />
+    <input type="text" id="username" placeholder="Username" />
+    <button onclick="login()">Claim User</button>
+  </div>
   <script>
-    function claimUser() {
-      const key = document.getElementById('adminKey').value;
-      const name = document.getElementById('username').value;
-      localStorage.setItem('username', name);
-      localStorage.setItem('isAdmin', key === '331256444');
-      window.location.href = 'chat.html';
+    function login() {
+      const adminKey = document.getElementById('adminKey').value;
+      const username = document.getElementById('username').value;
+      if (!username) return alert("Username required");
+      localStorage.setItem("username", username);
+      if (adminKey === "c00lkid") {
+        localStorage.setItem("isAdmin", "true");
+      }
+      window.location.href = "chat.html";
     }
   </script>
 </body>
