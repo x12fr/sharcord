@@ -1,131 +1,97 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const fs = require('fs');
+const app = express();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 const path = require('path');
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
 const PORT = process.env.PORT || 3000;
-const ADMIN_KEY = "331256444";
 
-let users = {};
-let messageHistory = [];
+const ADMIN_KEY = "your_admin_key_here"; // Change this
 
-// Load chat history from file
-const historyPath = path.join(__dirname, 'messages.json');
-if (fs.existsSync(historyPath)) {
-  try {
-    const data = fs.readFileSync(historyPath);
-    messageHistory = JSON.parse(data);
-  } catch (err) {
-    console.error("Failed to load chat history:", err);
-  }
-}
+let users = {}; // username -> socket.id
+let admins = new Set();
+let messages = []; // stored messages for chat history
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
 
 io.on('connection', (socket) => {
-  let currentUser = null;
+  console.log('A user connected');
 
-  // Send chat history to newly connected user
-  socket.emit('chatHistory', messageHistory);
-
-  socket.on('join', ({ username, adminKey, profilePicture }) => {
-    const isAdmin = adminKey === ADMIN_KEY;
-    users[socket.id] = { username, isAdmin, profilePicture };
-    currentUser = users[socket.id];
-
-    if (isAdmin) {
-      socket.emit('adminStatus', true);
+  socket.on('join', ({ username, adminKey }) => {
+    if (Object.values(users).includes(username)) {
+      socket.emit('usernameTaken');
+      socket.disconnect();
+      return;
     }
-  });
-
-  socket.on('message', (msg) => {
-    if (!currentUser) return;
-
-    const messageData = {
-      username: currentUser.username,
-      message: msg,
-      profilePicture: currentUser.profilePicture,
-      isAdmin: currentUser.isAdmin
-    };
-
-    messageHistory.push(messageData);
-    fs.writeFileSync(historyPath, JSON.stringify(messageHistory, null, 2));
-
-    io.emit('chatMessage', messageData);
-  });
-
-  socket.on('image', (url) => {
-    if (!currentUser) return;
-
-    const imageData = {
-      username: currentUser.username,
-      imageURL: url,
-      profilePicture: currentUser.profilePicture,
-      isAdmin: currentUser.isAdmin
-    };
-
-    messageHistory.push(imageData);
-    fs.writeFileSync(historyPath, JSON.stringify(messageHistory, null, 2));
-
-    io.emit('chatImage', imageData);
-  });
-
-  socket.on('updateProfilePicture', (newPic) => {
-    if (currentUser) {
-      currentUser.profilePicture = newPic;
-      users[socket.id].profilePicture = newPic;
+    socket.username = username;
+    users[socket.id] = username;
+    
+    if (adminKey === ADMIN_KEY) {
+      socket.isAdmin = true;
+      admins.add(socket.id);
+      socket.emit('adminStatus');
+    } else {
+      socket.isAdmin = false;
     }
+
+    socket.emit('chatHistory', messages);
   });
 
-  // Admin features
+  socket.on('chatMessage', ({ username, message, profilePic }) => {
+    const data = { username, message, profilePic, isAdmin: socket.isAdmin, type: 'text' };
+    messages.push(data);
+    io.emit('chatMessage', data);
+  });
+
+  socket.on('chatImage', ({ username, imgUrl, profilePic }) => {
+    const data = { username, imgUrl, profilePic, isAdmin: socket.isAdmin, type: 'image' };
+    messages.push(data);
+    io.emit('chatImage', data);
+  });
+
   socket.on('playAudio', (url) => {
-    if (currentUser?.isAdmin) {
+    if (socket.isAdmin) {
       io.emit('playAudio', url);
-      io.emit('announcement', `${currentUser.username} played audio`);
     }
   });
 
-  socket.on('strobe', (duration) => {
-    if (currentUser?.isAdmin) {
-      io.emit('strobe', duration);
-      io.emit('announcement', `${currentUser.username} strobed screens`);
+  socket.on('strobeScreen', (duration) => {
+    if (socket.isAdmin) {
+      io.emit('strobeScreen', duration);
     }
   });
 
-  socket.on('timeoutUser', ({ user, duration }) => {
-    if (currentUser?.isAdmin) {
-      const targetSocketId = Object.keys(users).find(
-        id => users[id].username === user
-      );
-      if (targetSocketId) {
-        io.to(targetSocketId).emit('timeout', duration);
-        io.emit('announcement', `${user} was timed out for ${duration}s`);
+  socket.on('timeoutUser', ({ targetUsername, duration }) => {
+    if (socket.isAdmin) {
+      for (let id in users) {
+        if (users[id] === targetUsername) {
+          io.to(id).emit('timeoutUser', duration);
+        }
       }
     }
   });
 
-  socket.on('redirectUser', ({ user, url }) => {
-    if (currentUser?.isAdmin) {
-      const targetSocketId = Object.keys(users).find(
-        id => users[id].username === user
-      );
-      if (targetSocketId) {
-        io.to(targetSocketId).emit('redirect', url);
-        io.emit('announcement', `${user} was redirected`);
+  socket.on('redirectUser', ({ targetUsername, redirectURL }) => {
+    if (socket.isAdmin) {
+      for (let id in users) {
+        if (users[id] === targetUsername) {
+          io.to(id).emit('redirectUser', redirectURL);
+        }
       }
     }
   });
 
   socket.on('disconnect', () => {
     delete users[socket.id];
+    admins.delete(socket.id);
+    console.log('A user disconnected');
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Sharcord server running at http://localhost:${PORT}`);
+http.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
