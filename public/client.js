@@ -4,6 +4,7 @@ const messagesDiv = document.getElementById("messages");
 
 const username = localStorage.getItem("username");
 const isAdmin = localStorage.getItem("isAdmin") === "true";
+let profilePic = localStorage.getItem("profilePic") || "";
 
 if (!username) window.location.href = "index.html";
 
@@ -12,7 +13,7 @@ messageInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     const text = messageInput.value;
     if (text.trim()) {
-      socket.emit("message", { user: username, text, isAdmin });
+      socket.emit("message", { user: username, text, isAdmin, profilePic });
       messageInput.value = "";
     }
   }
@@ -23,7 +24,14 @@ socket.on("message", (data) => {
   const msg = document.createElement("div");
   const nameStyle = data.isAdmin ? "color:red" : "color:white";
   const tag = data.isAdmin ? "[staff]" : "";
-  msg.innerHTML = `<strong style="${nameStyle}">${data.user} ${tag}:</strong> ${data.text}`;
+  const pfp = data.profilePic ? `<img class="profile-pic" src="${data.profilePic}">` : "";
+
+  if (data.text.startsWith("data:image/")) {
+    msg.innerHTML = `${pfp}<strong style="${nameStyle}">${data.user} ${tag}:</strong><br><img src="${data.text}" class="chat-image" />`;
+  } else {
+    msg.innerHTML = `${pfp}<strong style="${nameStyle}">${data.user} ${tag}:</strong> ${data.text}`;
+  }
+
   messagesDiv.appendChild(msg);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
@@ -34,8 +42,7 @@ if (!isAdmin) {
 }
 
 document.getElementById("adminToggle").onclick = () => {
-  const panel = document.getElementById("adminPanel");
-  panel.classList.toggle("hidden");
+  document.getElementById("adminPanel").classList.toggle("hidden");
 };
 
 function showBackgroundPrompt() {
@@ -68,3 +75,31 @@ socket.on("playSound", (url) => {
   const audio = new Audio(url);
   audio.play();
 });
+
+// Image upload
+function uploadImage() {
+  const fileInput = document.getElementById("imageInput");
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    socket.emit("message", {
+      user: username,
+      text: e.target.result,
+      isAdmin,
+      profilePic
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+// Set profile picture
+function setProfilePic() {
+  const url = prompt("Enter profile picture URL:");
+  if (url) {
+    profilePic = url;
+    localStorage.setItem("profilePic", url);
+    alert("Profile picture set!");
+  }
+}
