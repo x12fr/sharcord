@@ -1,79 +1,76 @@
-// Simple front-end "fake" chat (no backend yet)
+const socket = io();
 
-let users = {}; // { username: profilePicURL }
-let currentUser = localStorage.getItem('username');
-let profilePic = localStorage.getItem('profilePic');
+const username = localStorage.getItem('username');
+const profilePic = localStorage.getItem('profilePic');
 
-// Redirect if not logged in
-if (!currentUser && window.location.pathname.includes('chat.html')) {
-    window.location.href = 'index.html';
-}
+if (window.location.pathname === '/index.html' || window.location.pathname === '/') {
+  document.getElementById('claimButton').addEventListener('click', () => {
+    const uname = document.getElementById('usernameInput').value.trim();
+    const pfp = document.getElementById('profilePicInput').value.trim() || '';
 
-// Handle claiming username
-if (document.getElementById('claimButton')) {
-    document.getElementById('claimButton').addEventListener('click', () => {
-        const usernameInput = document.getElementById('usernameInput').value.trim();
-        if (!usernameInput) return alert('Enter a username!');
-        
-        if (localStorage.getItem('allUsers')) {
-            users = JSON.parse(localStorage.getItem('allUsers'));
-            if (users[usernameInput]) {
-                return alert('Username already taken!');
-            }
-        }
+    if (!uname) return alert('Enter a username');
 
-        users[usernameInput] = '';
-        localStorage.setItem('allUsers', JSON.stringify(users));
-        localStorage.setItem('username', usernameInput);
-        localStorage.setItem('profilePic', '');
-
+    socket.emit('claim-username', { username: uname, profilePic: pfp }, (res) => {
+      if (res.success) {
+        localStorage.setItem('username', uname);
+        localStorage.setItem('profilePic', pfp);
         window.location.href = 'chat.html';
+      } else {
+        alert(res.message);
+      }
     });
+  });
 }
 
-// Chat functions
-if (window.location.pathname.includes('chat.html')) {
-    const chatBox = document.getElementById('chatBox');
-    const messageInput = document.getElementById('messageInput');
-    const sendImageButton = document.getElementById('sendImageButton');
-    const profilePicInput = document.getElementById('profilePicInput');
+if (window.location.pathname === '/chat.html') {
+  const messageInput = document.getElementById('messageInput');
+  const chatBox = document.getElementById('chatBox');
+  const sendImageButton = document.getElementById('sendImageButton');
 
-    function sendMessage(text, imageUrl = null) {
-        const msgDiv = document.createElement('div');
-        msgDiv.style.margin = "10px";
-        
-        const pic = profilePic || 'https://via.placeholder.com/30'; // Default pic
-        msgDiv.innerHTML = `
-            <img src="${pic}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;">
-            <strong>${currentUser}</strong>: ${text}
-            ${imageUrl ? `<br><img src="${imageUrl}" style="max-width:200px;margin-top:5px;">` : ''}
-        `;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
+  socket.emit('claim-username', {
+    username,
+    profilePic
+  }, (res) => {
+    if (!res.success) {
+      alert('Username taken or invalid. Please re-login.');
+      localStorage.clear();
+      window.location.href = 'index.html';
     }
+  });
 
-    messageInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            if (messageInput.value.trim()) {
-                sendMessage(messageInput.value.trim());
-                messageInput.value = '';
-            }
-        }
-    });
+  function addMessage({ username, message, profilePic, image }) {
+    const div = document.createElement('div');
+    div.style.margin = '10px';
+    div.innerHTML = `
+      <img src="${profilePic || 'https://via.placeholder.com/30'}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;">
+      <strong>${username}</strong>: ${message}
+      ${image ? `<br><img src="${image}" style="max-width:200px;margin-top:5px;">` : ''}
+    `;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
 
-    sendImageButton.addEventListener('click', () => {
-        const imageUrl = prompt('Enter Image URL:');
-        if (imageUrl) {
-            sendMessage('', imageUrl);
-        }
-    });
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && messageInput.value.trim()) {
+      socket.emit('send-message', {
+        message: messageInput.value,
+        profilePic
+      });
+      messageInput.value = '';
+    }
+  });
 
-    profilePicInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            profilePic = profilePicInput.value.trim();
-            localStorage.setItem('profilePic', profilePic);
-            alert('Profile picture updated!');
-            profilePicInput.value = '';
-        }
-    });
+  sendImageButton.addEventListener('click', () => {
+    const imageUrl = prompt('Enter image URL:');
+    if (imageUrl) {
+      socket.emit('send-image', {
+        imageUrl,
+        profilePic
+      });
+    }
+  });
+
+  socket.on('new-message', (data) => {
+    addMessage(data);
+  });
 }
