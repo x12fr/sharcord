@@ -1,37 +1,8 @@
-.pfp {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-
-.chat-image {
-  max-width: 200px;
-  display: block;
-  margin: 5px 0;
-}
-
-.staff-tag {
-  color: red;
-}
-
-.message {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 5px 0;
-}
-
-.admin span {
-  color: white;
-}
-
-button.custom-btn {
+.custom-btn {
   background-color: black;
-  color: white;
-  border: 2px solid red;
-  padding: 5px 10px;
-  margin: 5px;
+  color: red;
+  border: 1px solid red;
+  padding: 8px 12px;
+  margin-right: 5px;
   cursor: pointer;
 }
