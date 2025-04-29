@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Claim Username</title>
-    <link rel="stylesheet" href="style.css">
-    <script defer src="client.js"></script>
+  <meta charset="UTF-8" />
+  <title>Claim Username</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="/socket.io/socket.io.js"></script>
+  <script defer src="client.js"></script>
 </head>
 <body>
-    <div class="claim-container">
-        <input type="text" id="usernameInput" placeholder="Enter Username">
-        <button id="claimButton">Claim User</button>
-    </div>
+  <div class="claim-container">
+    <input type="text" id="usernameInput" placeholder="Enter Username" />
+    <input type="text" id="profilePicInput" placeholder="Profile Picture URL" />
+    <button id="claimButton">Claim User</button>
+  </div>
 </body>
 </html>
