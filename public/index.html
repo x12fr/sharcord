@@ -2,20 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Claim Username</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sharcord Login</title>
   <link rel="stylesheet" href="style.css" />
-  <script defer src="/socket.io/socket.io.js"></script>
-  <script defer src="client.js"></script>
 </head>
 <body>
-  <div class="claim-container">
-    <input type="text" id="usernameInput" placeholder="Enter your username..." />
-    <input type="text" id="profilePicInput" placeholder="Enter profile picture URL (optional)" />
-    <br>
-    <label>Admin Key:</label><br>
-    <input type="text" id="adminKeyInput" placeholder="Leave empty if not admin" />
-    <br><br>
-    <button id="claimButton">Claim User</button>
+  <div id="login-container">
+    <h1>Sharcord</h1>
+    <input type="text" id="username" placeholder="Enter Username" />
+    <input type="text" id="adminKey" placeholder="Admin Key (For Admins)" />
+    <button id="claimUserBtn">Claim User</button>
   </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const claimUserBtn = document.getElementById('claimUserBtn');
+
+    claimUserBtn.addEventListener('click', () => {
+      const username = document.getElementById('username').value.trim();
+      const adminKey = document.getElementById('adminKey').value.trim();
+
+      if (username) {
+        localStorage.setItem('username', username);
+        if (adminKey) {
+          localStorage.setItem('adminKey', adminKey);
+        }
+        window.location.href = '/chat.html';
+      }
+    });
+  </script>
 </body>
 </html>
