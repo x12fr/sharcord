@@ -1,97 +1,76 @@
 const express = require('express');
 const app = express();
-const http = require('http').Server(app);
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
+const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
+const ADMIN_KEY = 'admin123'; // Your admin key
 
-const ADMIN_KEY = "your_admin_key_here"; // Change this
-
-let users = {}; // username -> socket.id
-let admins = new Set();
-let messages = []; // stored messages for chat history
+let chatHistory = []; // Saved chat messages
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve index.html
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 io.on('connection', (socket) => {
-  console.log('A user connected');
+    console.log('A user connected.');
 
-  socket.on('join', ({ username, adminKey }) => {
-    if (Object.values(users).includes(username)) {
-      socket.emit('usernameTaken');
-      socket.disconnect();
-      return;
-    }
-    socket.username = username;
-    users[socket.id] = username;
-    
-    if (adminKey === ADMIN_KEY) {
-      socket.isAdmin = true;
-      admins.add(socket.id);
-      socket.emit('adminStatus');
-    } else {
-      socket.isAdmin = false;
-    }
+    let userData = {};
 
-    socket.emit('chatHistory', messages);
-  });
+    socket.on('join', (data) => {
+        const isAdmin = data.adminKey === ADMIN_KEY;
+        userData = {
+            username: data.username,
+            pfp: data.pfp,
+            isAdmin: isAdmin
+        };
 
-  socket.on('chatMessage', ({ username, message, profilePic }) => {
-    const data = { username, message, profilePic, isAdmin: socket.isAdmin, type: 'text' };
-    messages.push(data);
-    io.emit('chatMessage', data);
-  });
+        socket.emit('init', { isAdmin });
 
-  socket.on('chatImage', ({ username, imgUrl, profilePic }) => {
-    const data = { username, imgUrl, profilePic, isAdmin: socket.isAdmin, type: 'image' };
-    messages.push(data);
-    io.emit('chatImage', data);
-  });
+        // Send chat history to the new user
+        chatHistory.forEach(msg => {
+            if (msg.type === 'text') {
+                socket.emit('chat message', msg.data);
+            } else if (msg.type === 'image') {
+                socket.emit('chat image', msg.data);
+            }
+        });
+    });
 
-  socket.on('playAudio', (url) => {
-    if (socket.isAdmin) {
-      io.emit('playAudio', url);
-    }
-  });
+    socket.on('chat message', (msg) => {
+        const messageData = {
+            username: userData.username,
+            message: msg,
+            pfp: userData.pfp,
+            isAdmin: userData.isAdmin
+        };
 
-  socket.on('strobeScreen', (duration) => {
-    if (socket.isAdmin) {
-      io.emit('strobeScreen', duration);
-    }
-  });
+        io.emit('chat message', messageData);
+        chatHistory.push({ type: 'text', data: messageData });
+    });
 
-  socket.on('timeoutUser', ({ targetUsername, duration }) => {
-    if (socket.isAdmin) {
-      for (let id in users) {
-        if (users[id] === targetUsername) {
-          io.to(id).emit('timeoutUser', duration);
-        }
-      }
-    }
-  });
+    socket.on('chat image', (imageUrl) => {
+        const imageData = {
+            username: userData.username,
+            imageUrl: imageUrl,
+            pfp: userData.pfp,
+            isAdmin: userData.isAdmin
+        };
 
-  socket.on('redirectUser', ({ targetUsername, redirectURL }) => {
-    if (socket.isAdmin) {
-      for (let id in users) {
-        if (users[id] === targetUsername) {
-          io.to(id).emit('redirectUser', redirectURL);
-        }
-      }
-    }
-  });
+        io.emit('chat image', imageData);
+        chatHistory.push({ type: 'image', data: imageData });
+    });
 
-  socket.on('disconnect', () => {
-    delete users[socket.id];
-    admins.delete(socket.id);
-    console.log('A user disconnected');
-  });
+    socket.on('disconnect', () => {
+        console.log('A user disconnected.');
+    });
 });
 
 http.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
