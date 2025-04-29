@@ -1,182 +1,79 @@
-const socket = io();
-let username = new URLSearchParams(window.location.search).get('username');
-let canSend = true;
-let currentAudio = null;
-let adminPanelOpen = false; // Track if the admin panel is open or not
+// Simple front-end "fake" chat (no backend yet)
 
-socket.emit('setUsername', username);
+let users = {}; // { username: profilePicURL }
+let currentUser = localStorage.getItem('username');
+let profilePic = localStorage.getItem('profilePic');
 
-// Disable admin panel functionality if user is not 'X12'
-const isAdmin = username === 'X12';
-
-if (!isAdmin) {
-    document.getElementById('admin-panel').style.display = 'none'; // Hide admin panel for non-admin users
+// Redirect if not logged in
+if (!currentUser && window.location.pathname.includes('chat.html')) {
+    window.location.href = 'index.html';
 }
 
-document.getElementById('send-button').onclick = sendMessage;
-document.getElementById('message-input').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-});
-
-function sendMessage() {
-    if (canSend) {
-        const msg = document.getElementById('message-input').value;
-        if (msg.trim() !== '') {
-            socket.emit('chatMessage', msg);
-            document.getElementById('message-input').value = '';
-            canSend = false;
-            setTimeout(() => { canSend = true }, 2000);
-        }
-    }
-}
-
-document.getElementById('send-image-button').onclick = () => {
-    const img = document.getElementById('image-url').value;
-    socket.emit('chatImage', img);
-    document.getElementById('image-url').value = '';
-};
-
-document.getElementById('set-pfp-button').onclick = () => {
-    const url = document.getElementById('pfp-url').value;
-    socket.emit('setProfilePic', url);
-};
-
-socket.on('chatMessage', data => {
-    const box = document.getElementById('chat-box');
-    const msg = document.createElement('div');
-    const isOwner = data.username === "X12";
-    msg.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b style="color:${isOwner ? 'purple' : 'white'};">${data.username}${isOwner ? ' [owner]' : ''}:</b> ${formatMessage(data.message)}`;
-    box.appendChild(msg);
-    box.scrollTop = box.scrollHeight;
-});
-
-socket.on('chatImage', data => {
-    const box = document.getElementById('chat-box');
-    const img = document.createElement('div');
-    const isOwner = data.username === "X12";
-    img.innerHTML = `<img src="${data.profilePic}" width="30" height="30"> <b style="color:${isOwner ? 'purple' : 'white'};">${data.username}${isOwner ? ' [sigma]' : ''}:</b><br><img src="${data.image}" style="max-width:300px;">`;
-    box.appendChild(img);
-    box.scrollTop = box.scrollHeight;
-});
-
-function formatMessage(msg) {
-    return msg.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank">$1</a>');
-}
-
-// Admin panel toggle
-if (isAdmin) {
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'p') {
-            const panel = document.getElementById('admin-panel');
-            adminPanelOpen = !adminPanelOpen; // Toggle the state of admin panel
-            panel.style.display = adminPanelOpen ? 'block' : 'none';
-
-            // Prevent triggering jumpscare when admin panel is opened/closed
-            if (adminPanelOpen) {
-                document.body.classList.add('admin-active'); // Admin panel open
-            } else {
-                document.body.classList.remove('admin-active'); // Admin panel closed
+// Handle claiming username
+if (document.getElementById('claimButton')) {
+    document.getElementById('claimButton').addEventListener('click', () => {
+        const usernameInput = document.getElementById('usernameInput').value.trim();
+        if (!usernameInput) return alert('Enter a username!');
+        
+        if (localStorage.getItem('allUsers')) {
+            users = JSON.parse(localStorage.getItem('allUsers'));
+            if (users[usernameInput]) {
+                return alert('Username already taken!');
             }
         }
+
+        users[usernameInput] = '';
+        localStorage.setItem('allUsers', JSON.stringify(users));
+        localStorage.setItem('username', usernameInput);
+        localStorage.setItem('profilePic', '');
+
+        window.location.href = 'chat.html';
     });
 }
 
-function strobe() {
-    socket.emit('adminStrobe');
-}
+// Chat functions
+if (window.location.pathname.includes('chat.html')) {
+    const chatBox = document.getElementById('chatBox');
+    const messageInput = document.getElementById('messageInput');
+    const sendImageButton = document.getElementById('sendImageButton');
+    const profilePicInput = document.getElementById('profilePicInput');
 
-function playAudio() {
-    const url = document.getElementById('audio-url').value;
-    socket.emit('adminAudio', url);
-}
-
-function stopAudio() {
-    socket.emit('adminStopAudio');
-}
-
-function timeout() {
-    const user = document.getElementById('timeout-user').value;
-    const duration = document.getElementById('timeout-duration').value;
-    socket.emit('adminTimeout', { user, duration });
-}
-
-function redirect() {
-    const user = document.getElementById('redirect-user').value;
-    const link = document.getElementById('redirect-link').value;
-    socket.emit('adminRedirect', { user, link });
-}
-
-function changePFP() {
-    const user = document.getElementById('change-pfp-user').value;
-    const url = document.getElementById('change-pfp-url').value;
-    socket.emit('adminChangePFP', { user, url });
-}
-
-function jumpScare() {
-    if (adminPanelOpen) {
-        // Only allow jump scare when admin panel is NOT open
-        const img = document.getElementById('jumpscare-img').value;
-        socket.emit('adminJumpScare', { img, audio });
+    function sendMessage(text, imageUrl = null) {
+        const msgDiv = document.createElement('div');
+        msgDiv.style.margin = "10px";
+        
+        const pic = profilePic || 'https://via.placeholder.com/30'; // Default pic
+        msgDiv.innerHTML = `
+            <img src="${pic}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;">
+            <strong>${currentUser}</strong>: ${text}
+            ${imageUrl ? `<br><img src="${imageUrl}" style="max-width:200px;margin-top:5px;">` : ''}
+        `;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            if (messageInput.value.trim()) {
+                sendMessage(messageInput.value.trim());
+                messageInput.value = '';
+            }
+        }
+    });
+
+    sendImageButton.addEventListener('click', () => {
+        const imageUrl = prompt('Enter Image URL:');
+        if (imageUrl) {
+            sendMessage('', imageUrl);
+        }
+    });
+
+    profilePicInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            profilePic = profilePicInput.value.trim();
+            localStorage.setItem('profilePic', profilePic);
+            alert('Profile picture updated!');
+            profilePicInput.value = '';
+        }
+    });
 }
-
-socket.on('strobe', () => {
-    let colors = ['blue', 'yellow'];
-    let i = 0;
-    const interval = setInterval(() => {
-        document.body.style.backgroundColor = colors[i % colors.length];
-        i++;
-    }, 200);
-    setTimeout(() => {
-        clearInterval(interval);
-        document.body.style.backgroundColor = "black";
-    }, 3000);
-});
-
-socket.on('playAudio', (url) => {
-    if (currentAudio) currentAudio.pause();
-    currentAudio = new Audio(url);
-    currentAudio.play();
-});
-
-socket.on('stopAudio', () => {
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-    }
-});
-
-socket.on('timeout', (duration) => {
-    document.body.innerHTML = `<h1 style="color:red;">Timed Out for ${duration} seconds</h1>`;
-    setTimeout(() => {
-        location.reload();
-    }, duration * 1000);
-});
-
-socket.on('redirect', (link) => {
-    window.location.href = link;
-});
-
-socket.on('updatePFP', (url) => {
-    // Profile picture updated
-});
-
-socket.on('jumpScare', (data) => {
-    const img = document.createElement('img');
-    img.src = data.img;
-    img.style.position = 'fixed';
-    img.style.top = '0';
-    img.style.left = '0';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.zIndex = '9999';
-    document.body.appendChild(img);
-
-    if (currentAudio) currentAudio.pause();
-    currentAudio = new Audio(data.audio);
-    currentAudio.play();
-
-    setTimeout(() => {
-        img.remove();
-    }, 3000);
-});
