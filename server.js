@@ -1,90 +1,60 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const fs = require('fs');
-const path = require('path');
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
+const path = require("path");
 
-const PORT = process.env.PORT || 3000;
-const CHAT_HISTORY_FILE = 'chat-history.json';
+app.use(express.static(path.join(__dirname)));
 
-let users = {};
-let chatHistory = [];
+const users = {}; // username -> { profilePic, isAdmin }
+const messages = []; // stored message history
 
-// Load saved chat history
-function loadChatHistory() {
-  if (fs.existsSync(CHAT_HISTORY_FILE)) {
-    try {
-      chatHistory = JSON.parse(fs.readFileSync(CHAT_HISTORY_FILE, 'utf-8'));
-    } catch (err) {
-      console.error('Error reading chat history:', err);
-    }
-  }
-}
-
-// Save chat history (keep last 100 messages only)
-function saveChatHistory() {
-  fs.writeFileSync(CHAT_HISTORY_FILE, JSON.stringify(chatHistory.slice(-100), null, 2));
-}
-
-loadChatHistory();
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   let username = null;
 
-  socket.on('set-username', ({ name, profilePic, isAdmin }) => {
-    if (Object.values(users).some(user => user.name === name)) {
-      socket.emit('username-taken');
-      return;
-    }
+  // Send chat history to newly connected user
+  socket.emit("chat history", messages);
 
+  socket.on("claim user", ({ name, profilePic, isAdmin }, callback) => {
+    if (users[name]) {
+      return callback(false);
+    }
     username = name;
-    users[socket.id] = { name, profilePic, isAdmin };
-
-    // Send chat history to new user
-    socket.emit('chat-history', chatHistory);
-
-    console.log(`${name} connected.`);
+    users[username] = { profilePic, isAdmin };
+    callback(true);
   });
 
-  socket.on('send-message', (text) => {
+  socket.on("chat message", (msg) => {
     if (!username) return;
-    const msg = {
-      type: 'text',
-      name: users[socket.id].name,
-      profilePic: users[socket.id].profilePic,
-      isAdmin: users[socket.id].isAdmin,
-      content: text
+    const messageData = {
+      user: username,
+      profilePic: users[username]?.profilePic || "",
+      text: msg,
+      isAdmin: users[username]?.isAdmin || false,
+      type: "text",
     };
-    chatHistory.push(msg);
-    saveChatHistory();
-    io.emit('chat-message', msg);
+    messages.push(messageData); // save message
+    io.emit("chat message", messageData);
   });
 
-  socket.on('send-image', (imgUrl) => {
+  socket.on("image message", (url) => {
     if (!username) return;
-    const msg = {
-      type: 'image',
-      name: users[socket.id].name,
-      profilePic: users[socket.id].profilePic,
-      isAdmin: users[socket.id].isAdmin,
-      content: imgUrl
+    const messageData = {
+      user: username,
+      profilePic: users[username]?.profilePic || "",
+      url: url,
+      isAdmin: users[username]?.isAdmin || false,
+      type: "image",
     };
-    chatHistory.push(msg);
-    saveChatHistory();
-    io.emit('chat-message', msg);
+    messages.push(messageData); // save image
+    io.emit("image message", messageData);
   });
 
-  socket.on('disconnect', () => {
-    if (username) {
-      console.log(`${username} disconnected.`);
-      delete users[socket.id];
-    }
+  socket.on("disconnect", () => {
+    if (username) delete users[username];
   });
 });
 
-http.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+http.listen(3000, () => {
+  console.log("Sharcord server running on port 3000");
 });
