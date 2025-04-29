@@ -1,89 +1,137 @@
 const socket = io();
 
-const username = localStorage.getItem('username');
-const profilePic = localStorage.getItem('profilePic');
-const isAdmin = localStorage.getItem('isAdmin') === 'true'; // Store admin flag locally
+// DOM elements
+const messageForm = document.getElementById('message-form');
+const messageInput = document.getElementById('message-input');
+const chatBox = document.getElementById('chat-box');
+const imageForm = document.getElementById('image-form');
+const imageInput = document.getElementById('image-url');
+const profilePicInput = document.getElementById('profile-pic');
+const usernameClaimForm = document.getElementById('username-form');
+const usernameInput = document.getElementById('username');
+const adminKeyInput = document.getElementById('admin-key');
+const claimButton = document.getElementById('claim-button');
 
-if (window.location.pathname === '/index.html' || window.location.pathname === '/') {
-  document.getElementById('claimButton').addEventListener('click', () => {
-    const uname = document.getElementById('usernameInput').value.trim();
-    const pfp = document.getElementById('profilePicInput').value.trim() || '';
-    const adminKey = document.getElementById('adminKeyInput').value.trim();
+let myUsername = localStorage.getItem('sharcord_username');
+let myProfilePic = localStorage.getItem('sharcord_profilePic');
+let isAdmin = localStorage.getItem('sharcord_isAdmin') === 'true';
 
-    if (!uname) return alert('Enter a username');
-
-    socket.emit('claim-username', { username: uname, profilePic: pfp, adminKey }, (res) => {
-      if (res.success) {
-        localStorage.setItem('username', uname);
-        localStorage.setItem('profilePic', pfp);
-        localStorage.setItem('isAdmin', res.isAdmin); // Save if admin
-        window.location.href = 'chat.html';
-      } else {
-        alert(res.message);
-      }
-    });
-  });
+// Claim username logic
+if (!myUsername) {
+  document.getElementById('claim-section').style.display = 'block';
 }
 
-if (window.location.pathname === '/chat.html') {
-  const messageInput = document.getElementById('messageInput');
-  const imageURLInput = document.getElementById('imageURLInput');
-  const chatBox = document.getElementById('chatBox');
-  const sendImageButton = document.getElementById('sendImageButton');
+claimButton.addEventListener('click', () => {
+  const username = usernameInput.value.trim();
+  const adminKey = adminKeyInput.value.trim();
+  const profilePic = profilePicInput.value.trim() || 'https://via.placeholder.com/30';
+  if (!username) return;
 
-  socket.emit('claim-username', {
-    username,
-    profilePic,
+  myUsername = username;
+  myProfilePic = profilePic;
+  isAdmin = adminKey === 'your-admin-key-here';
+
+  localStorage.setItem('sharcord_username', myUsername);
+  localStorage.setItem('sharcord_profilePic', myProfilePic);
+  localStorage.setItem('sharcord_isAdmin', isAdmin);
+
+  socket.emit('set-username', {
+    name: myUsername,
+    profilePic: myProfilePic,
     isAdmin
-  }, (res) => {
-    if (!res.success) {
-      alert('Username taken or invalid. Please re-login.');
-      localStorage.clear();
-      window.location.href = 'index.html';
-    }
   });
 
-  function addMessage({ username, message, profilePic, image, isAdmin }) {
-    const div = document.createElement('div');
-    div.className = 'message';
-    div.innerHTML = `
-      <img src="${profilePic || 'https://via.placeholder.com/40'}" class="profile-pic">
-      <div>
-        <strong style="color:${isAdmin ? 'red' : 'white'}">
-          ${username}${isAdmin ? ' [Administrator]' : ''}
-        </strong><br>
-        ${message ? message : ''}
-        ${image ? `<br><img src="${image}" style="max-width:200px;margin-top:5px;">` : ''}
-      </div>
-    `;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+  document.getElementById('claim-section').style.display = 'none';
+  document.getElementById('chat-section').style.display = 'block';
+});
+
+// Submit message
+messageForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const message = messageInput.value.trim();
+  if (message) {
+    socket.emit('send-message', message);
+    messageInput.value = '';
+  }
+});
+
+// Submit image
+imageForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const imageUrl = imageInput.value.trim();
+  if (imageUrl) {
+    socket.emit('send-image', imageUrl);
+    imageInput.value = '';
+  }
+});
+
+// Enter key to send
+messageInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    messageForm.dispatchEvent(new Event('submit'));
+  }
+});
+
+// Receive chat history
+socket.on('chat-history', (messages) => {
+  messages.forEach(displayMessage);
+});
+
+// Receive live messages
+socket.on('chat-message', displayMessage);
+
+// Username already taken
+socket.on('username-taken', () => {
+  alert('Username is already taken.');
+  localStorage.removeItem('sharcord_username');
+  location.reload();
+});
+
+// Function to display messages or images
+function displayMessage(msg) {
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.marginBottom = '10px';
+  wrapper.style.color = 'white';
+
+  const pic = document.createElement('img');
+  pic.src = msg.profilePic || 'https://via.placeholder.com/30';
+  pic.style.width = '30px';
+  pic.style.height = '30px';
+  pic.style.border = '2px solid red';
+  pic.style.borderRadius = '50%';
+  pic.style.marginRight = '10px';
+
+  const text = document.createElement('div');
+  const nameTag = document.createElement('strong');
+  nameTag.textContent = msg.name;
+  nameTag.style.color = msg.isAdmin ? 'red' : 'white';
+
+  if (msg.isAdmin) {
+    const adminTag = document.createElement('span');
+    adminTag.textContent = ' [administrator]';
+    adminTag.style.color = 'red';
+    nameTag.appendChild(adminTag);
   }
 
-  messageInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && messageInput.value.trim()) {
-      socket.emit('send-message', {
-        message: messageInput.value,
-        profilePic,
-        isAdmin
-      });
-      messageInput.value = '';
-    }
-  });
+  text.appendChild(nameTag);
+  text.appendChild(document.createElement('br'));
 
-  sendImageButton.addEventListener('click', () => {
-    const imageUrl = imageURLInput.value.trim();
-    if (imageUrl) {
-      socket.emit('send-image', {
-        imageUrl,
-        profilePic,
-        isAdmin
-      });
-      imageURLInput.value = '';
-    }
-  });
+  if (msg.type === 'text') {
+    text.appendChild(document.createTextNode(msg.content));
+  } else if (msg.type === 'image') {
+    const image = document.createElement('img');
+    image.src = msg.content;
+    image.style.maxWidth = '200px';
+    image.style.maxHeight = '200px';
+    image.style.border = '2px solid red';
+    text.appendChild(image);
+  }
 
-  socket.on('new-message', (data) => {
-    addMessage(data);
-  });
+  wrapper.appendChild(pic);
+  wrapper.appendChild(text);
+  chatBox.appendChild(wrapper);
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
