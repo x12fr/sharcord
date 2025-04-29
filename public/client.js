@@ -1,136 +1,158 @@
 const socket = io();
 
-let currentUsername = localStorage.getItem("username") || "";
-let currentProfilePic = localStorage.getItem("profilePic") || "";
-let isAdmin = localStorage.getItem("isAdmin") === "true";
+let myUsername = '';
+let myProfilePic = '';
 
-// Claim username
-document.getElementById("claimBtn")?.addEventListener("click", () => {
-  const userInput = document.getElementById("usernameInput").value.trim();
-  const adminKey = document.getElementById("adminKeyInput")?.value.trim();
-  if (!userInput) return;
+document.getElementById('registerBtn').onclick = () => {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const profilePic = document.getElementById('profilePic').value;
+  socket.emit('register', { username, password, profilePic });
+};
 
-  socket.emit("claim username", { username: userInput, adminKey }, (response) => {
-    if (response.success) {
-      localStorage.setItem("username", userInput);
-      localStorage.setItem("isAdmin", response.isAdmin);
-      window.location.href = "chat.html";
-    } else {
-      alert(response.message);
-    }
-  });
+document.getElementById('loginBtn').onclick = () => {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  socket.emit('login', { username, password });
+};
+
+socket.on('registerSuccess', ({ username, profilePic }) => {
+  myUsername = username;
+  myProfilePic = profilePic;
+  enterChat();
 });
 
-// Load previous messages
-socket.on("load messages", (messages) => {
-  messages.forEach((msg) => {
-    if (msg.type === "image") {
-      addImageMessage(msg.username, msg.url, msg.profilePic);
-    } else {
-      addMessage(msg.username, msg.text, msg.profilePic, msg.isAdmin);
-    }
-  });
+socket.on('registerFail', (msg) => alert(msg));
+
+socket.on('loginSuccess', ({ username, profilePic }) => {
+  myUsername = username;
+  myProfilePic = profilePic;
+  enterChat();
 });
 
-// Handle message send
-const form = document.getElementById("form");
-const input = document.getElementById("input");
+socket.on('loginFail', (msg) => alert(msg));
 
-form?.addEventListener("submit", function (e) {
-  e.preventDefault();
-  if (input.value.trim()) {
-    socket.emit("chat message", {
-      type: "text",
-      username: currentUsername,
-      text: input.value.trim(),
-      profilePic: currentProfilePic,
-      isAdmin
-    });
-    input.value = "";
+function enterChat() {
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('chat').style.display = 'block';
+
+  if (myUsername === 'X12') {
+    document.getElementById('adminPanel').style.display = 'block';
   }
-});
-
-// Handle sending images
-document.getElementById("sendImageBtn")?.addEventListener("click", () => {
-  const imageInput = document.getElementById("imageInput").value.trim();
-  if (imageInput) {
-    socket.emit("chat image", {
-      type: "image",
-      username: currentUsername,
-      url: imageInput,
-      profilePic: currentProfilePic
-    });
-    document.getElementById("imageInput").value = "";
-  }
-});
-
-// Set profile picture
-document.getElementById("setPfpBtn")?.addEventListener("click", () => {
-  const pfpUrl = document.getElementById("pfpInput").value.trim();
-  if (pfpUrl) {
-    currentProfilePic = pfpUrl;
-    localStorage.setItem("profilePic", pfpUrl);
-    alert("Profile picture updated!");
-  }
-});
-
-// Receive new message
-socket.on("chat message", (msg) => {
-  addMessage(msg.username, msg.text, msg.profilePic, msg.isAdmin);
-});
-
-socket.on("chat image", (msg) => {
-  addImageMessage(msg.username, msg.url, msg.profilePic);
-});
-
-// Add text message to DOM
-function addMessage(username, text, profilePic, isAdmin) {
-  const item = document.createElement("div");
-  item.classList.add("message");
-
-  const img = document.createElement("img");
-  img.src = profilePic || "";
-  img.alt = "pfp";
-  img.className = "pfp";
-
-  const name = document.createElement("strong");
-  name.textContent = username;
-  if (isAdmin) {
-    name.style.color = "red";
-    name.textContent += " [administrator]";
-  }
-
-  const msg = document.createElement("span");
-  msg.textContent = `: ${text}`;
-
-  item.appendChild(img);
-  item.appendChild(name);
-  item.appendChild(msg);
-  document.getElementById("messages").appendChild(item);
-  window.scrollTo(0, document.body.scrollHeight);
 }
 
-// Add image message to DOM
-function addImageMessage(username, url, profilePic) {
-  const item = document.createElement("div");
-  item.classList.add("message");
+document.getElementById('sendBtn').onclick = () => {
+  sendMessage();
+};
 
-  const img = document.createElement("img");
-  img.src = profilePic || "";
-  img.alt = "pfp";
-  img.className = "pfp";
+document.getElementById('message').addEventListener('keypress', e => {
+  if (e.key === 'Enter') sendMessage();
+});
 
-  const name = document.createElement("strong");
-  name.textContent = username;
-
-  const image = document.createElement("img");
-  image.src = url;
-  image.alt = "chat image";
-  image.className = "chat-img";
-
-  item.appendChild(img);
-  item.appendChild(name);
-  item.appendChild(image);
-  document.getElementById("messages").appendChild(item);
-  window.scrollTo(0, document.body.scrollHeight);
+function sendMessage() {
+  const msg = document.getElementById('message').value.trim();
+  if (!msg) return;
+  socket.emit('chatMessage', { type: 'text', message: msg });
+  document.getElementById('message').value = '';
 }
+
+document.getElementById('sendImageBtn').onclick = () => {
+  const url = document.getElementById('imageUrl').value.trim();
+  if (url) {
+    socket.emit('chatMessage', { type: 'image', imageUrl: url });
+    document.getElementById('imageUrl').value = '';
+  }
+};
+
+socket.on('chatMessage', (data) => {
+  const chat = document.getElementById('messages');
+  const div = document.createElement('div');
+
+  const timeoutNotice = data.timeout ? ` (timed out)` : '';
+  const nameLine = `<strong><img src="${data.profilePic}" class="pfp">${data.username}</strong>${timeoutNotice}:`;
+
+  if (data.type === 'text') {
+    div.innerHTML = `${nameLine} ${data.message}`;
+  } else if (data.type === 'image') {
+    div.innerHTML = `${nameLine}<br><img src="${data.imageUrl}" class="chat-image">`;
+  }
+
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+});
+
+socket.on('timeoutApplied', ({ target, duration }) => {
+  const msg = document.createElement('div');
+  msg.innerHTML = `<em>${target} has been timed out for ${duration}s</em>`;
+  document.getElementById('messages').appendChild(msg);
+});
+
+socket.on('timeoutLifted', ({ target }) => {
+  const msg = document.createElement('div');
+  msg.innerHTML = `<em>${target}'s timeout is over</em>`;
+  document.getElementById('messages').appendChild(msg);
+});
+
+socket.on('userJoined', ({ username, profilePic }) => {
+  const msg = document.createElement('div');
+  msg.innerHTML = `<em>${username} joined</em>`;
+  document.getElementById('messages').appendChild(msg);
+});
+
+socket.on('userLeft', (username) => {
+  const msg = document.createElement('div');
+  msg.innerHTML = `<em>${username} left</em>`;
+  document.getElementById('messages').appendChild(msg);
+});
+
+// Admin commands
+document.getElementById('strobeBtn').onclick = () => {
+  const duration = parseInt(prompt('Strobe duration (seconds):'), 10);
+  if (!isNaN(duration)) {
+    socket.emit('adminCommand', { action: 'strobe', duration });
+  }
+};
+
+document.getElementById('audioBtn').onclick = () => {
+  const url = prompt('YouTube audio URL:');
+  if (url) socket.emit('adminCommand', { action: 'playAudio', url });
+};
+
+document.getElementById('timeoutBtn').onclick = () => {
+  const target = prompt('Username to timeout:');
+  const duration = parseInt(prompt('Timeout duration in seconds:'), 10);
+  if (target && !isNaN(duration)) {
+    socket.emit('adminCommand', { action: 'timeout', target, duration });
+  }
+};
+
+document.getElementById('redirectBtn').onclick = () => {
+  const targetSocketId = prompt('Target socket ID:');
+  const url = prompt('Redirect URL:');
+  if (targetSocketId && url) {
+    socket.emit('adminCommand', { action: 'redirect', targetSocketId, url });
+  }
+};
+
+// Client reactions
+socket.on('strobeScreen', ({ duration }) => {
+  let count = 0;
+  const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+  const interval = setInterval(() => {
+    document.body.style.backgroundColor = colors[count % colors.length];
+    count++;
+    if (count > duration * 10) {
+      clearInterval(interval);
+      document.body.style.backgroundColor = '';
+    }
+  }, 100);
+});
+
+socket.on('playAudio', ({ url }) => {
+  const audio = new Audio(url);
+  audio.play();
+});
+
+socket.on('redirect', (url) => {
+  window.location.href = url;
+});
