@@ -7,30 +7,13 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="login-container">
-    <h1>Sharcord</h1>
-    <input type="text" id="username" placeholder="Enter Username" />
-    <input type="text" id="adminKey" placeholder="Admin Key (For Admins)" />
-    <button id="claimUserBtn">Claim User</button>
+  <div class="container">
+    <h1>Welcome to Sharcord</h1>
+    <input type="text" id="usernameInput" placeholder="Enter your username" />
+    <input type="text" id="adminKeyInput" placeholder="Enter admin key (optional)" />
+    <button id="claimBtn">Enter Chat</button>
   </div>
-
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const claimUserBtn = document.getElementById('claimUserBtn');
-
-    claimUserBtn.addEventListener('click', () => {
-      const username = document.getElementById('username').value.trim();
-      const adminKey = document.getElementById('adminKey').value.trim();
-
-      if (username) {
-        localStorage.setItem('username', username);
-        if (adminKey) {
-          localStorage.setItem('adminKey', adminKey);
-        }
-        window.location.href = '/chat.html';
-      }
-    });
-  </script>
+  <script src="client.js"></script>
 </body>
 </html>
