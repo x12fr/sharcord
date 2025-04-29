@@ -24,6 +24,7 @@ if (window.location.pathname === '/index.html' || window.location.pathname === '
 
 if (window.location.pathname === '/chat.html') {
   const messageInput = document.getElementById('messageInput');
+  const imageURLInput = document.getElementById('imageURLInput');
   const chatBox = document.getElementById('chatBox');
   const sendImageButton = document.getElementById('sendImageButton');
 
@@ -40,11 +41,14 @@ if (window.location.pathname === '/chat.html') {
 
   function addMessage({ username, message, profilePic, image }) {
     const div = document.createElement('div');
-    div.style.margin = '10px';
+    div.className = 'message';
     div.innerHTML = `
-      <img src="${profilePic || 'https://via.placeholder.com/30'}" style="width:30px;height:30px;border-radius:50%;vertical-align:middle;">
-      <strong>${username}</strong>: ${message}
-      ${image ? `<br><img src="${image}" style="max-width:200px;margin-top:5px;">` : ''}
+      <img src="${profilePic || 'https://via.placeholder.com/40'}" class="profile-pic">
+      <div>
+        <strong>${username}</strong><br>
+        ${message ? message : ''}
+        ${image ? `<br><img src="${image}" style="max-width:200px;margin-top:5px;">` : ''}
+      </div>
     `;
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -61,12 +65,13 @@ if (window.location.pathname === '/chat.html') {
   });
 
   sendImageButton.addEventListener('click', () => {
-    const imageUrl = prompt('Enter image URL:');
+    const imageUrl = imageURLInput.value.trim();
     if (imageUrl) {
       socket.emit('send-image', {
         imageUrl,
         profilePic
       });
+      imageURLInput.value = '';
     }
   });
 
