@@ -1,8 +1,82 @@
-.custom-btn {
+body {
   background-color: black;
-  color: red;
-  border: 1px solid red;
-  padding: 8px 12px;
-  margin-right: 5px;
+  color: white;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.chat-box {
+  height: 80vh;
+  overflow-y: auto;
+  border: 3px solid red;
+  padding: 10px;
+  margin: 10px;
+  background-color: #111;
+}
+
+input#messageInput {
+  width: 95%;
+  padding: 10px;
+  background: #222;
+  border: 2px solid red;
+  color: white;
+  margin: 10px;
+}
+
+#adminToggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: black;
+  border: 2px solid red;
+  padding: 5px;
   cursor: pointer;
+  z-index: 100;
+}
+
+#adminPanel {
+  position: fixed;
+  top: 0;
+  left: 50px;
+  background: #111;
+  border: 2px solid red;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#bgPrompt {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+}
+
+#bgUrlInput {
+  padding: 5px;
+  border: 2px solid red;
+  background: black;
+  color: white;
+}
+
+#soundboard {
+  position: fixed;
+  right: 10px;
+  top: 10px;
+  background: #111;
+  border: 2px solid red;
+  padding: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 50px;
 }
