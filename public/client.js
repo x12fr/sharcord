@@ -17,6 +17,7 @@ let username = localStorage.getItem('username');
 let isAdmin = localStorage.getItem('isAdmin') === 'true';
 let profilePic = localStorage.getItem('profilePic') || '';
 
+// Show admin tools if user is admin
 if (isAdmin) {
   adminToggle.style.display = 'block';
 }
@@ -26,7 +27,7 @@ adminToggle.addEventListener('click', () => {
 });
 
 bgButton.addEventListener('click', () => {
-  bgPanel.style.display = 'block';
+  bgPanel.style.display = bgPanel.style.display === 'none' ? 'block' : 'none';
 });
 
 bgSubmit.addEventListener('click', () => {
@@ -39,7 +40,7 @@ bgSubmit.addEventListener('click', () => {
 });
 
 soundboardToggle.addEventListener('click', () => {
-  soundboardPanel.style.display = 'block';
+  soundboardPanel.style.display = soundboardPanel.style.display === 'none' ? 'block' : 'none';
 });
 
 document.querySelectorAll('.sound-btn').forEach(btn => {
