@@ -6,30 +6,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="messages"></div>
+  <div id="chatBox" class="chat-box"></div>
+  <input id="messageInput" type="text" placeholder="Type a message..." />
+  <button id="sendImage">📷</button>
+  <button id="setPfp">🖼️</button>
 
-  <form id="message-form">
-    <input type="text" id="message-input" placeholder="Type your message here..." autocomplete="off" />
-    <input type="file" id="imageInput" title="Send Image">
-    <input type="file" id="profilePicInput" title="Set Profile Picture">
-    <button type="submit">Send</button>
-  </form>
-
-  <div id="admin-toggle">☰</div>
-
-  <div id="admin-panel">
-    <h3>C00L P4N3eL</h3>
-    <button id="set-bg-btn">Set Back Decal</button>
-    <div id="bg-panel">
-      <input type="text" id="bgInput" placeholder="Decal" />
-      <button id="bgSubmit">Apply</button>
+  <!-- Admin Panel -->
+  <div id="adminPanel" class="admin-panel">
+    <button id="setBgBtn" class="arrow-toggle">⇧</button>
+    <div id="bgSetter" class="bg-setter">
+      <input id="bgUrlInput" type="text" placeholder="Background URL" />
     </div>
 
-    <button id="soundboard-toggle">Open Soundboard</button>
-    <div id="soundboard-panel">
-      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/vine-boom.mp3">Vine Boom</button>
-      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/goofy-ahh-sounds.mp3">Goofy Sound</button>
-      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/mlg-airhorn.mp3">Airhorn</button>
+    <button id="toggleSoundboard" class="arrow-toggle">⇩</button>
+    <div id="soundboard" class="soundboard">
+      <button class="sound-btn" data-sound="https://files.catbox.moe/oqvjsc.mp3">Tung Tung Sahur</button>
+      <button class="sound-btn" data-sound="https://example.com/sound2.mp3">🔊 Sound 2</button>
+      <button class="sound-btn" data-sound="https://example.com/sound3.mp3">🔊 Sound 3</button>
     </div>
   </div>
 
