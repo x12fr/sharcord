@@ -1,24 +1,41 @@
 const socket = io();
 
-const username = localStorage.getItem("username");
-const isAdmin = localStorage.getItem("isAdmin") === "true";
+// Ask for username and admin key
+let username = localStorage.getItem("username");
+let isAdmin = false;
+
+if (!username) {
+  username = prompt("Enter your username:");
+  localStorage.setItem("username", username);
+}
+
+const adminKey = prompt("Enter admin key (leave blank if not admin):");
+if (adminKey === "331256444") {
+  isAdmin = true;
+  localStorage.setItem("isAdmin", "true");
+} else {
+  isAdmin = false;
+  localStorage.setItem("isAdmin", "false");
+}
+
 let profilePicture = localStorage.getItem("profilePicture") || "default.png";
 
-// Join chat
+// Join server
 socket.emit("join", { username, isAdmin });
 
-// Message input
+// Elements
 const messageInput = document.getElementById("messageInput");
 const chatBox = document.getElementById("chatBox");
 
-// Send message on Enter
+// Send message
 messageInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && messageInput.value.trim() !== "") {
     socket.emit("sendMessage", {
       username,
       text: messageInput.value.trim(),
       profilePicture,
-      isAdmin
+      isAdmin,
+      type: "text"
     });
     messageInput.value = "";
   }
@@ -26,41 +43,42 @@ messageInput.addEventListener("keydown", e => {
 
 // Send image
 document.getElementById("sendImage").addEventListener("click", () => {
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*";
-  fileInput.onchange = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = () => {
     const reader = new FileReader();
     reader.onload = () => {
       socket.emit("sendImage", {
         username,
         image: reader.result,
         profilePicture,
-        isAdmin
+        isAdmin,
+        type: "image"
       });
     };
-    reader.readAsDataURL(fileInput.files[0]);
+    reader.readAsDataURL(input.files[0]);
   };
-  fileInput.click();
+  input.click();
 });
 
 // Set profile picture
 document.getElementById("setPfp").addEventListener("click", () => {
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*";
-  fileInput.onchange = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = () => {
     const reader = new FileReader();
     reader.onload = () => {
       profilePicture = reader.result;
       localStorage.setItem("profilePicture", reader.result);
     };
-    reader.readAsDataURL(fileInput.files[0]);
+    reader.readAsDataURL(input.files[0]);
   };
-  fileInput.click();
+  input.click();
 });
 
-// Show message
+// Handle new messages
 socket.on("message", data => {
   const div = document.createElement("div");
   div.className = "message";
@@ -88,20 +106,21 @@ socket.on("message", data => {
   chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-// Load saved messages
+// Load message history
 socket.on("loadMessages", messages => {
   messages.forEach(m => socket.emit("message", m));
 });
 
-// Admin-only tools
+// Admin tools
 if (isAdmin) {
   document.getElementById("adminPanel").style.display = "block";
 
-  // Background setter
+  // Toggle background section
   document.getElementById("setBgBtn").addEventListener("click", () => {
     document.getElementById("bgSetter").classList.toggle("open");
   });
 
+  // Set background
   document.getElementById("bgUrlInput").addEventListener("keydown", e => {
     if (e.key === "Enter") {
       socket.emit("changeBackground", e.target.value);
@@ -109,7 +128,7 @@ if (isAdmin) {
     }
   });
 
-  // Soundboard toggle
+  // Toggle soundboard
   document.getElementById("toggleSoundboard").addEventListener("click", () => {
     document.getElementById("soundboard").classList.toggle("open");
   });
@@ -123,7 +142,7 @@ if (isAdmin) {
   });
 }
 
-// Play background and audio
+// Background and audio
 socket.on("changeBackground", url => {
   document.body.style.backgroundImage = `url(${url})`;
 });
