@@ -1,110 +1,104 @@
 body {
-  background-color: black;
-  color: white;
-  font-family: 'Arial', sans-serif;
   margin: 0;
-  padding: 0;
-  overflow-x: hidden;
+  font-family: Arial, sans-serif;
+  background: #000;
+  color: white;
+}
+
+#chatContainer {
+  padding: 20px;
 }
 
 .chat-box {
-  width: 90%;
-  height: 70vh;
-  margin: 20px auto;
-  background: #111;
   border: 2px solid red;
+  background-color: #111;
+  height: 400px;
   overflow-y: auto;
   padding: 10px;
-  box-shadow: 0 0 10px red;
+  margin-bottom: 10px;
 }
 
 #messageInput {
-  width: 60%;
-  display: block;
-  margin: 0 auto;
+  width: 70%;
   padding: 10px;
+  border: 2px solid red;
   background: #222;
-  border: 2px solid red;
   color: white;
-  font-size: 16px;
 }
 
-button {
-  margin: 10px 5px;
-  padding: 8px 12px;
-  border: 2px solid red;
-  background-color: black;
+#sendImage, #setPfp {
+  padding: 10px;
+  margin-left: 5px;
+  background: black;
   color: white;
+  border: 2px solid red;
   cursor: pointer;
-  font-weight: bold;
 }
 
-.pfp {
+.message {
+  margin-bottom: 10px;
+}
+
+.profile-pic {
   width: 30px;
   height: 30px;
   border-radius: 50%;
   vertical-align: middle;
-  margin-right: 10px;
-}
-
-.message {
-  margin: 10px 0;
+  margin-right: 5px;
 }
 
 .chat-image {
-  max-width: 200px;
+  max-height: 200px;
   display: block;
   margin-top: 5px;
-  border: 1px solid red;
+  border: 1px solid #444;
+}
+
+#toggleAdminPanel {
+  position: fixed;
+  top: 20px;
+  right: 10px;
+  background: black;
+  color: white;
+  border: 2px solid red;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 1001;
 }
 
 .admin-panel {
   position: fixed;
-  top: 10px;
-  right: 10px;
-  width: 250px;
+  top: 60px;
+  right: -310px;
+  width: 300px;
   background: #111;
   border: 2px solid red;
-  box-shadow: 0 0 15px red;
   padding: 10px;
-  display: none;
+  color: white;
+  transition: right 0.4s ease;
   z-index: 1000;
 }
 
-.arrow-toggle {
-  width: 100%;
-  background: black;
-  color: white;
-  border: 2px solid red;
-  font-size: 18px;
-  margin-top: 5px;
+.admin-panel.open {
+  right: 10px;
 }
 
-.bg-setter,
-.soundboard {
-  margin-top: 10px;
-  display: none;
-  flex-direction: column;
+.admin-section {
+  margin-bottom: 20px;
 }
 
-.bg-setter.open,
-.soundboard.open {
-  display: flex;
-}
-
-#bgUrlInput {
-  width: 100%;
-  padding: 5px;
-  border: 2px solid red;
-  background: #222;
-  color: white;
-  margin-top: 5px;
+.admin-panel h4 {
+  margin-bottom: 5px;
+  color: red;
 }
 
 .sound-btn {
-  background: #222;
-  color: white;
+  background: black;
   border: 2px solid red;
-  margin: 4px 0;
+  color: white;
+  padding: 6px 10px;
+  margin: 5px 0;
   cursor: pointer;
+  display: block;
+  width: 100%;
 }
