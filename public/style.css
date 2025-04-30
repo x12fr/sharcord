@@ -90,12 +90,7 @@ button, input[type="file"] {
   right: 10px;
 }
 
-#bg-panel {
-  display: none;
-  margin-top: 10px;
-}
-
-#soundboard-panel {
+#bg-panel, #soundboard-panel {
   display: none;
   margin-top: 10px;
 }
