@@ -1,34 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Sharcord Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body id="chat-bg">
-  <div id="messages" class="chat-box"></div>
+<body>
+  <div id="messages"></div>
 
-  <input id="messageInput" placeholder="Type your message..." />
-  <div class="chat-buttons">
-    <input type="file" id="imageInput" accept="image/*" />
-    <button onclick="uploadImage()">Send Image</button>
-    <button onclick="setProfilePic()">Set Profile Picture</button>
-  </div>
+  <form id="message-form">
+    <input type="text" id="message-input" placeholder="Type your message here..." autocomplete="off" />
+    <input type="file" id="imageInput" title="Send Image">
+    <input type="file" id="profilePicInput" title="Set Profile Picture">
+    <button type="submit">Send</button>
+  </form>
 
-  <!-- Admin GUI -->
-  <div id="adminToggle">&#x25B6;</div>
-  <div id="adminPanel" class="hidden">
-    <button onclick="showBackgroundPrompt()">Set Background</button>
-    <button onclick="toggleSoundboard()">🎵</button>
-  </div>
-  <div id="bgPrompt" class="hidden">
-    <input id="bgUrlInput" placeholder="Background URL..." />
-  </div>
+  <div id="admin-toggle">☰</div>
 
-  <!-- Soundboard -->
-  <div id="soundboard" class="hidden">
-    <button onclick="playSound('https://example.com/sound1.mp3')">Sound 1</button>
-    <button onclick="playSound('https://example.com/sound2.mp3')">Sound 2</button>
+  <div id="admin-panel">
+    <h3>Admin Panel</h3>
+    <button id="set-bg-btn">Set Background</button>
+    <div id="bg-panel">
+      <input type="text" id="bgInput" placeholder="Background URL" />
+      <button id="bgSubmit">Apply</button>
+    </div>
+
+    <button id="soundboard-toggle">Open Soundboard</button>
+    <div id="soundboard-panel">
+      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/vine-boom.mp3">Vine Boom</button>
+      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/goofy-ahh-sounds.mp3">Goofy Sound</button>
+      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/mlg-airhorn.mp3">Airhorn</button>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
