@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Sharcord Chat</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Chatbox -->
   <div id="chatBox" class="chat-box"></div>
   <input id="messageInput" type="text" placeholder="Type a message..." />
   <button id="sendImage">📷</button>
@@ -13,14 +14,14 @@
 
   <!-- Admin Panel -->
   <div id="adminPanel" class="admin-panel">
-    <button id="setBgBtn" class="arrow-toggle">⇧</button>
+    <button id="setBgBtn" class="arrow-toggle">⇧ Background</button>
     <div id="bgSetter" class="bg-setter">
-      <input id="bgUrlInput" type="text" placeholder="Background URL" />
+      <input id="bgUrlInput" type="text" placeholder="Enter background URL" />
     </div>
 
-    <button id="toggleSoundboard" class="arrow-toggle">⇩</button>
+    <button id="toggleSoundboard" class="arrow-toggle">⇩ Soundboard</button>
     <div id="soundboard" class="soundboard">
-      <button class="sound-btn" data-sound="https://files.catbox.moe/oqvjsc.mp3">Tung Tung Sahur</button>
+      <button class="sound-btn" data-sound="https://example.com/sound1.mp3">🔊 Sound 1</button>
       <button class="sound-btn" data-sound="https://example.com/sound2.mp3">🔊 Sound 2</button>
       <button class="sound-btn" data-sound="https://example.com/sound3.mp3">🔊 Sound 3</button>
     </div>
