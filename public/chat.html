@@ -2,27 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sharcord Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sharcord</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="chatBox" class="chat-box"></div>
-  <input id="messageInput" type="text" placeholder="Type a message..." />
-  <button id="sendImage">📷</button>
-  <button id="setPfp">🖼️</button>
 
-  <!-- Admin Panel -->
+  <div id="chatContainer">
+    <div id="chatBox" class="chat-box"></div>
+    <input id="messageInput" placeholder="Type your message..." autocomplete="off" />
+    <button id="sendImage">📷</button>
+    <button id="setPfp">🎭</button>
+  </div>
+
+  <!-- Toggle button for admin panel -->
+  <button id="toggleAdminPanel">⇨</button>
+
+  <!-- Admin panel (visible only to admins) -->
   <div id="adminPanel" class="admin-panel">
-    <button id="setBgBtn" class="arrow-toggle">⇧ Background</button>
-    <div id="bgSetter" class="bg-setter">
-      <input id="bgUrlInput" type="text" placeholder="Enter background URL" />
+    <h3 style="text-align:center;">c00lkidd Admin Panel</h3>
+
+    <div class="admin-section">
+      <h4>Background Setter</h4>
+      <input id="backgroundInput" placeholder="Background Image URL" />
+      <button id="setBackground">Set Background</button>
     </div>
 
-    <button id="toggleSoundboard" class="arrow-toggle">⇩ Soundboard</button>
-    <div id="soundboard" class="soundboard">
-      <button class="sound-btn" data-sound="https://example.com/sound1.mp3">🔊 Sound 1</button>
-      <button class="sound-btn" data-sound="https://example.com/sound2.mp3">🔊 Sound 2</button>
-      <button class="sound-btn" data-sound="https://example.com/sound3.mp3">🔊 Sound 3</button>
+    <div class="admin-section">
+      <h4>Soundboard</h4>
+      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/troll-song.mp3">Troll Song</button>
+      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/vine-boom.mp3">Vine Boom</button>
+      <button class="sound-btn" data-url="https://www.myinstants.com/media/sounds/windows-xp-error.mp3">XP Error</button>
     </div>
   </div>
 
