@@ -1,44 +1,62 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const path = require('path');
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
+const path = require("path");
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Route for root URL
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+const PORT = process.env.PORT || 3000;
+const adminKey = "331256444";
 
 let messages = [];
 
-io.on('connection', (socket) => {
-  // Send existing messages to the newly connected client
-  messages.slice(-100).forEach(msg => socket.emit("message", msg));
+app.use(express.static("public"));
 
-  // Handle incoming messages
-  socket.on("message", data => {
-    const msg = { ...data };
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+io.on("connection", (socket) => {
+  socket.on("join", ({ username, isAdmin }) => {
+    socket.username = username;
+    socket.isAdmin = isAdmin;
+    socket.emit("loadMessages", messages);
+  });
+
+  socket.on("sendMessage", (data) => {
+    const msg = {
+      username: data.username,
+      text: data.text,
+      profilePicture: data.profilePicture,
+      isAdmin: data.isAdmin,
+      type: "text"
+    };
     messages.push(msg);
     if (messages.length > 100) messages.shift();
     io.emit("message", msg);
   });
 
-  // Handle background change requests
-  socket.on("setBackground", (url) => {
-    io.emit("changeBackground", url);
+  socket.on("sendImage", (data) => {
+    const img = {
+      username: data.username,
+      image: data.image,
+      profilePicture: data.profilePicture,
+      isAdmin: data.isAdmin,
+      type: "image"
+    };
+    messages.push(img);
+    if (messages.length > 100) messages.shift();
+    io.emit("message", img);
   });
 
-  // Handle sound play requests
-  socket.on("playSound", (url) => {
-    io.emit("playSound", url);
+  socket.on("playAudio", (url) => {
+    io.emit("playAudio", url);
+  });
+
+  socket.on("changeBackground", (url) => {
+    io.emit("changeBackground", url);
   });
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-  console.log(`Sharcord running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
